@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "strictFunctionTypes": false,
+    "strictNullChecks": false,
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": false,
+    "noEmit": true,
+    "jsx": "preserve",
+    "allowJs": true,
+    "strict": true,
+    "sourceMap": true,
+    "alwaysStrict": true,
+    "noImplicitAny": false,
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "outDir": "dist",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "types": ["node", "vite/client"],
+    "typeRoots": [
+      "./node_modules/@types", // 原生类型
+      "./src/types" // 自定义类型（关键）
+    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable", "scripthost"]
+  },
+  "include": ["src/**/*.ts", "packages/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/**/*.js",
+    "script"
+  ]
+}
