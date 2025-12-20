@@ -112,7 +112,10 @@ export function diffusionConfig() {
    * @param {number[]} options.center 波纹中心经纬度坐标 [longitude, latitude]
    * @param {number} options.maxRadius 波纹最大扩散半径（米）
    * @param {string} options.color 波纹颜色（CSS颜色字符串）
-   * @param {number} [options.duration=2000] 波纹扩散动画时长（毫秒）
+   * @param {number} [options.speed=1.0] 倍速（原始速率的倍数）
+   *   - u_speed = 1.0 → 1倍速（跟随原始千帧速率）
+   *   - u_speed = 2.0 → 2倍速（千帧速率的2倍）
+   *   - u_speed = 0.5 → 0.5倍速（千帧速率的一半）
    * @param {number} [options.circlesNumber=3] 波纹圈数
    * @returns {Cesium.Entity|null} 创建的波纹实体，若创建失败则返回null
    */
@@ -121,7 +124,7 @@ export function diffusionConfig() {
     center: any[]; 
     maxRadius: number, 
     color: string, 
-    duration?: number, 
+    speed?: number, 
     circlesNumber? : number
   }) => {
     const map = mapStore.getMap()
@@ -149,7 +152,7 @@ export function diffusionConfig() {
           fabric: {
             uniforms: {
               u_color: Cesium.Color.fromCssColorString(options.color).withAlpha(1),
-              u_speed: 10, // 速度（毫秒）
+              u_speed: options.speed || 1.0, // 倍速（原始速率的倍数）
               u_count: options.circlesNumber || 2,
               u_gradient: 0.1
             },
@@ -237,7 +240,10 @@ export function diffusionConfig() {
    * @param {number[]} options.center 波纹中心经纬度坐标 [longitude, latitude]
    * @param {number} options.maxRadius 波纹最大扩散半径（米）
    * @param {string} options.color 波纹颜色（CSS颜色字符串）
-   * @param {number} [options.duration=2000] 扫描动画时长（毫秒） 
+   * @param {number} [options.speed=1.0] 倍速（原始速率的倍数）
+   *   - u_speed = 1.0 → 1倍速（跟随原始千帧速率）
+   *   - u_speed = 2.0 → 2倍速（千帧速率的2倍）
+   *   - u_speed = 0.5 → 0.5倍速（千帧速率的一半）
    * @returns {Cesium.Entity|null} 创建的波纹实体，若创建失败则返回null 
    */
   const scanning = (options: {
@@ -245,7 +251,7 @@ export function diffusionConfig() {
     center: any[];
     maxRadius: number,
     color: string,
-    duration?: number,
+    speed?: number,
   }) => {
     const map = mapStore.getMap()
     if (!map) {
@@ -272,7 +278,7 @@ export function diffusionConfig() {
           fabric: {
             uniforms: {
               u_color: Cesium.Color.fromCssColorString(options.color).withAlpha(0.9), // 固定为红色，提高透明度
-              u_speed: options.duration ? 360 / (options.duration / 1000) : 60, // 降低速度，让拖尾更明显
+              u_speed: options.speed ? 360 / (options.speed) : 60, // 降低速度，让拖尾更明显
               u_fan_angle: 60.0, // 扇子角度（度）
               u_tail_length: 90.0 // 拖尾长度（度）
             },

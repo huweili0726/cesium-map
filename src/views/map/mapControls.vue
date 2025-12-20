@@ -343,7 +343,7 @@ const toCreateMultiDiffusion = () => {
     center: [117.228433, 31.723159], // 涟漪中心坐标
     maxRadius: 1500, // 最大扩散半径（米）
     color: '#E81224', // 涟漪颜色
-    duration: 3000, // 扩散动画时长（毫秒）
+    speed: 10, // 倍速（原始速率的倍数）
     circlesNumber: 3 // 波纹圈数
   })
 }
@@ -355,7 +355,7 @@ const toCreateScanning = () => {
     center: [117.228433, 31.723159], // 涟漪中心坐标
     maxRadius: 1500, // 最大扩散半径（米）
     color: '#E81224', // 涟漪颜色
-    duration: 3000, // 扫描动画时长（毫秒）
+    speed: 3, // 倍速（原始速率的倍数）
   })
 }
 
