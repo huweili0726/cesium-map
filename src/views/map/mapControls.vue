@@ -85,6 +85,7 @@
           <button @click="toCreateMultiDiffusion" class="control-btn">创建多圈涟漪</button>
           <button @click="toCreateScanning" class="control-btn">创建扫描圈</button>
           <button @click="toCreateScanning1" class="control-btn">创建扫描圈img</button>
+          <button @click="toCreatePolygonDiffusion" class="control-btn">创建多边形扩散</button>
           <button @click="toRemoveSingleDiffusion" class="control-btn">移除涟漪效果</button>
         </div>
       </div>
@@ -371,6 +372,22 @@ const toCreateScanning1 = () => {
   })
 }
 
+// 创建多边形扩散涟漪效果
+const toCreatePolygonDiffusion = () => {
+  polygonDiffusion({
+    id: 'polygon_diffusion_001',
+    maxRadius: 1500, // 最大扩散半径（米）
+    color: '#E81224', // 涟漪颜色
+    speed: 10, // 倍速（原始速率的倍数）
+    polygonPoints: [
+      117.228433, 31.723159,
+      117.218433, 31.723659,
+      117.229433, 31.723659,
+      117.229433, 31.723159
+    ]
+  })
+}
+
 // 移除单圈涟漪效果
 const toRemoveSingleDiffusion = () => {
   // 移除指定ID的涟漪效果
@@ -405,6 +422,7 @@ const {
   multiDiffusion,
   removeDiffusion,
   circleScanImage,
+  polygonDiffusion,
   scanning
 } = diffusionConfig()
 </script>

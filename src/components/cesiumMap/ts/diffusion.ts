@@ -390,12 +390,103 @@ export function diffusionConfig() {
     mapStore.setGraphicMap(options.id, primitive);
     return primitive;
   }
+
+  /**
+   * 创建多边形扩散涟漪效果
+   * 
+   * 在指定位置创建一个从中心向外扩散的多边形波纹，类似雷达波或信号涟漪
+   * 波纹会逐渐扩大并淡出，支持循环播放
+   * 
+   * @param {string} options.id 波纹唯一标识
+   * @param {number} options.maxRadius 波纹最大扩散半径（米）
+   * @param {string} options.color 波纹颜色（CSS颜色字符串）
+   * @param {number} [options.speed=1.0] 倍速（原始速率的倍数）
+   *   - u_speed = 1.0 → 1倍速（跟随原始千帧速率）
+   *   - u_speed = 2.0 → 2倍速（千帧速率的2倍）
+   *   - u_speed = 0.5 → 0.5倍速（千帧速率的一半）
+   * @param {number[]} [options.polygonPoints] 多边形顶点坐标数组，格式为 [longitude1, latitude1, longitude2, latitude2, ...]
+   * @returns {Cesium.Entity|null} 创建的波纹实体，若创建失败则返回null 
+   */
+  const polygonDiffusion = (options: {
+    id: string,
+    maxRadius: number,
+    color: string,
+    speed?: number,
+    polygonPoints?: number[];
+  }) => {
+    const map = mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return null
+    }
+
+    // 检查是否已存在相同ID的扫描效果
+    if (mapStore.getGraphicMap(options.id)) {
+      console.log(`id: ${options.id} 扫描效果已存在`)
+      return null
+    }
+
+    // 计算多边形几何形状
+    let geometry;
+    if (options.polygonPoints) {
+      // 使用自定义多边形顶点
+      geometry = new Cesium.PolygonGeometry({
+        polygonHierarchy: new Cesium.PolygonHierarchy(
+          Cesium.Cartesian3.fromDegreesArray(options.polygonPoints)
+        ),
+        height: 0
+      });
+    } 
+
+    const primitive = new Cesium.GroundPrimitive({
+      geometryInstances: new Cesium.GeometryInstance({
+        geometry: geometry
+      }),
+      appearance: new Cesium.EllipsoidSurfaceAppearance({
+        material: new Cesium.Material({
+          fabric: {
+            uniforms: {
+              u_color: Cesium.Color.fromCssColorString(options.color).withAlpha(1),
+              u_speed: options.speed || 1.0,
+              u_gradient: 0.1
+            },
+            source: `
+              czm_material czm_getMaterial(czm_materialInput materialInput)
+              {
+                  czm_material material = czm_getDefaultMaterial(materialInput);
+                  material.diffuse = 1.5 * u_color.rgb;
+                  vec2 st = materialInput.st;
+
+                  float dis = distance(st, vec2(0.5, 0.5));
+                  float per = fract(u_speed * czm_frameNumber / 1000.0);
+
+                  if(dis > per * 0.5)discard;
+                  material.alpha = u_color.a * dis / per / 2.0;
+
+                  return material;
+              }
+            `
+          },
+          translucent: true
+        }),
+      }),
+      asynchronous: false
+    });
+
+    // 添加primitive到场景
+    map.scene.primitives.add(primitive);
+    // 将primitive缓存到graphicMap中
+    mapStore.setGraphicMap(options.id, primitive);
+    return primitive;
+  }
+
   // 导出扩散波纹操作方法
   return {
     singleDiffusion,
     multiDiffusion,
     removeDiffusion,
     circleScanImage,
+    polygonDiffusion,
     scanning
   }
 }
