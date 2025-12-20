@@ -12,6 +12,7 @@
  */
 import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
+import circleScan from '@/assets/img/circle-scan.png'
 
 export function diffusionConfig() {
 
@@ -278,69 +279,28 @@ export function diffusionConfig() {
           fabric: {
             uniforms: {
               u_color: Cesium.Color.fromCssColorString(options.color).withAlpha(0.9), // 固定为红色，提高透明度
-              u_speed: options.speed ? 360 / (options.speed) : 60, // 降低速度，让拖尾更明显
-              u_fan_angle: 60.0, // 扇子角度（度）
-              u_tail_length: 90.0 // 拖尾长度（度）
+              u_image: circleScan,
+              u_speed: options.speed, // 降低速度，让拖尾更明显
             },
             source: `
               czm_material czm_getMaterial(czm_materialInput materialInput)
               {
-                czm_material material = czm_getDefaultMaterial(materialInput);
-                vec2 st = materialInput.st;
+                  czm_material material = czm_getDefaultMaterial(materialInput);
+                  vec2 st = materialInput.st;
 
-                // 计算从中心到当前点的角度
-                vec2 center = vec2(0.5, 0.5);
-                vec2 direction = st - center;
-                float angle = atan(direction.y, direction.x);
-                angle = degrees(angle); // 转换为度数
-                if (angle < 0.0) angle += 360.0; // 转换为0-360范围
+                  float angle = radians(mod(czm_frameNumber * u_speed, 360.0)); // u_time 作为角度（度数）
+                  mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+                  st = (rot * (st - 0.5)) + 0.5;
 
-                // 计算当前扫描角度（随时间变化）
-                float scan_angle = mod(czm_frameNumber * u_speed / 60.0, 360.0);
-
-                // 计算角度差（考虑360度循环）
-                float angle_diff = angle - scan_angle;
-                if (angle_diff > 180.0) angle_diff -= 360.0;
-                if (angle_diff < -180.0) angle_diff += 360.0;
-                angle_diff = abs(angle_diff);
-
-                // 计算距离中心的距离
-                float distance = length(direction) * 2.0;
-
-                // 扇子形状：限制角度范围
-                float fan_shape = 0.0;
-                if (angle_diff < u_fan_angle * 0.5) {
-                  fan_shape = 1.0;
-                }
-
-                // 拖尾效果：根据角度差实现渐变
-                float tail_effect = 0.0;
-                if (angle_diff < u_tail_length) {
-                  tail_effect = 1.0 - (angle_diff / u_tail_length);
-                  // 拖尾末端更柔和的渐变
-                  tail_effect = pow(tail_effect, 2.0);
-                }
-
-                // 距离衰减：扇子末端渐变
-                float distance_fade = 1.0 - smoothstep(0.0, 1.0, distance);
-
-                // 组合效果
-                float alpha = fan_shape * tail_effect * distance_fade * u_color.a;
-                
-                // 颜色保持红色，增强拖尾的亮度变化
-                vec3 final_color = u_color.rgb * (1.0 + tail_effect * 0.5);
-                
-                material.diffuse = final_color;
-                material.alpha = alpha;
-                
-                return material;
+                  vec4 img = texture(u_image,st);
+                  material.diffuse = u_color.rgb;
+                  material.alpha = img.a;
+                  return material;
               }
             `
           },
-          translucent: true
+          translucent: false
         }),
-        flat: true, // 禁用光照
-        faceForward: true // 确保材质始终可见
       }),
       asynchronous: false
     });
