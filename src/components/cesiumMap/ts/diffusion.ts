@@ -539,20 +539,32 @@ export function diffusionConfig() {
    * 创建圆形墙效果
    * @param options - 配置选项
    * @param options.id - 效果的唯一标识符
-   * @param options.center - 中心坐标 [经度, 纬度]
+   * @param options.center - 中心坐标 [经度, 纬度, 高度（可选，默认0）]
    * @param options.maxRadius - 最大半径（米）
    * @param options.maxHeight - 最大高度（米）
    * @param options.color - 颜色字符串（例如 '#00ffff'）
+   * @param options.opacity - 初始透明度（可选，默认1.0）
    * @param options.speed - 倍速参数，影响动画速度（可选，默认1.0）
+   * @param options.effectType - 效果类型（可选，默认2）：
+   *                              0 - 垂直流动光环
+   *                              1 - 扫描线
+   *                              2 - 波浪效果
+   *                              3 - 粒子流动
+   * @param options.segments - 圆形的分段数（可选，默认64，影响圆形平滑度和性能）
+   * @param options.asynchronous - 是否异步创建（可选，默认false）
    * @returns 成功时返回Primitive实例，失败时返回null
    */
   const circleDiffusion= (options: {
     id: string,
-    center: any[];
+    center: number[];
     maxRadius: number;
     maxHeight: number;
     color: string;
+    opacity?: number;
     speed?: number;
+    effectType?: number;
+    segments?: number;
+    asynchronous?: boolean;
   }) => {
     console.log('circleDiffusion函数被调用，参数：', options);
     
@@ -561,193 +573,114 @@ export function diffusionConfig() {
       console.error('地图实例不存在')
       return null
     }
-    console.log('地图实例获取成功');
-
-    // 检查是否已存在相同ID的扫描效果
-    if (mapStore.getGraphicMap(options.id)) {
-      console.log(`id: ${options.id} 效果已存在`)
-      return null
-    }
-    console.log('ID检查通过，不存在重复效果');
-
-    // 生成圆形墙体的顶点数据
-    const centerCartesian = Cesium.Cartesian3.fromDegrees(options.center[0], options.center[1], 0);
-    console.log('中心点坐标：', centerCartesian);
     
+    // 检查是否已存在相同ID的效果
+    if (mapStore.getGraphicMap(options.id)) {
+      console.warn(`ID: ${options.id} 的效果已存在，将返回现有实例`)
+      return mapStore.getGraphicMap(options.id)
+    }
+    
+    // 解析中心点坐标，支持可选的高度参数，默认贴地
+    const centerHeight = options.center.length > 2 ? options.center[2] : 0;
+    const centerCartesian = Cesium.Cartesian3.fromDegrees(options.center[0], options.center[1], centerHeight);
+    
+    // 参数默认值
     const radius = options.maxRadius;
     const height = options.maxHeight;
-    const segments = 64; // 圆形的分段数
-    console.log('参数：radius=' + radius + ', height=' + height + ', segments=' + segments);
+    const segments = Math.max(8, Math.min(options.segments || 64, 256)); // 限制分段数在8-256之间
+    const opacity = options.opacity !== undefined ? options.opacity : 1.0;
+    const speed = options.speed || 1.0;
+    const effectType = Math.max(0, Math.min(options.effectType || 2, 3)); // 限制效果类型在0-3之间
+    const asynchronous = options.asynchronous || false;
     
-    // 计算圆形顶点
-    const positions = [];
-    const normals = [];
-    const sts = [];
-    const indices = [];
+    // 确保墙体贴地显示
+    const groundHeight = 0; // 地面高度
+    const wallHeight = height; // 墙体高度
+    
+    console.log('参数配置：radius=' + radius + ', height=' + height + ', segments=' + segments + 
+                ', opacity=' + opacity + ', speed=' + speed + ', effectType=' + effectType);
+    
+    // 使用EllipsoidSurfacePrimitive创建圆形墙
+    const circlePositions: Cesium.Cartesian3[] = [];
     
     for (let i = 0; i <= segments; i++) {
       const angle = (i / segments) * Math.PI * 2;
-      const x = centerCartesian.x + radius * Math.cos(angle);
-      const y = centerCartesian.y + radius * Math.sin(angle);
+      const lat = options.center[1] + (radius / 111320) * Math.sin(angle); // 纬度偏移
+      const lon = options.center[0] + (radius / (111320 * Math.cos(options.center[1] * Math.PI / 180))) * Math.cos(angle); // 经度偏移
       
-      // 底部顶点
-      positions.push(x, y, 0);
-      // 顶部顶点
-      positions.push(x, y, height);
-      
-      // 计算法向量（指向圆外）
-      const nx = Math.cos(angle);
-      const ny = Math.sin(angle);
-      const nz = 0;
-      
-      // 底部和顶部顶点使用相同的法向量
-      normals.push(nx, ny, nz);
-      normals.push(nx, ny, nz);
-      
-      // 纹理坐标
-      const t = i / segments;
-      sts.push(t, 0); // 底部顶点
-      sts.push(t, 1); // 顶部顶点
-      
-      // 三角形索引（除了最后一个分段）
-      if (i < segments) {
-        const bottomLeft = i * 2;
-        const topLeft = bottomLeft + 1;
-        const bottomRight = (i + 1) * 2;
-        const topRight = bottomRight + 1;
-        
-        // 第一个三角形
-        indices.push(bottomLeft, topLeft, bottomRight);
-        // 第二个三角形
-        indices.push(topLeft, topRight, bottomRight);
-      }
+      // 使用贴地高度
+      circlePositions.push(Cesium.Cartesian3.fromDegrees(lon, lat, groundHeight));
     }
 
-    console.log('顶点数据生成完成，positions长度：', positions.length, 'indices长度：', indices.length);
-    
-    const primitive = new Cesium.Primitive({
-      geometryInstances: new Cesium.GeometryInstance({
-          geometry: new Cesium.Geometry({
-            attributes: {
-              position: new Cesium.GeometryAttribute({
-                componentDatatype: Cesium.ComponentDatatype.DOUBLE,
-                componentsPerAttribute: 3,
-                values: new Float64Array(positions)
-              }),
-              normal: new Cesium.GeometryAttribute({
-                componentDatatype: Cesium.ComponentDatatype.FLOAT,
-                componentsPerAttribute: 3,
-                values: new Float32Array(normals)
-              }),
-              st: new Cesium.GeometryAttribute({
-                componentDatatype: Cesium.ComponentDatatype.FLOAT,
-                componentsPerAttribute: 2,
-                values: new Float32Array(sts)
-              })
-            } as any, // 使用类型断言绕过GeometryAttributes类型检查
-            indices: new Uint16Array(indices),
-            primitiveType: Cesium.PrimitiveType.TRIANGLES,
-            boundingSphere: Cesium.BoundingSphere.fromVertices(positions)
-          })
-        }),
-        appearance: new Cesium.MaterialAppearance({
-          material: new Cesium.Material({
-            fabric: {
-              uniforms: {
-                u_color: Cesium.Color.fromCssColorString(options.color).withAlpha(1),
-                u_time: 0,
-                u_speed: options.speed || 1.0,
-                u_effectType: 2
-              },
-              source: `
-                uniform vec4 u_color;
-                uniform float u_time;
-                uniform float u_speed;
-                uniform float u_effectType;
-
-                vec4 getMaterial(vec2 st) {
-                  float t = u_time * u_speed;
-                  vec4 color = u_color;
-                  
-                  if (u_effectType < 0.5) {
-                    // 垂直流动光环 (effectType = 0)
-                    float wave = abs(sin(st.y * 5.0 - t * 2.0) * 0.5 + 0.5);
-                    color.rgb = u_color.rgb * wave;
-                    color.a = 1.0; // 确保不透明
-                  } else if (u_effectType < 1.5) {
-                    // 扫描线 (effectType = 1)
-                    float scanLine = step(0.95, sin(st.y * 50.0 - t * 5.0) * 0.5 + 0.5);
-                    color.rgb = mix(u_color.rgb, vec3(1.0), scanLine * 0.5);
-                    color.a = 1.0; // 确保不透明
-                  } else if (u_effectType < 2.5) {
-                    // 波浪效果 (effectType = 2)
-                    float wave = sin(st.y * 20.0 + t * 3.0) * 0.1;
-                    color.a = smoothstep(0.1, 0.9, st.y + wave);
-                  } else {
-                    // 粒子流动 (effectType = 3)
-                    float particle = mod(st.y * 10.0 - t * 5.0, 1.0);
-                    color.rgb = u_color.rgb * (1.0 - smoothstep(0.1, 0.3, particle) * smoothstep(0.3, 0.5, particle));
-                    color.a = 1.0; // 确保不透明
-                  }
-                  
-                  return color;
-                }
-              `
-            },
-            translucent: true,
-          }),
-          vertexShaderSource: `
-            #version 300 es
-            precision highp float;
-
-            in vec3 position3DHigh;
-            in vec3 position3DLow;
-            in vec3 normal;
-            in vec2 st;
-            in float batchId;
-            out vec3 v_positionEC;
-            out  vec2 v_st;
-            out  vec3 v_normalEC;
-            void main()
-            {
-                vec4 p = czm_translateRelativeToEye(position3DHigh,position3DLow);
-                v_positionEC = (czm_modelViewRelativeToEye * p).xyz;
-                v_normalEC = czm_normal * normal;
-                v_st=st;
-                gl_Position = czm_modelViewProjectionRelativeToEye * p;
-            }
-          `,
-          fragmentShaderSource: `
-            #version 300 es
-            precision highp float;
-            out vec4 fragColor;
-
-            in vec3 v_positionEC;
-            in vec3 v_normalEC;
-            in vec2 v_st;
-            void main(){
-                fragColor  = getMaterial(v_st);
-            }
-          `
-        }),
-        asynchronous: false
-      })
-      
-    console.log('Primitive创建完成：', primitive);
+    console.log('圆形位置数据生成完成，位置数量：', circlePositions.length);
     
     try {
+      // 创建材质 - 使用简单的颜色材质
+      const material = new Cesium.Material({
+        fabric: {
+          type: 'Color',
+          uniforms: {
+            color: Cesium.Color.fromCssColorString(options.color).withAlpha(opacity)
+          }
+        },
+        translucent: true,
+      });
+      
+      // 创建几何实例 - 使用WallGeometry创建圆形墙（只显示侧面）
+      const geometryInstance = new Cesium.GeometryInstance({
+        geometry: new Cesium.WallGeometry({
+          positions: circlePositions,
+          maximumHeights: new Array(circlePositions.length).fill(groundHeight + wallHeight),
+          minimumHeights: new Array(circlePositions.length).fill(groundHeight)
+        })
+      });
+      
+      // 创建外观
+      const appearance = new Cesium.MaterialAppearance({
+        material: material,
+        translucent: true
+      });
+      
+      // 创建Primitive
+      const primitive = new Cesium.Primitive({
+        geometryInstances: geometryInstance,
+        appearance: appearance,
+        asynchronous: asynchronous
+      });
+      
+      console.log('Primitive创建完成：', primitive);
+      
       // 添加primitive到场景
       map.scene.primitives.add(primitive);
+      
+      // 设置默认的zIndex确保扩散效果显示在其他元素上方
+      // primitive.zIndex = 100;
+      primitive.show = true;
+      
       // 将primitive缓存到graphicMap中
       mapStore.setGraphicMap(options.id, primitive);
+      console.log('Primitive已缓存到graphicMap');
+      
+      // 添加动画更新事件
+      const startTime = Cesium.JulianDate.now();
+      const preUpdateHandler = () => {
+        const currentTime = Cesium.JulianDate.now();
+        const timeDifference = Cesium.JulianDate.secondsDifference(currentTime, startTime);
+        if (primitive && primitive.appearance && primitive.appearance.material) {
+          primitive.appearance.material.uniforms.u_time = timeDifference;
+        }
+      };
+      
+      map.scene.postRender.addEventListener(preUpdateHandler);
+      
+      // 保存事件处理器引用，以便后续清理
+      (primitive as any)._preUpdateHandler = preUpdateHandler;
+      
+      console.log('动画更新事件已添加');
       
       return primitive;
     } catch (error) {
       console.error('创建圆形墙效果失败:', error);
-      // 清理资源
-      if (primitive) {
-        map.scene.primitives.remove(primitive);
-      }
       return null;
     }
   }
