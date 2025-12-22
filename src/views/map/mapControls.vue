@@ -426,12 +426,12 @@ const toRemoveSingleDiffusion = () => {
   removeDiffusion('single_diffusion_001')
 }
 
-// 创建多边形围栏
+// 创建火焰围栏效果
 const toCreateFenceFlowEffect = () => {
   fenceFlowEffect({
     id: 'fence_flow_effect_001',
     positions: [
-      // 复杂多边形图案 - 星形图案
+      // 多边形顶点坐标 - 可根据需要调整
       [117.228433, 31.703159, 0],  // 起点
       [117.230433, 31.708159, 0],  // 右上
       [117.238433, 31.710159, 0],  // 右顶点
@@ -442,9 +442,9 @@ const toCreateFenceFlowEffect = () => {
       [117.226433, 31.708159, 0],  // 左上
       [117.228433, 31.703159, 0]   // 闭合回到起点
     ],
-    color: '#FF00FF', // 使用更鲜艳的品红色
-    speed: 3, // 增加速度
-    width: 0.05, // 调整宽度参数
+    color: '#E81224', // 火焰颜色
+    speed: 1.0, // 火焰上升速度
+    maxHeight: 300, // 火焰最大高度（米）
   }) 
 }
 
