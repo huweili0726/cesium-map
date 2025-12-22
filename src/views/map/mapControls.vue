@@ -90,6 +90,17 @@
           <button @click="toRemoveSingleDiffusion" class="control-btn">移除涟漪效果</button>
         </div>
       </div>
+
+      <!-- 围栏控制按钮组 -->
+      <div class="button-group fence-controls">
+        <div class="group-title" @click="toggleControls('fence')">
+          围墙控制
+          <span class="toggle-icon">{{ isFenceControlsOpen ? '▼' : '▶' }}</span>
+        </div>
+        <div v-if="isFenceControlsOpen" class="controls-content">
+          <button @click="toCreateFenceFlowEffect" class="control-btn">创建多边形围栏</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -102,6 +113,7 @@ import { hemisphereConfig } from '@/components/cesiumMap/ts/hemisphere'
 import { move } from '@/components/cesiumMap/ts/movePoint'
 import { setReplay } from '@/components/cesiumMap/ts/replayPath'
 import { diffusionConfig } from '@/components/cesiumMap/ts/diffusion'
+import { fenceConfig } from '@/components/cesiumMap/ts/fence'
 
 
 // 获取store实例，保持响应性
@@ -114,6 +126,7 @@ const isHemisphereControlsOpen = ref(false)
 const isDroneControlsOpen = ref(false)
 const isReplayControlsOpen = ref(false)
 const isDiffusionControlsOpen = ref(false)
+const isFenceControlsOpen = ref(false)
 
 // 切换按钮组展开/折叠状态
 const toggleControls = (controlType: string) => {
@@ -135,6 +148,9 @@ const toggleControls = (controlType: string) => {
       break
     case 'diffusion':
       isDiffusionControlsOpen.value = !isDiffusionControlsOpen.value
+      break
+    case 'fence':
+      isFenceControlsOpen.value = !isFenceControlsOpen.value
       break
   }
 }
@@ -410,6 +426,28 @@ const toRemoveSingleDiffusion = () => {
   removeDiffusion('single_diffusion_001')
 }
 
+// 创建多边形围栏
+const toCreateFenceFlowEffect = () => {
+  fenceFlowEffect({
+    id: 'fence_flow_effect_001',
+    positions: [
+      // 复杂多边形图案 - 星形图案
+      [117.228433, 31.703159, 0],  // 起点
+      [117.230433, 31.708159, 0],  // 右上
+      [117.238433, 31.710159, 0],  // 右顶点
+      [117.230433, 31.712159, 0],  // 右下
+      [117.228433, 31.717159, 0],  // 下顶点
+      [117.226433, 31.712159, 0],  // 左下
+      [117.218433, 31.710159, 0],  // 左顶点
+      [117.226433, 31.708159, 0],  // 左上
+      [117.228433, 31.703159, 0]   // 闭合回到起点
+    ],
+    color: '#FF00FF', // 使用更鲜艳的品红色
+    speed: 3, // 增加速度
+    width: 0.05, // 调整宽度参数
+  }) 
+}
+
 const { 
   setPointByImg, 
   setBatchPointsByImg,
@@ -442,6 +480,10 @@ const {
   circleDiffusion,
   scanning
 } = diffusionConfig()
+
+const {
+  fenceFlowEffect
+} = fenceConfig()
 </script>
 
 <style scoped lang="less">
@@ -551,6 +593,12 @@ const {
   margin-top: 6px;
   background: rgba(60, 20, 40, 0.9);
   border-color: rgba(255, 100, 150, 0.3);
+}
+
+.map-controls .fence-controls {
+  margin-top: 6px;
+  background: rgba(60, 40, 20, 0.9); /* 棕色系背景，与模型控制类似 */
+  border-color: rgba(255, 200, 100, 0.3); /* 金色边框 */
 }
 
 .delete-controls {
