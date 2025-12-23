@@ -98,7 +98,8 @@
           <span class="toggle-icon">{{ isFenceControlsOpen ? '▼' : '▶' }}</span>
         </div>
         <div v-if="isFenceControlsOpen" class="controls-content">
-          <button @click="toCreateFenceFlowEffect" class="control-btn">创建多边形围栏</button>
+          <button @click="toCreateFenceFlowEffect" class="control-btn">创建火焰围栏</button>
+          <button @click="toCreateConicalEffect" class="control-btn">创建圆锥体</button>
         </div>
       </div>
     </div>
@@ -448,6 +449,17 @@ const toCreateFenceFlowEffect = () => {
   }) 
 }
 
+// 创建圆锥体特效
+const toCreateConicalEffect = () => {
+  conicalEffect({
+    id: 'conical_effect_001',
+    positions: [117.228433, 31.703159, 0], // 圆锥体中心坐标
+    color: '#E81224', // 圆锥体颜色
+    height: 500, // 圆锥体高度（米）
+    radius: 400, // 圆锥体半径（米）
+  })
+}
+
 const { 
   setPointByImg, 
   setBatchPointsByImg,
@@ -482,7 +494,8 @@ const {
 } = diffusionConfig()
 
 const {
-  fenceFlowEffect
+  fenceFlowEffect,
+  conicalEffect
 } = fenceConfig()
 </script>
 
