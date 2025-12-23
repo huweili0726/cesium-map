@@ -459,7 +459,7 @@ const toCreateConicalEffect = () => {
     height: 900, // 圆锥体高度（米）
     radius: 100, // 圆锥体底部半径（米）
     heading: Cesium.Math.toRadians(0), // 指向方向：45度（东北方向）
-    pitch: Cesium.Math.toRadians(20), // 俯仰角度：-30度（向上倾斜）
+    pitch: Cesium.Math.toRadians(90), // 俯仰角度：-30度（向上倾斜）
   }) 
 }
 

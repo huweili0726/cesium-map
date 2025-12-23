@@ -215,36 +215,50 @@ export function fenceConfig() {
         topRadius: 0.0, // 顶部半径为0，形成圆锥
         bottomRadius: conicalRadius,
         slices: 64, // 增加切片数，使圆锥更平滑
+        vertexFormat: Cesium.VertexFormat.POSITION_AND_NORMAL
       });
-      
-      // 创建变换矩阵，将圆锥体放置在指定位置并根据heading和pitch调整指向
-      const translation = Cesium.Cartesian3.subtract(top, center, new Cesium.Cartesian3());
       
       // 获取默认角度
       const heading = options.heading || 0; // 指向方向，默认0（正北）
       const pitch = options.pitch || 0;     // 俯仰角度，默认0（水平）
       const roll = 0;                       // 翻滚角度，默认0
       
-      // 创建旋转矩阵 - 先绕X轴旋转90度使圆锥从垂直方向转为水平方向
-      const initialRotation = Cesium.Quaternion.fromAxisAngle(
-        new Cesium.Cartesian3(1.0, 0.0, 0.0),
-        Cesium.Math.PI_OVER_TWO
-      );
+      // 圆锥尖端应该位于地面（center位置）
       
-      // 应用heading（绕Z轴旋转）、pitch（绕Y轴旋转）和roll（绕X轴旋转）
+      // 1. 创建旋转矩阵，应用heading, pitch, roll（以尖端为原点）
       const hprRotation = Cesium.Transforms.headingPitchRollQuaternion(
         Cesium.Cartesian3.ZERO,
         new Cesium.HeadingPitchRoll(heading, pitch, roll)
       );
-      
-      // 合并旋转
-      const combinedRotation = Cesium.Quaternion.multiply(hprRotation, initialRotation, new Cesium.Quaternion());
-      
-      // 创建最终的模型矩阵
-      const rotationMatrix = Cesium.Matrix4.fromRotationTranslation(
-        Cesium.Matrix3.fromQuaternion(combinedRotation),
-        Cesium.Cartesian3.add(center, translation, new Cesium.Cartesian3())
+      const rotateHPR = Cesium.Matrix4.fromRotationTranslation(
+        Cesium.Matrix3.fromQuaternion(hprRotation),
+        Cesium.Cartesian3.ZERO
       );
+      
+      // 2. 创建一个沿X轴的旋转矩阵，将圆锥体从沿X轴方向旋转到沿Z轴方向
+      const rotateX = Cesium.Matrix4.fromRotationTranslation(
+        Cesium.Matrix3.fromQuaternion(
+          Cesium.Quaternion.fromAxisAngle(
+            new Cesium.Cartesian3(1, 0, 0), // X轴
+            Cesium.Math.PI_OVER_TWO // 旋转90度
+          )
+        ),
+        Cesium.Cartesian3.ZERO
+      );
+      
+      // 3. 创建平移矩阵，将圆锥体沿Z轴向上平移，使其尖端位于原点
+      const translateUp = Cesium.Matrix4.fromTranslation(
+        new Cesium.Cartesian3(0, 0, -conicalHeight / 2) // 将圆锥体向下平移一半长度
+      );
+      
+      // 4. 创建平移矩阵，将整个圆锥体移动到center位置（地面）
+      const translateToGround = Cesium.Matrix4.fromTranslation(center);
+      
+      // 5. 合并所有变换矩阵：
+      // 先调整圆锥体方向，然后平移使其尖端位于原点，最后移到地面位置
+      let modelMatrix = Cesium.Matrix4.multiply(rotateX, translateUp, new Cesium.Matrix4());
+      modelMatrix = Cesium.Matrix4.multiply(rotateHPR, modelMatrix, new Cesium.Matrix4());
+      modelMatrix = Cesium.Matrix4.multiply(translateToGround, modelMatrix, new Cesium.Matrix4());
       
       // 创建半透明材质
       const material = new Cesium.Material({
@@ -272,7 +286,7 @@ export function fenceConfig() {
       const primitive = new Cesium.Primitive({
         geometryInstances: new Cesium.GeometryInstance({
           geometry: Cesium.CylinderGeometry.createGeometry(cylinderGeometry),
-          modelMatrix: rotationMatrix
+          modelMatrix: modelMatrix
         }),
         appearance: new Cesium.MaterialAppearance({
           material: material,
