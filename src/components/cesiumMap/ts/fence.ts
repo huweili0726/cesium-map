@@ -202,107 +202,38 @@ export function fenceConfig() {
     try {
       // 提取位置参数
       const [lng, lat, height] = options.positions;
-      const conicalHeight = options.height || 200; // 圆锥体高度默认200米
-      const conicalRadius = options.radius || 50; // 圆锥体底部半径默认50米
       
-      // 计算圆锥体的底部和顶部位置
-      const center = Cesium.Cartesian3.fromDegrees(lng, lat, height);
-      const top = Cesium.Cartesian3.fromDegrees(lng, lat, height + conicalHeight);
+      // 创建位置
+      const position = Cesium.Cartesian3.fromDegrees(lng, lat, height);
       
-      // 创建圆锥体几何 - 使用CylinderGeometry创建圆锥体（顶部半径为0）
-      const cylinderGeometry = new Cesium.CylinderGeometry({
-        length: conicalHeight,
-        topRadius: 0.0, // 顶部半径为0，形成圆锥
-        bottomRadius: conicalRadius,
-        slices: 64, // 增加切片数，使圆锥更平滑
-        vertexFormat: Cesium.VertexFormat.POSITION_AND_NORMAL
-      });
-      
-      // 获取默认角度
-      const heading = options.heading || 0; // 指向方向，默认0（正北）
-      const pitch = options.pitch || 0;     // 俯仰角度，默认0（水平）
-      const roll = 0;                       // 翻滚角度，默认0
-      
-      // 圆锥尖端应该位于地面（center位置）
-      
-      // 1. 创建旋转矩阵，应用heading, pitch, roll（以尖端为原点）
-      const hprRotation = Cesium.Transforms.headingPitchRollQuaternion(
-        Cesium.Cartesian3.ZERO,
-        new Cesium.HeadingPitchRoll(heading, pitch, roll)
-      );
-      const rotateHPR = Cesium.Matrix4.fromRotationTranslation(
-        Cesium.Matrix3.fromQuaternion(hprRotation),
-        Cesium.Cartesian3.ZERO
+      // 计算方向
+      const heading = options.heading || 0;
+      const pitch = Cesium.Math.toRadians(options.pitch || 0);
+      const roll = Cesium.Math.toRadians(0);
+      const hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
+      const orientation = Cesium.Transforms.headingPitchRollQuaternion(
+        position,
+        hpr
       );
       
-      // 2. 创建一个沿X轴的旋转矩阵，将圆锥体从沿X轴方向旋转到沿Z轴方向
-      const rotateX = Cesium.Matrix4.fromRotationTranslation(
-        Cesium.Matrix3.fromQuaternion(
-          Cesium.Quaternion.fromAxisAngle(
-            new Cesium.Cartesian3(1, 0, 0), // X轴
-            Cesium.Math.PI_OVER_TWO // 旋转90度
-          )
-        ),
-        Cesium.Cartesian3.ZERO
-      );
-      
-      // 3. 创建平移矩阵，将圆锥体沿Z轴向上平移，使其尖端位于原点
-      const translateUp = Cesium.Matrix4.fromTranslation(
-        new Cesium.Cartesian3(0, 0, -conicalHeight / 2) // 将圆锥体向下平移一半长度
-      );
-      
-      // 4. 创建平移矩阵，将整个圆锥体移动到center位置（地面）
-      const translateToGround = Cesium.Matrix4.fromTranslation(center);
-      
-      // 5. 合并所有变换矩阵：
-      // 先调整圆锥体方向，然后平移使其尖端位于原点，最后移到地面位置
-      let modelMatrix = Cesium.Matrix4.multiply(rotateX, translateUp, new Cesium.Matrix4());
-      modelMatrix = Cesium.Matrix4.multiply(rotateHPR, modelMatrix, new Cesium.Matrix4());
-      modelMatrix = Cesium.Matrix4.multiply(translateToGround, modelMatrix, new Cesium.Matrix4());
-      
-      // 创建半透明材质
-      const material = new Cesium.Material({
-        fabric: {
-          uniforms: {
-            color: Cesium.Color.fromCssColorString(options.color || '#00FFFF').withAlpha(0.2),
-          },
-          source: `
-            uniform vec4 color;
-            
-            czm_material czm_getMaterial(czm_materialInput materialInput)
-            {
-              czm_material material = czm_getDefaultMaterial(materialInput);
-              material.diffuse = color.rgb;
-              material.alpha = color.a;
-              material.emission = color.rgb * 0.5; // 添加轻微发光效果
-              return material;
-            }
-          `
+      // 创建圆锥体实体
+      const entity = map.entities.add({
+        name: "Radar Cone",
+        position: position,
+        orientation: orientation,
+        cylinder: {
+          length: options.height || 200, // 圆锥体高度
+          topRadius: 0, // 顶部半径为0，形成圆锥
+          bottomRadius: options.radius || 50, // 圆锥体底部半径
+          material: Cesium.Color.fromCssColorString(options.color || '#00FFFF').withAlpha(0.2)
         },
-        translucent: true
       });
-
-      // 创建primitive
-      const primitive = new Cesium.Primitive({
-        geometryInstances: new Cesium.GeometryInstance({
-          geometry: Cesium.CylinderGeometry.createGeometry(cylinderGeometry),
-          modelMatrix: modelMatrix
-        }),
-        appearance: new Cesium.MaterialAppearance({
-          material: material,
-          translucent: true,
-          closed: true
-        }),
-        asynchronous: false
-      });
-
-      // 添加到场景
-      map.scene.primitives.add(primitive);
-      // 存储primitive
-      mapStore.setGraphicMap(options.id, primitive);
       
-      console.log('圆锥体效果创建成功，位置：', [lng, lat, height], '高度：', conicalHeight, '米，半径：', conicalRadius, '米')
-      return primitive;
+      // 存储entity
+      mapStore.setGraphicMap(options.id, entity);
+      
+      console.log('圆锥体效果创建成功，位置：', [lng, lat, height], '高度：', options.height || 200, '米，半径：', options.radius || 50, '米')
+      return entity;
     } catch (error) {
       console.error('圆锥体效果创建失败:', error);
       return null;

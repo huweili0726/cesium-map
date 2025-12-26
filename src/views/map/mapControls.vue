@@ -116,7 +116,7 @@ import { move } from '@/components/cesiumMap/ts/movePoint'
 import { setReplay } from '@/components/cesiumMap/ts/replayPath'
 import { diffusionConfig } from '@/components/cesiumMap/ts/diffusion'
 import { fenceConfig } from '@/components/cesiumMap/ts/fence'
-
+import RadarEmission from '@/components/cesiumMap/ts/RadarEmission'
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()
@@ -450,17 +450,33 @@ const toCreateFenceFlowEffect = () => {
   }) 
 }
 
+
+let radarEmission = null;
 // 创建圆锥体特效
 const toCreateConicalEffect = () => {
-  conicalEffect({
-    id: 'conical_effect_001',
-    positions: [117.228433, 31.703159, 0], // 圆锥体底部位置
-    color: '#00FFFF', // 半透明青色
-    height: 900, // 圆锥体高度（米）
-    radius: 100, // 圆锥体底部半径（米）
-    heading: Cesium.Math.toRadians(0), // 指向方向：45度（东北方向）
-    pitch: Cesium.Math.toRadians(90), // 俯仰角度：-30度（向上倾斜）
-  }) 
+  // conicalEffect({
+  //   id: 'conical_effect_001',
+  //   positions: [117.228433, 31.703159, 0], // 圆锥体底部位置
+  //   color: '#00FFFF', // 半透明青色
+  //   height: 900, // 圆锥体高度（米）
+  //   radius: 100, // 圆锥体底部半径（米）
+  //   heading: Cesium.Math.toRadians(0), // 指向方向：45度（东北方向）
+  //   pitch: Cesium.Math.toRadians(0), // 俯仰角度：-30度（向上倾斜）
+  // }) 
+
+  const map = mapStore.getMap()
+    // 创建雷达发射效果
+  radarEmission = new RadarEmission(map, {
+    position: [117.228433, 31.703159, 500000.0],
+    heading: 135,
+    color: Cesium.Color.CYAN,
+    length: 500000,
+    bottomRadius: 50000,
+    thickness: 0.1,
+  });
+
+  // 定位到雷达
+  radarEmission.zoomTo();
 }
 
 const { 

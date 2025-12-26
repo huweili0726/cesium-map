@@ -47,6 +47,7 @@ const mapOnLoad = (map: any) => {
   mapStore.setMap(map); // 地图加载完成, 全局设置地图对象到store中
 
   setBeiJingTime(); // 地图加载完成后设置为当前北京时间
+
 }
 
 /**
