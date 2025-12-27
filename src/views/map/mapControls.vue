@@ -468,10 +468,10 @@ const toCreateConicalEffect = () => {
   // 创建雷达发射效果
   radarEmission = new RadarEmission(map, {
     position: [117.229619, 31.726288, 0],
-    heading: 60,
+    heading: 0,
     color: Cesium.Color.CYAN,
-    length: 500,
-    bottomRadius: 50,
+    length: 5000,
+    bottomRadius: 500,
     thickness: 0.1,
     pitch: 110, // 俯仰角度：-30度（向上倾斜）
   });
