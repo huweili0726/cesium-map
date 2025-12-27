@@ -137,7 +137,7 @@ export const useMapStore = defineStore('map', () => {
 
   // 清除所有无人机轨迹
   const clearAllDroneTrails = () => {
-    droneTrails.forEach((value, key) => {
+    droneTrails.forEach((_, key) => {
       if (key.endsWith('_trail')) {
         droneTrails.delete(key)
       }
