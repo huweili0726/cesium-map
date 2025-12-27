@@ -467,13 +467,13 @@ const toCreateConicalEffect = () => {
   const map = mapStore.getMap()
   // 创建雷达发射效果
   radarEmission = new RadarEmission(map, {
-    position: [117.228433, 31.703159, 0],
+    position: [117.229619, 31.726288, 0],
     heading: 60,
     color: Cesium.Color.CYAN,
-    length: 500000,
-    bottomRadius: 50000,
+    length: 500,
+    bottomRadius: 50,
     thickness: 0.1,
-    pitch: 140, // 俯仰角度：-30度（向上倾斜）
+    pitch: 110, // 俯仰角度：-30度（向上倾斜）
   });
 
   // 定位到雷达
