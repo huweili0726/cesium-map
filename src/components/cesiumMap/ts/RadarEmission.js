@@ -134,28 +134,61 @@ class RadarEmission {
     // 提取经纬度和高度
     const [lng, lat, height] = this.options.position;
     
-    // 关键：直接使用经纬度作为圆柱体的位置，这个位置将作为圆锥体的顶点
+    // 关键：直接使用经纬度作为圆锥体顶点的位置
     const vertexPosition = Cesium.Cartesian3.fromDegrees(lng, lat, 0);
     
-    // 关键：设置pitch=90度，使圆柱体向下延伸
-    // 这样圆柱体的原点（entity.position）就是圆锥体的顶点
+    // 使用用户在mapControls.vue中设置的方向参数
     const heading = Cesium.Math.toRadians(this.options.heading);
-    const pitch = Cesium.Math.toRadians(90); // 90度表示向下延伸
+    // 注意：这里我们需要调整pitch的处理方式
+    // 为了让圆锥体的顶点在红点位置，我们需要：
+    // 1. 保持heading不变
+    // 2. 将pitch角度反转，让圆锥体向正确方向延伸
+    const originalPitch = Cesium.Math.toRadians(this.options.pitch);
+    // 反转pitch角度，确保圆锥体向正确方向延伸
+    const pitch = -originalPitch;
     const roll = 0;
     
     // 创建HeadingPitchRoll对象，控制圆锥的朝向
     const hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
     
-    // 计算方向向量，参考点是顶点位置
-    const orientation = Cesium.Transforms.headingPitchRollQuaternion(
+    // 创建变换矩阵，用于将本地坐标转换为世界坐标
+    const transform = Cesium.Transforms.headingPitchRollToFixedFrame(
       vertexPosition,
+      hpr
+    );
+    
+    // 创建一个沿圆锥体轴线方向的单位向量
+    // 在圆锥体的本地坐标系中，y轴是其轴线方向
+    const localAxis = new Cesium.Cartesian3(0, 1, 0);  // 使用1表示圆锥体向正y轴方向延伸
+    
+    // 将本地轴线向量转换为世界坐标系
+    const worldAxis = Cesium.Matrix4.multiplyByPointAsVector(
+      transform,
+      localAxis,
+      new Cesium.Cartesian3()
+    );
+    
+    // 归一化方向向量
+    Cesium.Cartesian3.normalize(worldAxis, worldAxis);
+    
+    // 计算圆锥体的中心点位置
+    // 由于Cesium的圆柱体是从中心点向前后延伸的，所以我们需要：
+    // 1. 从顶点位置沿着圆锥体轴线反方向移动长度的一半
+    // 2. 这样圆锥体的顶点就会刚好位于红点位置
+    const halfLength = this.options.length / 2;
+    const cylinderCenter = Cesium.Cartesian3.clone(vertexPosition);
+    Cesium.Cartesian3.multiplyByScalar(worldAxis, halfLength, worldAxis);
+    Cesium.Cartesian3.subtract(cylinderCenter, worldAxis, cylinderCenter);  // 使用subtract而不是add
+    
+    // 计算圆锥体的方向四元数
+    const orientation = Cesium.Transforms.headingPitchRollQuaternion(
+      cylinderCenter,
       hpr
     );
 
     this.entity = this.viewer.entities.add({
       name: "Radar Cone",
-      // 位置设置为圆锥的顶点（最尖处）
-      position: vertexPosition,
+      position: cylinderCenter,  // 圆锥体的中心点
       orientation: orientation,
       cylinder: {
         length: this.options.length,
@@ -172,7 +205,7 @@ class RadarEmission {
         color: Cesium.Color.RED,
         outlineColor: Cesium.Color.WHITE,
         outlineWidth: 2,
-        position: vertexPosition,
+        position: vertexPosition,  // 红点位置即圆锥体的顶点
       },
     });
 

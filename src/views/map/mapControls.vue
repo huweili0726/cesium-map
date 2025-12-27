@@ -473,7 +473,7 @@ const toCreateConicalEffect = () => {
     length: 500000,
     bottomRadius: 50000,
     thickness: 0.1,
-    pitch: 180, // 俯仰角度：-30度（向上倾斜）
+    pitch: 140, // 俯仰角度：-30度（向上倾斜）
   });
 
   // 定位到雷达
