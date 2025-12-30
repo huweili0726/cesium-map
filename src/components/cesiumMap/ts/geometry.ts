@@ -162,77 +162,88 @@ export function geometryConfig() {
     return primitive;
   }
 
-  /**
-   * 动态更新圆锥体高度（顶点到底盘的距离）
-   * @param options
-   *        id      圆锥体唯一标识
-   *        length  新的高度（单位：米）
-   * @returns boolean  成功 true / 失败 false
-   */
-  const updateConeLength = (options: { 
-    id: string; 
-    length: number 
-  }): boolean => {
-    const { id, length } = options;
-    const map = mapStore.getMap();
-    if (!map) {
-      console.error('地图实例不存在');
-      return false;
-    }
+/**
+ * 更新圆锥体高度 / 位置
+ * @param options
+ *        id        圆锥体唯一标识
+ *        length    新的高度（米）（可选）
+ *        positions 新的 [lng, lat, height]（可选）
+ * @returns boolean  成功 true / 失败 false
+ */
+const updateConeLengthOrPosition = (options: {
+  id: string;
+  length?: number;
+  positions?: [number, number, number];
+}): boolean => {
+  const { id, length, positions } = options;
+  const map = mapStore.getMap();
+  if (!map) {
+    console.error('地图实例不存在');
+    return false;
+  }
 
-    // 1. 取出旧 primitive
-    const oldPrimitive = mapStore.getGraphicMap(id);
-    if (!oldPrimitive) {
-      console.error(`id: ${id} 圆锥体不存在`);
-      return false;
-    }
+  if(length === undefined && positions === undefined) {
+    console.error('更新圆锥体高度 / 位置：必须提供高度或位置');
+    return false;
+  }
 
-    try {
-      // 2. 备份原始参数
-      const opts = { ...(oldPrimitive as any)._originalOptions };
-      opts.length = length;          // 用新的高度
-      const [lng, lat, height = 0] = opts.positions;
+  const oldPrimitive = mapStore.getGraphicMap(id);
+  if (!oldPrimitive) {
+    console.error(`id: ${id} 圆锥体不存在`);
+    return false;
+  }
 
-      // 3. 计算新的模型矩阵（与创建时逻辑完全一致）
-      const vertexPos = Cesium.Cartesian3.fromDegrees(lng, lat, height);
-      const hpr = new Cesium.HeadingPitchRoll(
-        Cesium.Math.toRadians(opts.heading),
-        Cesium.Math.toRadians(opts.pitch),
-        0
-      );
-      const modelMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(vertexPos, hpr);
-      const trans = Cesium.Matrix4.fromTranslation(new Cesium.Cartesian3(0, 0, -length / 2));
-      Cesium.Matrix4.multiply(modelMatrix, trans, modelMatrix);
+  try {
+    /* 1. 备份旧参数，并应用新值 */
+    const opts = { ...(oldPrimitive as any)._originalOptions };
+    if (typeof length === 'number') opts.length = length;
+    if (positions) opts.positions = positions;
 
-      // 4. 新建 primitive（仅 geometry 里的 length/bottomRadius 变化）
-      const newPrimitive = new Cesium.Primitive({
-        geometryInstances: new Cesium.GeometryInstance({
-          geometry: new Cesium.CylinderGeometry({
-            length,
-            topRadius: 0,
-            bottomRadius: opts.bottomRadius
-          })
-        }),
-        appearance: oldPrimitive.appearance, // 外观、材质复用
-        modelMatrix,
-        asynchronous: false
-      });
+    /* 2. 计算顶点世界坐标 */
+    const [lng, lat, height = 0] = opts.positions;
+    const vertexPos = Cesium.Cartesian3.fromDegrees(lng, lat, height);
 
-      // 5. 缓存参数
-      (newPrimitive as any)._originalOptions = opts;
+    /* 3. 计算模型矩阵（与创建时完全一致） */
+    const hpr = new Cesium.HeadingPitchRoll(
+      Cesium.Math.toRadians(opts.heading),
+      Cesium.Math.toRadians(opts.pitch),
+      0
+    );
+    const modelMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(vertexPos, hpr);
+    const trans = Cesium.Matrix4.fromTranslation(
+      new Cesium.Cartesian3(0, 0, -opts.length / 2)
+    );
+    Cesium.Matrix4.multiply(modelMatrix, trans, modelMatrix);
 
-      // 6. 移除旧 -> 添加新 -> 更新 store
-      map.scene.primitives.remove(oldPrimitive);
-      map.scene.primitives.add(newPrimitive);
-      mapStore.setGraphicMap(id, newPrimitive);
+    /* 4. 新建 primitive（geometry 仅 length/bottomRadius 可能变化） */
+    const newPrimitive = new Cesium.Primitive({
+      geometryInstances: new Cesium.GeometryInstance({
+        geometry: new Cesium.CylinderGeometry({
+          length: opts.length,
+          topRadius: 0,
+          bottomRadius: opts.bottomRadius
+        })
+      }),
+      appearance: oldPrimitive.appearance, // 材质复用
+      modelMatrix,
+      asynchronous: false
+    });
 
-      console.log(`id: ${id} 圆锥体高度已更新为 ${length} 米`);
-      return true;
-    } catch (e) {
-      console.error(`更新圆锥体高度失败:`, e);
-      return false;
-    }
-  };
+    /* 5. 缓存参数并替换场景对象 */
+    (newPrimitive as any)._originalOptions = opts;
+    map.scene.primitives.remove(oldPrimitive);
+    map.scene.primitives.add(newPrimitive);
+    mapStore.setGraphicMap(id, newPrimitive);
+
+    console.log(
+      `id: ${id} 圆锥体已更新 -> 高度:${opts.length}m, 位置:[${lng}, ${lat}, ${height}]`
+    );
+    return true;
+  } catch (e) {
+    console.error(`更新圆锥体失败:`, e);
+    return false;
+  }
+};
 
   /**
    * 更新圆锥体姿态
@@ -301,7 +312,7 @@ export function geometryConfig() {
 
   return {
     conicalWave,
-    updateConeLength,
+    updateConeLengthOrPosition,
     updateConePose
   }
 }

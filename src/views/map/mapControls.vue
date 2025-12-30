@@ -545,11 +545,6 @@ const toCreateConicalEffect = () => {
       thickness: 0.1, // 厚度（米）
       color: '#00FFFF', // 半透明青色
     });
-
-    updateConeLength({
-      id: coneId,
-      length: 10000,
-    })
   }
 
   // 设置定时器，每秒更新一次heading、pitch和length
@@ -576,9 +571,10 @@ const toCreateConicalEffect = () => {
 
 // 更新所有圆锥体高度
 const toUpdateConicalEffect = () => {
-  updateConeLength({
+  updateConeLengthOrPosition({
     id: `conical_wave_0`,
     length: 15000,
+    positions: [117.229619, 31.706288, 0],
   });
 }
 
@@ -650,7 +646,7 @@ const {
 const {
   conicalWave,
   updateConePose,
-  updateConeLength,
+  updateConeLengthOrPosition,
 } = geometryConfig()
 </script>
 
