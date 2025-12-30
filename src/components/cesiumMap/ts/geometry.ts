@@ -163,13 +163,92 @@ export function geometryConfig() {
   }
 
   /**
+   * 动态更新圆锥体高度（顶点到底盘的距离）
+   * @param options
+   *        id      圆锥体唯一标识
+   *        length  新的高度（单位：米）
+   * @returns boolean  成功 true / 失败 false
+   */
+  const updateConeLength = (options: { 
+    id: string; 
+    length: number 
+  }): boolean => {
+    const { id, length } = options;
+    const map = mapStore.getMap();
+    if (!map) {
+      console.error('地图实例不存在');
+      return false;
+    }
+
+    // 1. 取出旧 primitive
+    const oldPrimitive = mapStore.getGraphicMap(id);
+    if (!oldPrimitive) {
+      console.error(`id: ${id} 圆锥体不存在`);
+      return false;
+    }
+
+    try {
+      // 2. 备份原始参数
+      const opts = { ...(oldPrimitive as any)._originalOptions };
+      opts.length = length;          // 用新的高度
+      const [lng, lat, height = 0] = opts.positions;
+
+      // 3. 计算新的模型矩阵（与创建时逻辑完全一致）
+      const vertexPos = Cesium.Cartesian3.fromDegrees(lng, lat, height);
+      const hpr = new Cesium.HeadingPitchRoll(
+        Cesium.Math.toRadians(opts.heading),
+        Cesium.Math.toRadians(opts.pitch),
+        0
+      );
+      const modelMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(vertexPos, hpr);
+      const trans = Cesium.Matrix4.fromTranslation(new Cesium.Cartesian3(0, 0, -length / 2));
+      Cesium.Matrix4.multiply(modelMatrix, trans, modelMatrix);
+
+      // 4. 新建 primitive（仅 geometry 里的 length/bottomRadius 变化）
+      const newPrimitive = new Cesium.Primitive({
+        geometryInstances: new Cesium.GeometryInstance({
+          geometry: new Cesium.CylinderGeometry({
+            length,
+            topRadius: 0,
+            bottomRadius: opts.bottomRadius
+          })
+        }),
+        appearance: oldPrimitive.appearance, // 外观、材质复用
+        modelMatrix,
+        asynchronous: false
+      });
+
+      // 5. 缓存参数
+      (newPrimitive as any)._originalOptions = opts;
+
+      // 6. 移除旧 -> 添加新 -> 更新 store
+      map.scene.primitives.remove(oldPrimitive);
+      map.scene.primitives.add(newPrimitive);
+      mapStore.setGraphicMap(id, newPrimitive);
+
+      console.log(`id: ${id} 圆锥体高度已更新为 ${length} 米`);
+      return true;
+    } catch (e) {
+      console.error(`更新圆锥体高度失败:`, e);
+      return false;
+    }
+  };
+
+  /**
    * 更新圆锥体姿态
-   * @param {string} id - 圆锥体ID
-   * @param {number} heading - 新的指向方向（度）
-   * @param {number} pitch - 新的俯仰角度（度）
+   * @param {Object} options 更新配置参数
+   * @param {string} options.id - 圆锥体ID
+   * @param {number} options.heading - 新的指向方向（度）
+   * @param {number} options.pitch - 新的俯仰角度（度）
    * @returns {boolean} 更新成功返回true，否则返回false
    */
-  const updateConePose = (id: string, heading: number, pitch: number) => {
+  const updateConePose = (options: { 
+    id: string, 
+    heading?: number,
+    pitch?: number,
+  }) => {
+    const { id, heading, pitch } = options;
+
     const map = mapStore.getMap()
     if (!map) {
       console.error('地图实例不存在')
@@ -222,6 +301,7 @@ export function geometryConfig() {
 
   return {
     conicalWave,
+    updateConeLength,
     updateConePose
   }
 }

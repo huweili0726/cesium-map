@@ -112,6 +112,7 @@
         </div>
         <div v-if="isPyramidControlsOpen" class="controls-content">
             <button @click="toCreateConicalEffect" class="control-btn">创建圆锥体</button>
+            <button @click="toUpdateConicalEffect" class="control-btn">更新圆锥体高度</button>
         </div>
       </div>
     </div>
@@ -506,6 +507,7 @@ const toCreateFenceFlowEffect = () => {
 let conicalTimer: number | null = null;
 let currentHeading = 45;
 let currentPitch = 190;
+let coneIds: string[] = [];
 
 const toCreateConicalEffect = () => {
   // 如果已有定时器，先清除
@@ -514,41 +516,96 @@ const toCreateConicalEffect = () => {
     conicalTimer = null;
   }
 
-  // 初始创建圆锥体
-  conicalWave({
-    id: 'conical_wave_001',
-    positions: [117.229619, 31.726288, 0], // 圆锥体底部位置
-    heading: currentHeading, // 动态更新的指向方向
-    pitch: currentPitch, // 动态更新的俯仰角度
-    length: 5000, // 波长（米）
-    bottomRadius: 500, // 底部半径（米）
-    thickness: 0.1, // 厚度（米）
-    color: '#00FFFF', // 半透明青色
-  });
+  // 清除之前创建的所有圆锥
+  clearAllCones();
 
-  // 设置定时器，每秒更新一次heading和pitch
+  // 创建2000个圆锥体
+  const centerLng = 117.229619;
+  const centerLat = 31.726288;
+  const maxOffset = 0.2; // 最大经纬度偏移
+  const totalCones = 1;
+
+  for (let i = 0; i < totalCones; i++) {
+    // 生成随机位置（在中心点周围均匀分布）
+    const angle = (i / totalCones) * Math.PI * 2;
+    const distance = Math.random() * maxOffset;
+    const lng = centerLng + Math.cos(angle) * distance;
+    const lat = centerLat + Math.sin(angle) * distance;
+    
+    const coneId = `conical_wave_${i}`;
+    coneIds.push(coneId);
+
+    conicalWave({
+      id: coneId,
+      positions: [lng, lat, 0], // 圆锥体底部位置
+      heading: currentHeading + (i % 360), // 初始角度略有不同
+      pitch: currentPitch, // 初始俯仰角度
+      length: 5000, // 波长（米）
+      bottomRadius: 500, // 底部半径（米）
+      thickness: 0.1, // 厚度（米）
+      color: '#00FFFF', // 半透明青色
+    });
+
+    updateConeLength({
+      id: coneId,
+      length: 10000,
+    })
+  }
+
+  // 设置定时器，每秒更新一次heading、pitch和length
   conicalTimer = setInterval(() => {
     // 更新heading和pitch值
     currentHeading += 5; // 每秒增加5度
     currentPitch += 2; // 每秒增加2度
-
     // 限制pitch值在合理范围内
     if (currentPitch > 360) {
       currentPitch -= 360;
     }
 
-    // 尝试直接更新圆锥体姿态，如果失败则重新创建
-    updateConePose('conical_wave_001', currentHeading, currentPitch);
+    // 更新所有圆锥体的姿态和长度
+    coneIds.forEach((id, index) => {
+      updateConePose({
+        id,
+        heading: currentHeading + (index % 360),
+        pitch: currentPitch,
+      });
+    });
 
   }, 1000) as unknown as number;
 }
 
+// 更新所有圆锥体高度
+const toUpdateConicalEffect = () => {
+  updateConeLength({
+    id: `conical_wave_0`,
+    length: 15000,
+  });
+}
+
+// 清除所有圆锥体
+const clearAllCones = () => {
+  const map = mapStore.getMap();
+  if (map) {
+    coneIds.forEach(id => {
+      const primitive = mapStore.getGraphicMap(id);
+      if (primitive) {
+        // 从场景中移除primitive
+        map.scene.primitives.remove(primitive);
+        // 从mapStore中移除
+        mapStore.removeGraphicMap(id);
+      }
+    });
+  }
+  coneIds = [];
+}
+
 onBeforeUnmount(() => {
-  // 组件卸载时清除定时器
+  // 组件卸载时清除定时器和所有圆锥体
   if (conicalTimer) {
     clearInterval(conicalTimer);
     conicalTimer = null;
   }
+  clearAllCones();
 })
 
 const { 
@@ -592,7 +649,8 @@ const {
 
 const {
   conicalWave,
-  updateConePose
+  updateConePose,
+  updateConeLength,
 } = geometryConfig()
 </script>
 
