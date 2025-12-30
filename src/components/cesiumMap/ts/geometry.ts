@@ -231,7 +231,7 @@ const updateConeLengthOrPosition = (options: {
 
     /* 5. 缓存参数并替换场景对象 */
     (newPrimitive as any)._originalOptions = opts;
-    map.scene.primitives.remove(oldPrimitive);
+    map.scene.primitives.remove(oldPrimitive); // 场景会负责 destroy
     map.scene.primitives.add(newPrimitive);
     mapStore.setGraphicMap(id, newPrimitive);
 
