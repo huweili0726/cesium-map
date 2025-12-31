@@ -110,39 +110,12 @@ export function geometryConfig() {
       appearance: new Cesium.MaterialAppearance({
         material: new Cesium.Material({
           fabric: {
-            uniforms: {
-              color: Cesium.Color.fromCssColorString(options.color || '#00FFFF').withAlpha(0.7),
-              duration: 6000,
-              repeat: 30,
-              offset: 0,
-              thickness: options.thickness || 0.3
-            },
-            source: `
-              uniform vec4 color;
-              uniform float duration;
-              uniform float repeat;
-              uniform float offset;
-              uniform float thickness;
-              
-              czm_material czm_getMaterial(czm_materialInput materialInput) {
-                czm_material material = czm_getDefaultMaterial(materialInput);
-                float sp = 1.0/repeat;
-                vec2 st = materialInput.st;
-                float dis = distance(st, vec2(0.5));
-                
-                // 使用czm_frameNumber作为时间变量，不需要手动更新
-                // 调整动画速度计算方式，使其在不同duration值下都能正常播放
-                float time = mod((czm_frameNumber / 60.0) / (duration / 1000.0), 1.0);
-                
-                float m = mod(dis + offset - time, sp);
-                float a = step(sp*(1.0-thickness), m);
-                material.diffuse = color.rgb;
-                material.alpha = a * color.a;
-                return material;
+              type: 'Color',
+              uniforms: {
+                color: Cesium.Color.fromCssColorString(options.color || '#00FFFF').withAlpha(0.7)
               }
-            `
-          },
-          translucent: true
+            },
+            translucent: true
         }),
         translucent: true
       }),
@@ -319,7 +292,6 @@ export function geometryConfig() {
    * @param {number} options.height - 四棱锥高度（米）
    * @param {number} options.horizontalAngle - 水平展开角度（度）
    * @param {number} options.verticalAngle - 垂直展开角度（度）
-   * @param {number} options.thickness - 厚度（用于材质效果）
    * @param {string} options.color - 颜色（默认 '#00FFFF'）
    * @returns {Cesium.Primitive|null} 创建的四棱锥波实体，若创建失败则返回null
    */
@@ -331,7 +303,6 @@ export function geometryConfig() {
     height: number,
     horizontalAngle: number,
     verticalAngle: number,
-    thickness: number,
     color: string,
   }) => {
     const map = mapStore.getMap()
@@ -395,37 +366,10 @@ export function geometryConfig() {
       appearance: new Cesium.MaterialAppearance({
         material: new Cesium.Material({
           fabric: {
+            type: 'Color',
             uniforms: {
-              color: Cesium.Color.fromCssColorString(options.color || '#00FFFF').withAlpha(0.7),
-              duration: 6000,
-              repeat: 30,
-              offset: 0,
-              thickness: options.thickness || 0.3
-            },
-            source: `
-              uniform vec4 color;
-              uniform float duration;
-              uniform float repeat;
-              uniform float offset;
-              uniform float thickness;
-              
-              czm_material czm_getMaterial(czm_materialInput materialInput) {
-                czm_material material = czm_getDefaultMaterial(materialInput);
-                float sp = 1.0/repeat;
-                vec2 st = materialInput.st;
-                float dis = distance(st, vec2(0.5));
-                
-                // 使用czm_frameNumber作为时间变量，不需要手动更新
-                // 调整动画速度计算方式，使其在不同duration值下都能正常播放
-                float time = mod((czm_frameNumber / 60.0) / (duration / 1000.0), 1.0);
-                
-                float m = mod(dis + offset - time, sp);
-                float a = step(sp*(1.0-thickness), m);
-                material.diffuse = color.rgb;
-                material.alpha = a * color.a;
-                return material;
-              }
-            `
+              color: Cesium.Color.fromCssColorString(options.color || '#00FFFF').withAlpha(0.7)
+            }
           },
           translucent: true
         }),
