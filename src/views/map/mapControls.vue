@@ -114,6 +114,7 @@
             <button @click="toCreateConicalEffect" class="control-btn">创建圆锥体</button>
             <button @click="toUpdateConicalEffect" class="control-btn">更新圆锥体高度</button>
             <button @click="toCreateRectangularPyramidEffect" class="control-btn">创建四棱锥</button>
+            <button @click="toUpdateRectangularPyramidEffect" class="control-btn">更新四棱锥高度</button>
         </div>
       </div>
     </div>
@@ -652,6 +653,15 @@ const toCreateRectangularPyramidEffect = () => {
   }, 1000) as unknown as number;
 }
 
+// 更新四棱锥高度
+const toUpdateRectangularPyramidEffect = () => {
+  updateRectangularPyramidLengthOrPosition({
+    id: `rectangular_pyramid_wave_001`,
+    height: 15000,
+    positions: [117.228033, 31.683159, 0],
+  });
+}
+
 // 清除所有四棱锥
 const clearAllRectangularPyramids = () => {
   const map = mapStore.getMap();
@@ -728,7 +738,8 @@ const {
   updateConePose,
   updateConeLengthOrPosition,
   rectangularPyramidWave,
-  updateRectangularPyramidWavePose
+  updateRectangularPyramidWavePose,
+  updateRectangularPyramidLengthOrPosition
 } = geometryConfig()
 </script>
 
