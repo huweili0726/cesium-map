@@ -437,12 +437,73 @@ const updateConeLengthOrPosition = (options: {
 
     return primitive;
   }
+
+  /**
+   * 更新四棱锥特效的朝向
+   * @param {Object} options 更新配置参数
+   * @param {string} options.id - 四棱锥ID
+   * @param {number} options.heading - 新的水平方位角（度）
+   * @param {number} options.pitch - 新的垂直方位角（度）
+   * @returns {boolean} 更新成功返回true，否则返回false
+   */
+  const updateRectangularPyramidWavePose = (options: { 
+    id: string, 
+    heading?: number,
+    pitch?: number,
+  }) => {
+    const { id, heading, pitch } = options;
+
+    const map = mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return false
+    }
+
+    // 获取已创建的四棱锥
+    const primitive = mapStore.getGraphicMap(id)
+    if (!primitive) {
+      console.error(`id: ${id} 四棱锥体不存在`)
+      return false
+    }
+
+    try {
+      const primitive = mapStore.getGraphicMap(id);
+      if (!primitive) return false;
+
+      const opts = (primitive as any)._originalOptions;
+      const [lng, lat, height = 0] = opts.positions;
+      const vertexPos = Cesium.Cartesian3.fromDegrees(lng, lat, height);
+
+      const hpr = new Cesium.HeadingPitchRoll(
+        Cesium.Math.toRadians(heading),
+        Cesium.Math.toRadians(pitch),
+        0
+      );
+
+      // 计算新矩阵
+      const M = Cesium.Transforms.headingPitchRollToFixedFrame(vertexPos, hpr);
+      const T = Cesium.Matrix4.fromTranslation(
+        new Cesium.Cartesian3(0, 0, -opts.height / 2)
+      );
+      Cesium.Matrix4.multiply(M, T, M);
+
+      // 直接赋值——立即生效，无需重建
+      primitive.modelMatrix = M;
+
+      console.log(`id: ${id} 四棱锥姿态已更新`);
+      return true;
+    } catch (error) {
+      console.error(`更新四棱锥姿态失败:`, error);
+      return false;
+    }
+  }
   
 
   return {
     conicalWave,
     updateConeLengthOrPosition,
     updateConePose,
-    rectangularPyramidWave
+    rectangularPyramidWave,
+    updateRectangularPyramidWavePose
   }
 }

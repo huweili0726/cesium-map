@@ -112,8 +112,8 @@
         </div>
         <div v-if="isPyramidControlsOpen" class="controls-content">
             <button @click="toCreateConicalEffect" class="control-btn">创建圆锥体</button>
-            <button @click="toCreateRectangularPyramidEffect" class="control-btn">创建四棱锥</button>
             <button @click="toUpdateConicalEffect" class="control-btn">更新圆锥体高度</button>
+            <button @click="toCreateRectangularPyramidEffect" class="control-btn">创建四棱锥</button>
         </div>
       </div>
     </div>
@@ -600,13 +600,19 @@ const toCreateRectangularPyramidEffect = () => {
   rectangularPyramidWave({
     id: 'rectangular_pyramid_wave_001',
     positions: [117.228433, 31.703159, 0],
-    heading: currentHeading,
-    pitch: currentPitch,
+    heading: 0,
+    pitch: 120,
     length: 5000, // 波长（米）
     width: 500, // 宽度（米）
     height: 800, // 高度（米）
     thickness: 1, // 厚度（米）
     color: '#00FFFF', // 半透明青色
+  })
+
+  updateRectangularPyramidWavePose({
+    id: 'rectangular_pyramid_wave_001',
+    heading: 0,
+    pitch: 180,
   })
 }
 
@@ -662,7 +668,8 @@ const {
   conicalWave,
   updateConePose,
   updateConeLengthOrPosition,
-  rectangularPyramidWave
+  rectangularPyramidWave,
+  updateRectangularPyramidWavePose
 } = geometryConfig()
 </script>
 
