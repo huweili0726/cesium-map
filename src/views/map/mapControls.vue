@@ -624,9 +624,9 @@ const toCreateRectangularPyramidEffect = () => {
     positions: [centerLng, centerLat, 0],
     heading: currentPyramidHeading,
     pitch: currentPyramidPitch,
-    length: 5000, // 波长（米）
-    width: 500, // 宽度（米）
-    height: 800, // 高度（米）
+    height: 5000, // 四棱锥高度（米）
+    horizontalAngle: 45, // 水平展开角度（度）
+    verticalAngle: 30, // 垂直展开角度（度）
     thickness: 1, // 厚度（米）
     color: '#00FFFF', // 半透明青色
   });

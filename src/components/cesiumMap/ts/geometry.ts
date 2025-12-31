@@ -317,8 +317,8 @@ export function geometryConfig() {
    * @param {number} options.heading - 水平方位角（度）
    * @param {number} options.pitch - 俯仰角（度）
    * @param {number} options.height - 四棱锥高度（米）
-   * @param {number} options.width - 四棱锥底部宽度（米）
-   * @param {number} options.length - 四棱锥底部长度（米）
+   * @param {number} options.horizontalAngle - 水平展开角度（度）
+   * @param {number} options.verticalAngle - 垂直展开角度（度）
    * @param {number} options.thickness - 厚度（用于材质效果）
    * @param {string} options.color - 颜色（默认 '#00FFFF'）
    * @returns {Cesium.Primitive|null} 创建的四棱锥波实体，若创建失败则返回null
@@ -329,8 +329,8 @@ export function geometryConfig() {
     heading: number,
     pitch: number,
     height: number,
-    width: number,
-    length: number,
+    horizontalAngle: number,
+    verticalAngle: number,
     thickness: number,
     color: string,
   }) => {
@@ -372,17 +372,26 @@ export function geometryConfig() {
     // 3. 将平移矩阵与模型矩阵相乘
     Cesium.Matrix4.multiply(modelMatrix, translationMatrix, modelMatrix);
     
-    // 使用CylinderGeometry创建四棱锥效果
-    // 通过设置多边形边数为4来模拟四棱锥
+    // 根据角度计算四棱锥的底部尺寸
+    // 使用三角函数：底部宽度 = 2 * height * tan(horizontalAngle / 2)
+    // 由于我们使用CylinderGeometry模拟四棱锥，取水平和垂直角度的平均值计算半径
+    const horizontalAngleRad = Cesium.Math.toRadians(options.horizontalAngle);
+
+    // 计算底部尺寸
+    const bottomWidth = 2 * options.height * Math.tan(horizontalAngleRad / 2);
+ 
+    // 使用CylinderGeometry创建四棱锥效果，使用宽度的一半作为半径
     const primitive = new Cesium.Primitive({
       geometryInstances: new Cesium.GeometryInstance({
         geometry: new Cesium.CylinderGeometry({
           length: options.height,
           topRadius: 0.1,  // 接近尖顶的值
-          bottomRadius: options.width / 2, // 使用宽度的一半作为半径
+          bottomRadius: bottomWidth / 2, // 使用宽度的一半作为半径
           slices: 4 // 4边形，模拟四棱锥
         })
       }),
+      // 注意：CylinderGeometry创建的四棱锥是正方形底部，如果需要矩形底部，需要使用其他方法
+      // 这里我们保持使用CylinderGeometry，因为它简单高效
       appearance: new Cesium.MaterialAppearance({
         material: new Cesium.Material({
           fabric: {
@@ -551,13 +560,19 @@ export function geometryConfig() {
       );
       Cesium.Matrix4.multiply(modelMatrix, trans, modelMatrix);
 
-      /* 4. 新建 primitive（geometry 仅 height/width 可能变化） */
+      /* 4. 根据角度计算四棱锥的底部尺寸 */
+      const horizontalAngleRad = Cesium.Math.toRadians(opts.horizontalAngle);
+
+      // 计算底部尺寸
+      const bottomWidth = 2 * opts.height * Math.tan(horizontalAngleRad / 2);
+      
+      /* 5. 新建 primitive */
       const newPrimitive = new Cesium.Primitive({
         geometryInstances: new Cesium.GeometryInstance({
           geometry: new Cesium.CylinderGeometry({
             length: opts.height,
             topRadius: 0.1,
-            bottomRadius: opts.width / 2,
+            bottomRadius: bottomWidth / 2,
             slices: 4 // 4边形，模拟四棱锥
           })
         }),
