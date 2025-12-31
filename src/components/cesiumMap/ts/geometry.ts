@@ -310,9 +310,139 @@ const updateConeLengthOrPosition = (options: {
     }
   }
 
+  /**
+   * 创建四棱锥波效果
+   * @param {string} options.id - 效果唯一标识符
+   * @param {number[]} options.positions - 四棱锥顶点位置 [经度, 纬度, 高度]
+   * @param {number} options.heading - 水平方位角（度）
+   * @param {number} options.pitch - 俯仰角（度）
+   * @param {number} options.height - 四棱锥高度（米）
+   * @param {number} options.width - 四棱锥底部宽度（米）
+   * @param {number} options.length - 四棱锥底部长度（米）
+   * @param {number} options.thickness - 厚度（用于材质效果）
+   * @param {string} options.color - 颜色（默认 '#00FFFF'）
+   * @returns {Cesium.Primitive|null} 创建的四棱锥波实体，若创建失败则返回null
+   */
+  const rectangularPyramidWave = (options: {
+    id: string,
+    positions: number[],
+    heading: number,
+    pitch: number,
+    height: number,
+    width: number,
+    length: number,
+    thickness: number,
+    color: string,
+  }) => {
+    const map = mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return null
+    }
+
+    // 检查是否已存在相同ID的效果
+    if (mapStore.getGraphicMap(options.id)) {
+      console.log(`id: ${options.id} 效果已存在`)
+      return null
+    }
+
+    // 提取经纬度和高度
+    const [lng, lat, height = 0] = options.positions;
+    
+    // 关键：直接使用经纬度作为四棱锥顶点的位置
+    const vertexPosition = Cesium.Cartesian3.fromDegrees(lng, lat, height);
+    
+    // 使用用户设置的方向参数，将度数转换为弧度
+    const heading = Cesium.Math.toRadians(options.heading);
+    const pitch = Cesium.Math.toRadians(options.pitch);
+    const roll = 0;
+    
+    // 创建HeadingPitchRoll对象，控制四棱锥的朝向
+    const hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
+
+    // 创建四棱锥Primitive
+    // 1. 使用headingPitchRollToFixedFrame创建正确的模型矩阵
+    // 这个方法会创建一个以vertexPosition为原点，应用hpr旋转的变换矩阵
+    const modelMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(vertexPosition, hpr);
+    
+    // 2. 创建一个平移矩阵，将四棱锥沿着Z轴负方向移动一半高度
+    // 因为RectangularPyramidGeometry默认中心在原点，所以需要将四棱锥平移，使其顶点位于变换原点
+    const translationMatrix = Cesium.Matrix4.fromTranslation(new Cesium.Cartesian3(0, 0, -options.height / 2));
+    
+    // 3. 将平移矩阵与模型矩阵相乘
+    Cesium.Matrix4.multiply(modelMatrix, translationMatrix, modelMatrix);
+    
+    // 使用CylinderGeometry创建四棱锥效果
+    // 通过设置多边形边数为4来模拟四棱锥
+    const primitive = new Cesium.Primitive({
+      geometryInstances: new Cesium.GeometryInstance({
+        geometry: new Cesium.CylinderGeometry({
+          length: options.height,
+          topRadius: 0.1,  // 接近尖顶的值
+          bottomRadius: options.width / 2, // 使用宽度的一半作为半径
+          slices: 4 // 4边形，模拟四棱锥
+        })
+      }),
+      appearance: new Cesium.MaterialAppearance({
+        material: new Cesium.Material({
+          fabric: {
+            uniforms: {
+              color: Cesium.Color.fromCssColorString(options.color || '#00FFFF').withAlpha(0.7),
+              duration: 6000,
+              repeat: 30,
+              offset: 0,
+              thickness: options.thickness || 0.3
+            },
+            source: `
+              uniform vec4 color;
+              uniform float duration;
+              uniform float repeat;
+              uniform float offset;
+              uniform float thickness;
+              
+              czm_material czm_getMaterial(czm_materialInput materialInput) {
+                czm_material material = czm_getDefaultMaterial(materialInput);
+                float sp = 1.0/repeat;
+                vec2 st = materialInput.st;
+                float dis = distance(st, vec2(0.5));
+                
+                // 使用czm_frameNumber作为时间变量，不需要手动更新
+                // 调整动画速度计算方式，使其在不同duration值下都能正常播放
+                float time = mod((czm_frameNumber / 60.0) / (duration / 1000.0), 1.0);
+                
+                float m = mod(dis + offset - time, sp);
+                float a = step(sp*(1.0-thickness), m);
+                material.diffuse = color.rgb;
+                material.alpha = a * color.a;
+                return material;
+              }
+            `
+          },
+          translucent: true
+        }),
+        translucent: true
+      }),
+      modelMatrix,
+      asynchronous: false
+    });
+
+    // 只需要挂原始参数，用于后面计算
+    (primitive as any)._originalOptions = { ...options };
+
+    // 将primitive添加到mapStore中进行管理
+    mapStore.setGraphicMap(options.id, primitive);
+
+    // 添加primitive到场景
+    map.scene.primitives.add(primitive);
+
+    return primitive;
+  }
+  
+
   return {
     conicalWave,
     updateConeLengthOrPosition,
-    updateConePose
+    updateConePose,
+    rectangularPyramidWave
   }
 }

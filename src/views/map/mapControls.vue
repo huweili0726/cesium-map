@@ -112,6 +112,7 @@
         </div>
         <div v-if="isPyramidControlsOpen" class="controls-content">
             <button @click="toCreateConicalEffect" class="control-btn">创建圆锥体</button>
+            <button @click="toCreateRectangularPyramidEffect" class="control-btn">创建四棱锥</button>
             <button @click="toUpdateConicalEffect" class="control-btn">更新圆锥体高度</button>
         </div>
       </div>
@@ -129,7 +130,6 @@ import { setReplay } from '@/components/cesiumMap/ts/replayPath'
 import { diffusionConfig } from '@/components/cesiumMap/ts/diffusion'
 import { fenceConfig } from '@/components/cesiumMap/ts/fence'
 import { geometryConfig } from '@/components/cesiumMap/ts/geometry'
-// import { wallPolygonDiffuse } from '@/components/cesiumMap/ts/WallPolygonDiffuse'
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()
@@ -595,6 +595,21 @@ const clearAllCones = () => {
   coneIds = [];
 }
 
+// 创建四棱锥特效
+const toCreateRectangularPyramidEffect = () => {
+  rectangularPyramidWave({
+    id: 'rectangular_pyramid_wave_001',
+    positions: [117.228433, 31.703159, 0],
+    heading: currentHeading,
+    pitch: currentPitch,
+    length: 5000, // 波长（米）
+    width: 500, // 宽度（米）
+    height: 800, // 高度（米）
+    thickness: 1, // 厚度（米）
+    color: '#00FFFF', // 半透明青色
+  })
+}
+
 onBeforeUnmount(() => {
   // 组件卸载时清除定时器和所有圆锥体
   if (conicalTimer) {
@@ -647,6 +662,7 @@ const {
   conicalWave,
   updateConePose,
   updateConeLengthOrPosition,
+  rectangularPyramidWave
 } = geometryConfig()
 </script>
 
