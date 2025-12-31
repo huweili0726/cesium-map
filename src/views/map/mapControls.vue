@@ -596,33 +596,92 @@ const clearAllCones = () => {
 }
 
 // 创建四棱锥特效
+let rectangularPyramidTimer: number | null = null;
+let currentPyramidHeading = 0;
+let currentPyramidPitch = 120;
+let pyramidIds: string[] = [];
+
 const toCreateRectangularPyramidEffect = () => {
+  // 如果已有定时器，先清除
+  if (rectangularPyramidTimer) {
+    clearInterval(rectangularPyramidTimer);
+    rectangularPyramidTimer = null;
+  }
+
+  // 清除之前创建的所有四棱锥
+  clearAllRectangularPyramids();
+
+  // 创建四棱锥
+  const centerLng = 117.228433;
+  const centerLat = 31.703159;
+  
+  const pyramidId = `rectangular_pyramid_wave_001`;
+  pyramidIds.push(pyramidId);
+
   rectangularPyramidWave({
-    id: 'rectangular_pyramid_wave_001',
-    positions: [117.228433, 31.703159, 0],
-    heading: 0,
-    pitch: 120,
+    id: pyramidId,
+    positions: [centerLng, centerLat, 0],
+    heading: currentPyramidHeading,
+    pitch: currentPyramidPitch,
     length: 5000, // 波长（米）
     width: 500, // 宽度（米）
     height: 800, // 高度（米）
     thickness: 1, // 厚度（米）
     color: '#00FFFF', // 半透明青色
-  })
+  });
 
-  updateRectangularPyramidWavePose({
-    id: 'rectangular_pyramid_wave_001',
-    heading: 0,
-    pitch: 180,
-  })
+  // 设置定时器，每秒更新一次heading和pitch
+  rectangularPyramidTimer = setInterval(() => {
+    // 更新heading和pitch值
+    currentPyramidHeading += 5; // 每秒增加5度
+    currentPyramidPitch += 2; // 每秒增加2度
+    // 限制pitch值在合理范围内
+    if (currentPyramidPitch > 360) {
+      currentPyramidPitch -= 360;
+    }
+
+    // 更新所有四棱锥的姿态
+    pyramidIds.forEach((id, index) => {
+      updateRectangularPyramidWavePose({
+        id,
+        heading: currentPyramidHeading + (index % 360),
+        pitch: currentPyramidPitch,
+      });
+    });
+
+  }, 1000) as unknown as number;
+}
+
+// 清除所有四棱锥
+const clearAllRectangularPyramids = () => {
+  const map = mapStore.getMap();
+  if (map) {
+    pyramidIds.forEach(id => {
+      const primitive = mapStore.getGraphicMap(id);
+      if (primitive) {
+        // 从场景中移除primitive
+        map.scene.primitives.remove(primitive);
+        // 从mapStore中移除
+        mapStore.removeGraphicMap(id);
+      }
+    });
+  }
+  pyramidIds = [];
 }
 
 onBeforeUnmount(() => {
-  // 组件卸载时清除定时器和所有圆锥体
+  // 组件卸载时清除定时器和所有几何体
   if (conicalTimer) {
     clearInterval(conicalTimer);
     conicalTimer = null;
   }
   clearAllCones();
+  
+  if (rectangularPyramidTimer) {
+    clearInterval(rectangularPyramidTimer);
+    rectangularPyramidTimer = null;
+  }
+  clearAllRectangularPyramids();
 })
 
 const { 
