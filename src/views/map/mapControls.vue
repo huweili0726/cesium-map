@@ -642,11 +642,11 @@ const toCreateRectangularPyramidEffect = () => {
 
     // 更新所有四棱锥的姿态
     pyramidIds.forEach((id, index) => {
-      updateRectangularPyramidWavePose({
-        id,
-        heading: currentPyramidHeading + (index % 360),
-        pitch: currentPyramidPitch,
-      });
+      // updateRectangularPyramidWavePose({
+      //   id,
+      //   heading: currentPyramidHeading + (index % 360),
+      //   pitch: currentPyramidPitch,
+      // });
     });
 
   }, 1000) as unknown as number;
