@@ -386,7 +386,7 @@ export function geometryConfig() {
           length: options.height,
           topRadius: 0,
           bottomRadius: bottomWidth / 2,
-          slices: 4, // 4边形底部
+          slices: 4, // 4边形底部 ( slices: 5  5棱锥 )
           vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT // 使用PerInstanceColorAppearance所需的顶点格式
         }),
         attributes: {
