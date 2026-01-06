@@ -625,9 +625,9 @@ const toCreateRectangularPyramidEffect = () => {
     heading: currentPyramidHeading,
     pitch: currentPyramidPitch,
     height: 5000, // 四棱锥高度（米）
-    horizontalAngle: 10, // 水平展开角度（度）
-    verticalAngle: 10, // 垂直展开角度（度）
-    color: '#CBDC36', // 半透明青色
+    horizontalAngle: 45, // 水平展开角度（度）
+    verticalAngle: 30, // 垂直展开角度（度）
+    color: '#CBDC36', 
   });
 
   // 设置定时器，每秒更新一次heading和pitch
