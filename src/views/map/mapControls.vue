@@ -616,11 +616,8 @@ const toCreateRectangularPyramidEffect = () => {
   const centerLng = 117.228433;
   const centerLat = 31.703159;
   
-  const pyramidId = `rectangular_pyramid_wave_001`;
-  pyramidIds.push(pyramidId);
-
   rectangularPyramidWave({
-    id: pyramidId,
+    id: 'rectangular_pyramid_wave_001',
     positions: [centerLng, centerLat, 0],
     heading: currentPyramidHeading,
     pitch: currentPyramidPitch,
@@ -641,12 +638,10 @@ const toCreateRectangularPyramidEffect = () => {
     }
 
     // 更新所有四棱锥的姿态
-    pyramidIds.forEach((id, index) => {
-      updateRectangularPyramidWavePose({
-        id,
-        heading: currentPyramidHeading + (index % 360),
-        pitch: currentPyramidPitch,
-      });
+    updateRectangularPyramidWavePose({
+      id: `rectangular_pyramid_wave_001`,
+      heading: currentPyramidHeading + (1 % 360),
+      pitch: currentPyramidPitch,
     });
 
   }, 1000) as unknown as number;
