@@ -374,28 +374,21 @@ export function geometryConfig() {
     const horizontalAngleRad = Cesium.Math.toRadians(options.horizontalAngle);
     const bottomWidth = options.height * Math.tan(horizontalAngleRad);
     
-    // 使用CylinderGeometry创建四棱锥
-    // slices设置为4创建四边形底部，topRadius设为0形成四棱锥
-    // 确保使用PerInstanceColorAppearance所需的顶点格式
-    const pyramidGeometry = new Cesium.CylinderGeometry({
-      length: options.height,
-      topRadius: 0,
-      bottomRadius: bottomWidth / 2,
-      slices: 4, // 4边形底部
-      vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT // 使用PerInstanceColorAppearance所需的顶点格式
-    });
-    
-    const geometryInstances = new Cesium.GeometryInstance({
-      geometry: pyramidGeometry,
-      attributes: {
-        color: Cesium.ColorGeometryInstanceAttribute.fromColor(
-          Cesium.Color.fromCssColorString(options.color || '#00FFFF').withAlpha(0.5)
-        )
-      }
-    });
-    
     const primitive = new Cesium.Primitive({
-      geometryInstances: geometryInstances,
+      geometryInstances: new Cesium.GeometryInstance({
+        geometry: new Cesium.CylinderGeometry({
+          length: options.height,
+          topRadius: 0,
+          bottomRadius: bottomWidth / 2,
+          slices: 4, // 4边形底部
+          vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT // 使用PerInstanceColorAppearance所需的顶点格式
+        }),
+        attributes: {
+          color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+            Cesium.Color.fromCssColorString(options.color || '#00FFFF').withAlpha(0.5)
+          )
+        }
+      }),
       appearance: new Cesium.PerInstanceColorAppearance({
         flat: true, // 使用平坦着色，避免光照导致的阴影
         closed: true,

@@ -625,8 +625,8 @@ const toCreateRectangularPyramidEffect = () => {
     heading: currentPyramidHeading,
     pitch: currentPyramidPitch,
     height: 5000, // 四棱锥高度（米）
-    horizontalAngle: 45, // 水平展开角度（度）
-    verticalAngle: 30, // 垂直展开角度（度）
+    horizontalAngle: 20, // 水平展开角度（度）
+    verticalAngle: 15, // 垂直展开角度（度）
     color: '#CBDC36', 
   });
 
@@ -642,11 +642,11 @@ const toCreateRectangularPyramidEffect = () => {
 
     // 更新所有四棱锥的姿态
     pyramidIds.forEach((id, index) => {
-      // updateRectangularPyramidWavePose({
-      //   id,
-      //   heading: currentPyramidHeading + (index % 360),
-      //   pitch: currentPyramidPitch,
-      // });
+      updateRectangularPyramidWavePose({
+        id,
+        heading: currentPyramidHeading + (index % 360),
+        pitch: currentPyramidPitch,
+      });
     });
 
   }, 1000) as unknown as number;
@@ -657,7 +657,7 @@ const toUpdateRectangularPyramidEffect = () => {
   updateRectangularPyramidLengthOrPosition({
     id: `rectangular_pyramid_wave_001`,
     height: 15000,
-    positions: [117.228033, 31.683159, 0],
+    // positions: [117.228033, 31.683159, 0],
   });
 }
 
