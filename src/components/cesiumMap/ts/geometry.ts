@@ -376,13 +376,13 @@ export function geometryConfig() {
     
     // 使用CylinderGeometry创建四棱锥
     // slices设置为4创建四边形底部，topRadius设为0形成四棱锥
-    // 确保启用正确的顶点格式以支持光照和材质
+    // 确保使用PerInstanceColorAppearance所需的顶点格式
     const pyramidGeometry = new Cesium.CylinderGeometry({
       length: options.height,
       topRadius: 0,
       bottomRadius: bottomWidth / 2,
       slices: 4, // 4边形底部
-      vertexFormat: Cesium.VertexFormat.POSITION_AND_NORMAL // 启用位置和法线顶点格式
+      vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT // 使用PerInstanceColorAppearance所需的顶点格式
     });
     
     const geometryInstances = new Cesium.GeometryInstance({
@@ -399,7 +399,7 @@ export function geometryConfig() {
       appearance: new Cesium.PerInstanceColorAppearance({
         flat: true, // 使用平坦着色，避免光照导致的阴影
         closed: true,
-        translucent: false
+        translucent: true // 设置为true以启用透明度
       }),
       modelMatrix,
       asynchronous: false
@@ -545,19 +545,19 @@ export function geometryConfig() {
       const geometryInstances = new Cesium.GeometryInstance({
         geometry: pyramidGeometry,
         attributes: {
-          color: Cesium.ColorGeometryInstanceAttribute.fromColor(
-            Cesium.Color.fromCssColorString(opts.color || '#00FFFF')
-          )
-        }
+        color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+          Cesium.Color.fromCssColorString(opts.color || '#00FFFF').withAlpha(0.5)
+        )
+      }
       });
       
       const newPrimitive = new Cesium.Primitive({
         geometryInstances: geometryInstances,
         appearance: new Cesium.PerInstanceColorAppearance({
-          flat: true, // 使用平坦着色，避免光照导致的阴影
-          closed: true,
-          translucent: false
-        }),
+        flat: true, // 使用平坦着色，避免光照导致的阴影
+        closed: true,
+        translucent: true
+      }),
         modelMatrix,
         asynchronous: false
       });
