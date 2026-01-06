@@ -196,8 +196,14 @@ export function geometryConfig() {
     try {
       /* 1. 备份旧参数，并应用新值 */
       const opts = { ...(oldPrimitive as any)._originalOptions };
-      opts.length = length;
-      opts.positions = positions;
+      
+      // 只在提供新值时才更新
+      if (length !== undefined) {
+        opts.length = length;
+      }
+      if (positions !== undefined) {
+        opts.positions = positions;
+      }
 
       /* 2. 计算顶点世界坐标 */
       const [lng, lat, height = 0] = opts.positions;
@@ -504,10 +510,17 @@ export function geometryConfig() {
     try {
       /* 1. 备份旧参数，并应用新值 */
       const opts = { ...(oldPrimitive as any)._originalOptions };
-      opts.height = height;
-      opts.positions = positions;
+      
+      // 只在提供新值时才更新
+      if (height !== undefined) {
+        opts.height = height;
+      }
+      if (positions !== undefined) {
+        opts.positions = positions;
+      }
 
       /* 2. 计算顶点世界坐标 */
+      // 确保始终从opts.positions获取坐标（可能是原始值或新值）
       const [lng, lat, height_val = 0] = opts.positions;
       const vertexPos = Cesium.Cartesian3.fromDegrees(lng, lat, height_val);
 
@@ -527,30 +540,26 @@ export function geometryConfig() {
       
       /* 5. 新建 primitive */
       // 使用CylinderGeometry创建四棱锥
-      const pyramidGeometry = new Cesium.CylinderGeometry({
-        length: opts.height,
-        topRadius: 0,
-        bottomRadius: bottomWidth / 2,
-        slices: 4, // 4边形底部
-        vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT // 为PerInstanceColorAppearance使用正确的顶点格式
-      });
-      
-      const geometryInstances = new Cesium.GeometryInstance({
-        geometry: pyramidGeometry,
-        attributes: {
-        color: Cesium.ColorGeometryInstanceAttribute.fromColor(
-          Cesium.Color.fromCssColorString(opts.color || '#00FFFF').withAlpha(0.5)
-        )
-      }
-      });
-      
       const newPrimitive = new Cesium.Primitive({
-        geometryInstances: geometryInstances,
+        geometryInstances: new Cesium.GeometryInstance({
+          geometry: new Cesium.CylinderGeometry({
+            length: opts.height,
+            topRadius: 0,
+            bottomRadius: bottomWidth / 2,
+            slices: 4, // 4边形底部
+            vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT // 为PerInstanceColorAppearance使用正确的顶点格式
+          }),
+          attributes: {
+            color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+              Cesium.Color.fromCssColorString(opts.color || '#00FFFF').withAlpha(0.5)
+            )
+          }
+        }),
         appearance: new Cesium.PerInstanceColorAppearance({
-        flat: true, // 使用平坦着色，避免光照导致的阴影
-        closed: true,
-        translucent: true
-      }),
+          flat: true, // 使用平坦着色，避免光照导致的阴影
+          closed: true,
+          translucent: true
+        }),
         modelMatrix,
         asynchronous: false
       });

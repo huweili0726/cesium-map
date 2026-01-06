@@ -575,7 +575,7 @@ const toUpdateConicalEffect = () => {
   updateConeLengthOrPosition({
     id: `conical_wave_0`,
     length: 15000,
-    positions: [117.229619, 31.706288, 0],
+    // positions: [117.229619, 31.706288, 0],
   });
 }
 
