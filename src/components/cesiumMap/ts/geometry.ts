@@ -531,6 +531,13 @@ export function geometryConfig() {
         0
       );
       const modelMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(vertexPos, hpr);
+      
+      // 4. 创建平移矩阵，将四棱锥向下平移高度的一半
+      // 这样可以确保四棱锥的底部位于指定的高度位置
+      const translation = Cesium.Matrix4.fromTranslation(
+        new Cesium.Cartesian3(0, 0, -opts.height / 2)
+      );
+      Cesium.Matrix4.multiply(modelMatrix, translation, modelMatrix);
 
       /* 4. 根据角度计算四棱锥的底部尺寸 */
       const horizontalAngleRad = Cesium.Math.toRadians(opts.horizontalAngle);
