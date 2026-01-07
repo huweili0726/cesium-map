@@ -626,6 +626,7 @@ const toCreateRectangularPyramidEffect = () => {
       currentPyramidPitch -= 360;
     }
 
+    // 创建四棱锥
     rectangularPyramidWave({
       id: 'rectangular_pyramid_wave_001',
       positions: [centerLng, centerLat, 0],
