@@ -635,7 +635,7 @@ const toCreateRectangularPyramidEffect = () => {
       height: 5000, // 四棱锥高度（米）
       horizontalAngle: 20, // 水平展开角度（度）
       verticalAngle: 15, // 垂直展开角度（度）
-      color: '#CBDC36', 
+      color: 'rgba(0,255,0,0.4)',
     });
 
     // 更新所有四棱锥的姿态
