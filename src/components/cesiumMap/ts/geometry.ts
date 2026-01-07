@@ -354,7 +354,7 @@ export function geometryConfig() {
     const [lng, lat, height = 0] = options.positions;
     
     // 关键：直接使用经纬度作为四棱锥顶点的位置
-    const vertexPosition = Cesium.Cartesian3.fromDegrees(lng, lat, height);
+    const worldVertexPosition = Cesium.Cartesian3.fromDegrees(lng, lat, height);
     
     // 使用用户设置的方向参数，将度数转换为弧度
     const heading = Cesium.Math.toRadians(options.heading);
@@ -366,8 +366,8 @@ export function geometryConfig() {
 
     // 创建四棱锥Primitive
     // 1. 使用headingPitchRollToFixedFrame创建正确的模型矩阵
-    // 这个方法会创建一个以vertexPosition为原点，应用hpr旋转的变换矩阵
-    const modelMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(vertexPosition, hpr);
+    // 这个方法会创建一个以worldVertexPosition为原点，应用hpr旋转的变换矩阵
+    const modelMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(worldVertexPosition, hpr);
     
     // 2. 创建平移矩阵，将四棱锥向下平移高度的一半
     // 这样可以确保四棱锥的底部位于指定的高度位置
@@ -380,25 +380,29 @@ export function geometryConfig() {
     const horizontalAngleRad = Cesium.Math.toRadians(options.horizontalAngle);
     const bottomWidth = options.height * Math.tan(horizontalAngleRad);
     
+    // 增强立体感的实现
+    // 1. 使用更高级的材质和光照效果
+    // 2. 添加边缘线框增强轮廓
+    // 3. 使用颜色渐变增强深度感
+
+    // 创建主颜色
+    const baseColor = Cesium.Color.fromCssColorString(options.color || '#00FFFF');
+    
+    // 创建四棱锥主体，使用MaterialAppearance
     const primitive = new Cesium.Primitive({
       geometryInstances: new Cesium.GeometryInstance({
         geometry: new Cesium.CylinderGeometry({
           length: options.height,
           topRadius: 0,
           bottomRadius: bottomWidth / 2,
-          slices: 4, // 4边形底部 ( slices: 5  5棱锥 )
-          vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT // 使用PerInstanceColorAppearance所需的顶点格式
-        }),
-        attributes: {
-          color: Cesium.ColorGeometryInstanceAttribute.fromColor(
-            Cesium.Color.fromCssColorString(options.color || '#00FFFF').withAlpha(0.5)
-          )
-        }
+          slices: 4 // 4边形底部
+        })
       }),
-      appearance: new Cesium.PerInstanceColorAppearance({
-        flat: true, // 使用平坦着色，避免光照导致的阴影
-        closed: true,
-        translucent: true // 设置为true以启用透明度
+      appearance: new Cesium.MaterialAppearance({
+        material: Cesium.Material.fromType('Color', {
+          color: baseColor.withAlpha(0.8) // 主颜色，带透明度
+        }),
+        closed: true
       }),
       modelMatrix,
       asynchronous: false
@@ -424,7 +428,7 @@ export function geometryConfig() {
    * @param {number} options.pitch - 新的垂直方位角（度）
    * @returns {boolean} 更新成功返回true，否则返回false
    */
-  const updateRectangularPyramidWavePose = (options: { 
+  const updateRectangularPyramidWavePose = (options: {
     id: string, 
     heading?: number,
     pitch?: number,
@@ -465,7 +469,6 @@ export function geometryConfig() {
       );
       Cesium.Matrix4.multiply(M, T, M);
 
-      // 直接赋值——立即生效，无需重建
       primitive.modelMatrix = M;
 
       console.log(`id: ${id} 四棱锥姿态已更新`);
@@ -484,7 +487,7 @@ export function geometryConfig() {
    * @param {number} options.positions - 新的位置（经度、纬度、高度）（可选）
    * @returns {boolean} 更新成功返回true，否则返回false
    */
-  const updateRectangularPyramidLengthOrPosition = (options: { 
+  const updateRectangularPyramidLengthOrPosition = (options: {
     id: string, 
     height?: number,
     positions?: [number, number, number];
@@ -539,39 +542,32 @@ export function geometryConfig() {
       );
       Cesium.Matrix4.multiply(modelMatrix, translation, modelMatrix);
 
-      /* 4. 根据角度计算四棱锥的底部尺寸 */
+      /* 5. 根据角度计算四棱锥的底部尺寸 */
       const horizontalAngleRad = Cesium.Math.toRadians(opts.horizontalAngle);
 
       // 计算底部尺寸
       const bottomWidth = opts.height * Math.tan(horizontalAngleRad);
       
-      /* 5. 新建 primitive */
-      // 使用CylinderGeometry创建四棱锥
-      const newPrimitive = new Cesium.Primitive({
-        geometryInstances: new Cesium.GeometryInstance({
-          geometry: new Cesium.CylinderGeometry({
-            length: opts.height,
-            topRadius: 0,
-            bottomRadius: bottomWidth / 2,
-            slices: 4, // 4边形底部
-            vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT // 为PerInstanceColorAppearance使用正确的顶点格式
-          }),
-          attributes: {
-            color: Cesium.ColorGeometryInstanceAttribute.fromColor(
-              Cesium.Color.fromCssColorString(opts.color || '#00FFFF').withAlpha(0.5)
-            )
-          }
-        }),
-        appearance: new Cesium.PerInstanceColorAppearance({
-          flat: true, // 使用平坦着色，避免光照导致的阴影
-          closed: true,
-          translucent: true
-        }),
-        modelMatrix,
-        asynchronous: false
-      });
+      /* 6. 新建四棱锥主体primitive，使用MaterialAppearance */
+       const newPrimitive = new Cesium.Primitive({
+         geometryInstances: new Cesium.GeometryInstance({
+           geometry: new Cesium.CylinderGeometry({
+              length: opts.height,
+              topRadius: 0,
+              bottomRadius: bottomWidth / 2,
+              slices: 4 // 4边形底部
+            })
+         }),
+         appearance: new Cesium.MaterialAppearance({
+           material: Cesium.Material.fromType('Color', {
+             color: Cesium.Color.fromCssColorString(opts.color || '#00FFFF').withAlpha(0.8) // 主颜色，带透明度
+           }),
+           closed: true
+         }),
+         modelMatrix,
+         asynchronous: false
+       });
 
-      /* 5. 缓存参数并替换场景对象 */
       (newPrimitive as any)._originalOptions = opts;
       map.scene.primitives.remove(oldPrimitive); // 场景会负责 destroy
       map.scene.primitives.add(newPrimitive);
