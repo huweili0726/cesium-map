@@ -615,17 +615,6 @@ const toCreateRectangularPyramidEffect = () => {
   // 创建四棱锥
   const centerLng = 117.228433;
   const centerLat = 31.703159;
-  
-  rectangularPyramidWave({
-    id: 'rectangular_pyramid_wave_001',
-    positions: [centerLng, centerLat, 0],
-    heading: currentPyramidHeading,
-    pitch: currentPyramidPitch,
-    height: 5000, // 四棱锥高度（米）
-    horizontalAngle: 20, // 水平展开角度（度）
-    verticalAngle: 15, // 垂直展开角度（度）
-    color: '#CBDC36', 
-  });
 
   // 设置定时器，每秒更新一次heading和pitch
   rectangularPyramidTimer = setInterval(() => {
@@ -636,6 +625,17 @@ const toCreateRectangularPyramidEffect = () => {
     if (currentPyramidPitch > 360) {
       currentPyramidPitch -= 360;
     }
+
+    rectangularPyramidWave({
+      id: 'rectangular_pyramid_wave_001',
+      positions: [centerLng, centerLat, 0],
+      heading: currentPyramidHeading,
+      pitch: currentPyramidPitch,
+      height: 5000, // 四棱锥高度（米）
+      horizontalAngle: 20, // 水平展开角度（度）
+      verticalAngle: 15, // 垂直展开角度（度）
+      color: '#CBDC36', 
+    });
 
     // 更新所有四棱锥的姿态
     updateRectangularPyramidWavePose({
