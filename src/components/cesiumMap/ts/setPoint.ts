@@ -39,7 +39,8 @@ export function setPoint(baseUrl: string) {
   const setPointByImg = (options: { 
     id: string, 
     lng: number, 
-    lat: number 
+    lat: number,
+    name?: string
   }) => {
     // 获取地图实例
     const map = mapStore.getMap()
@@ -67,8 +68,24 @@ export function setPoint(baseUrl: string) {
         horizontalOrigin: Cesium.HorizontalOrigin.CENTER, // 水平居中
         disableDepthTestDistance: Number.POSITIVE_INFINITY, // 禁用深度测试，确保图片始终在最上层
       },
+      // 添加标签：黑底白字显示点位名称
+      label: {
+        text: options.name || '自定义图片点位', // 使用传入的名称或默认名称
+        font: '12px sans-serif', // 字体样式
+        fillColor: Cesium.Color.WHITE, // 文字颜色：白色
+        outlineColor: Cesium.Color.BLACK, // 文字描边颜色：黑色
+        outlineWidth: 2, // 文字描边宽度
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 文字样式：填充+描边
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM, // 垂直对齐方式：底部
+        horizontalOrigin: Cesium.HorizontalOrigin.CENTER, // 水平对齐方式：居中
+        pixelOffset: new Cesium.Cartesian2(0, -70), // 偏移量：在图标上方70像素处
+        showBackground: true, // 显示背景
+        backgroundColor: new Cesium.Color(0, 0, 0, 0.8), // 背景颜色：黑色，透明度0.8
+        backgroundPadding: new Cesium.Cartesian2(5, 3), // 背景内边距：水平5像素，垂直3像素
+        disableDepthTestDistance: Number.POSITIVE_INFINITY, // 禁用深度测试，确保标签始终在最上层
+      },
       // 可选：添加点位名称/描述
-      name: '自定义图片点位',
+      name: options.name || '自定义图片点位',
       description: '<p>这是一个基于图片的 Cesium 点位</p>',
     };
 
@@ -97,7 +114,8 @@ export function setPoint(baseUrl: string) {
    */
   const setBatchPointsByImg = (options: { 
     lng: number, 
-    lat: number 
+    lat: number,
+    name?: string
   }) => {
     const map = mapStore.getMap()
     if (!map) {
@@ -126,27 +144,61 @@ export function setPoint(baseUrl: string) {
       });
     }
 
-    // 2. 创建空的BillboardCollection（无billboards参数）
+    // 2. 创建空的BillboardCollection和LabelCollection
     const billboardCollection = new Cesium.BillboardCollection({
       scene: map.scene,
       blendOption: Cesium.BlendOption.OPAQUE_AND_TRANSLUCENT,
     });
 
-    // 3. 循环添加所有点位配置
+    const labelCollection = new Cesium.LabelCollection({
+      scene: map.scene,
+      blendOption: Cesium.BlendOption.OPAQUE_AND_TRANSLUCENT,
+    });
+
+    // 3. 循环添加所有点位和标签配置
     billboardOptions.forEach(option => {
       // 检查是否已存在相同id的点位，如果存在直接返回
       if (mapStore.hasGraphicMap(option.id)) {
         console.warn(`点位已存在，ID: ${option.id}`)
         return mapStore.getGraphicMap(option.id)
       }
-      billboardCollection.add(option);
-      // 将点位缓存到 graphicMap 中，防止重复创建
-      mapStore.setGraphicMap(option.id, option)
+      
+      // 添加billboard
+      const billboard = billboardCollection.add(option);
+      
+      // 添加对应的label
+      const label = labelCollection.add({
+        position: option.position,
+        text: options.name || `点位${option.id}`,
+        font: '12px sans-serif',
+        fillColor: Cesium.Color.WHITE,
+        outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 2,
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+        pixelOffset: new Cesium.Cartesian2(0, -70),
+        showBackground: true,
+        backgroundColor: new Cesium.Color(0, 0, 0, 0.8),
+        backgroundPadding: new Cesium.Cartesian2(5, 3),
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      });
+      
+      // 将点位和标签缓存到 graphicMap 中，防止重复创建
+      mapStore.setGraphicMap(option.id, {
+        billboard,
+        label
+      });
     });
 
     // 4. 添加到场景
     map.scene.primitives.add(billboardCollection);
-    return billboardCollection;
+    map.scene.primitives.add(labelCollection);
+    
+    return {
+      billboardCollection,
+      labelCollection
+    };
   };
 
   /**
