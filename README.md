@@ -48,6 +48,11 @@
 
 ## 快速开始
 
+### 设置淘宝镜像
+```bash
+npm config set registry https://registry.npmmirror.com
+```
+
 ### 安装依赖
 
 ```bash
