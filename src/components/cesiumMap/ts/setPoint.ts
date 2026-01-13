@@ -57,7 +57,7 @@ export function setPoint(baseUrl: string) {
 
     // 点位参数配置
     const pointParams = {
-      position: Cesium.Cartesian3.fromDegrees(options.lng, options.lat, 0), // 经纬度 + 高度（高度可选）
+      position: Cesium.Cartesian3.fromDegrees(options.lng, options.lat, 0), // 经纬度 + 高度（使用0米高度）
       billboard: {
         image: new URL('@/assets/img/point.png', import.meta.url).href, // 图片路径
         width: 30, // 图片宽度（像素）
@@ -66,7 +66,8 @@ export function setPoint(baseUrl: string) {
         color: Cesium.Color.WHITE, // 图片颜色（WHITE 为原图颜色）
         verticalOrigin: Cesium.VerticalOrigin.BOTTOM, // 垂直对齐方式（底部对齐点位）
         horizontalOrigin: Cesium.HorizontalOrigin.CENTER, // 水平居中
-        disableDepthTestDistance: Number.POSITIVE_INFINITY, // 禁用深度测试，确保图片始终在最上层
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 贴地显示，固定在地面上
+        disableDepthTestDistance: Number.POSITIVE_INFINITY, // 禁用深度测试，确保图标始终在最上层，不会被地面遮挡
       },
       // 添加标签：黑底白字显示点位名称
       label: {
@@ -82,6 +83,7 @@ export function setPoint(baseUrl: string) {
         showBackground: true, // 显示背景
         backgroundColor: new Cesium.Color(0, 0, 0, 0.8), // 背景颜色：黑色，透明度0.8
         backgroundPadding: new Cesium.Cartesian2(5, 3), // 背景内边距：水平5像素，垂直3像素
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 贴地显示，固定在地面上
         disableDepthTestDistance: Number.POSITIVE_INFINITY, // 禁用深度测试，确保标签始终在最上层
       },
       // 可选：添加点位名称/描述
