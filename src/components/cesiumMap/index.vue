@@ -106,6 +106,19 @@ const initCesium = async () => {
         console.log(`加载底图：${activeBasemap.name}，URL：${activeBasemap.url}`)
       }
     }
+
+    // 禁用默认的双击行为 (双击缩放)
+    if (map.screenSpaceEventHandler && mapOptions.control.disableDoubleClick) {
+      // 移除默认的双击行为
+      map.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+    }
+
+    // 单击 entity 事件
+    if (mapOptions.control.disableEntityClick) {
+      map.selectedEntityChanged.addEventListener(() => {
+        map.selectedEntity = undefined;   // 永远不让实体被选中
+      });
+    }
  
     // 使用 flyTo 方法实现相机看向中心点的效果
     map.camera.flyTo({
