@@ -175,7 +175,8 @@ export function setPoint(baseUrl: string) {
       style: Cesium.LabelStyle.FILL_AND_OUTLINE,
       verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
       horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-      pixelOffset: new Cesium.Cartesian2(0, -70),
+      pixelOffset: new Cesium.Cartesian2(0, -70), // 偏移量：在图标上方70像素处
+      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
       showBackground: true,
       backgroundColor: new Cesium.Color(0, 0, 0, 0.8),
       backgroundPadding: new Cesium.Cartesian2(5, 3),
