@@ -63,7 +63,6 @@ export function setPoint(baseUrl: string) {
         width: 30, // 图片宽度（像素）
         height: 64, // 图片高度（像素）
         scale: 1, // 缩放比例（可选，覆盖宽高）
-        color: Cesium.Color.WHITE, // 图片颜色（WHITE 为原图颜色）
         verticalOrigin: Cesium.VerticalOrigin.BOTTOM, // 垂直对齐方式（底部对齐点位）
         horizontalOrigin: Cesium.HorizontalOrigin.CENTER, // 水平居中
         clampToGround: true,
