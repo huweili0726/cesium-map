@@ -36,7 +36,7 @@ export function setPoint(baseUrl: string) {
    *   需要点位绑定复杂逻辑：比如每个点位有独立的点击事件、弹窗、动态样式（如实时变色 / 缩放）；
    *   快速开发验证：Entity 代码简洁，无需关注底层渲染细节，适合原型开发。
    */
-  const setPointByImg = (options: { 
+  const setPointEntityByImg = (options: { 
     id: string, 
     lng: number, 
     lat: number,
@@ -358,7 +358,7 @@ export function setPoint(baseUrl: string) {
   }
 
   return {
-    setPointByImg,
+    setPointEntityByImg,
     setBatchPointsByImg,
     setPointByGlb,
     setDronePointByGlb
