@@ -3,6 +3,7 @@ import type { ConfigEnv } from "vite"
 import vue from '@vitejs/plugin-vue'
 import path from 'path';
 import cesium from 'vite-plugin-cesium'
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 export default ({ mode }: ConfigEnv) => {
   const root = process.cwd()
@@ -11,7 +12,18 @@ export default ({ mode }: ConfigEnv) => {
 
   return defineConfig({
     base: ENV.VITE_BASE_URL,
-    plugins: [vue(), cesium()],
+    plugins: [
+      vue(), 
+      cesium(), 
+      viteStaticCopy({
+        targets: [
+          {
+            src: 'node_modules/cesium/Build/Cesium/*',
+            dest: 'cesium'
+          }
+        ]
+      })
+    ],
     server: {
       host: '0.0.0.0', // 监听所有网络接口
       port: 3001, // 监听端口
