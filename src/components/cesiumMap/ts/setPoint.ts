@@ -107,6 +107,82 @@ export function setPoint(baseUrl: string) {
     return pointEntity;
   }
 
+  const setPointPrimitiveByImg = (options: { 
+    id: string, 
+    lng: number, 
+    lat: number,
+    name?: string
+  }) => {
+    // 获取地图实例
+    const map = mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return null
+    }
+
+    // 检查是否已存在相同id的点位，如果存在直接返回
+    if (mapStore.hasGraphicMap(options.id)) {
+      console.warn(`点位已存在，ID: ${options.id}`)
+      return mapStore.getGraphicMap(options.id)
+    }
+
+    // 创建点位位置
+    const position = Cesium.Cartesian3.fromDegrees(options.lng, options.lat, 0)
+
+    // 创建BillboardCollection
+    const billboardCollection = new Cesium.BillboardCollection({
+      scene: map.scene,
+      blendOption: Cesium.BlendOption.OPAQUE_AND_TRANSLUCENT,
+    })
+
+    // 添加Billboard
+    const billboard = billboardCollection.add({
+      id: options.id,
+      position: position,
+      image: new URL('@/assets/img/point.png', import.meta.url).href,
+      width: 30,
+      height: 64,
+      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+      horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 贴地显示，固定在地面上
+      disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      distanceDisplayCondition: new Cesium.DistanceDisplayCondition(100, 1000000),
+    })
+
+    // 创建LabelCollection并添加Label
+    const labelCollection = new Cesium.LabelCollection({
+      scene: map.scene,
+      blendOption: Cesium.BlendOption.OPAQUE_AND_TRANSLUCENT,
+    })
+
+    const label = labelCollection.add({
+      id: `${options.id}_label`,
+      position: position,
+      text: options.name || `点位${options.id}`,
+      font: '12px sans-serif',
+      fillColor: Cesium.Color.WHITE,
+      outlineColor: Cesium.Color.BLACK,
+      outlineWidth: 2,
+      verticalOrigin: Cesium.VerticalOrigin.TOP,
+      horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+      distanceDisplayCondition: new Cesium.DistanceDisplayCondition(100, 1000000),
+    })
+
+    map.scene.primitives.add(billboardCollection)
+    map.scene.primitives.add(labelCollection)
+    
+    // 将创建的对象存储到mapStore
+    const pointObject = {
+      billboard,
+      label,
+      billboardCollection,
+      labelCollection
+    }
+    mapStore.setGraphicMap(options.id, pointObject)
+
+    return pointObject
+  }
+
   /**
    * 批量设置点位 （直接把图片设置成点位, 1万+个点位）【海量点位的最优解：BillboardCollection（批量 Primitive）】
    * @param options 配置选项
@@ -359,6 +435,7 @@ export function setPoint(baseUrl: string) {
 
   return {
     setPointEntityByImg,
+    setPointPrimitiveByImg,
     setBatchPointsByImg,
     setPointByGlb,
     setDronePointByGlb

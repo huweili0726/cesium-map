@@ -14,7 +14,8 @@
           <span class="toggle-icon">{{ isImgPointControlsOpen ? '▼' : '▶' }}</span>
         </div>
         <div v-if="isImgPointControlsOpen" class="controls-content">
-          <button @click="toSetPointByImg" class="control-btn">set entity点位(img)</button>
+          <button @click="toSetPointEntityByImg" class="control-btn">set entity点位(img)</button>
+          <button @click="toSetPointPrimitiveByImg" class="control-btn">set primitive点位(img)</button>
           <button @click="toMovePointByImg" class="control-btn">move点位(img)</button>
           <button @click="toSetBatchPointByImg" class="control-btn">set(img 1万+）</button>
         </div>
@@ -176,9 +177,14 @@ const toggleControls = (controlType: string) => {
 }
 
 // 设置点位 （通过提供的图片设置点位）
-const toSetPointByImg = () => {
+const toSetPointEntityByImg = () => {
   // 设置点位 （通过提供的图片设置点位）
   setPointEntityByImg({id: '1', lng: 117.229619, lat: 31.716288});
+}
+
+const toSetPointPrimitiveByImg = () => {
+  // 设置点位 （通过提供的图片设置点位）
+  setPointPrimitiveByImg({id: '1', lng: 117.229619, lat: 31.716288});
 }
 
 // 移动点位 （通过提供的图片设置点位）
@@ -691,6 +697,7 @@ onBeforeUnmount(() => {
 
 const { 
   setPointEntityByImg, 
+  setPointPrimitiveByImg,
   setBatchPointsByImg,
   setPointByGlb,
 } = setPoint(process.env.BASE_URL)
