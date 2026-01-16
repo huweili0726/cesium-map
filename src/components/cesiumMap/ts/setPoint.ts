@@ -346,8 +346,9 @@ export function setPoint(baseUrl: string) {
         show: true, // 是否显示
         // 模型颜色（可选，叠加到模型上）
         color: Cesium.Color.WHITE,
-        // 禁用深度测试（避免被地形/建筑遮挡）
-        disableDepthTestDistance: Number.POSITIVE_INFINITY
+        clampToGround: true,
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 贴地显示，固定在地面上
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
       }
     })
 
