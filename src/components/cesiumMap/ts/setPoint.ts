@@ -151,11 +151,10 @@ export function setPoint(baseUrl: string) {
       image: new URL('@/assets/img/point.png', import.meta.url).href,
       width: 30,
       height: 64,
-      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-      horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+      verticalOrigin: Cesium.VerticalOrigin.BOTTOM, // 垂直对齐方式：底部对齐点位
+      horizontalOrigin: Cesium.HorizontalOrigin.CENTER, // 水平居中
       heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 贴地显示，固定在地面上
-      disableDepthTestDistance: Number.POSITIVE_INFINITY,
-      distanceDisplayCondition: new Cesium.DistanceDisplayCondition(100, 1000000),
+      disableDepthTestDistance: Number.POSITIVE_INFINITY, // 禁用深度测试，确保图标始终在最上层
     })
 
     // 创建LabelCollection并添加Label
