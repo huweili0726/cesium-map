@@ -107,6 +107,15 @@ export function setPoint(baseUrl: string) {
     return pointEntity;
   }
 
+  /**
+   * 设置点位 （通过提供的图片设置点位）【Primitive】
+   * @param options 点位参数
+   * @param options.id 点位id
+   * @param options.lng 点位经度
+   * @param options.lat 点位纬度
+   * @param options.name 点位名称
+   * @returns 点位Primitive
+   */
   const setPointPrimitiveByImg = (options: { 
     id: string, 
     lng: number, 
@@ -163,9 +172,14 @@ export function setPoint(baseUrl: string) {
       fillColor: Cesium.Color.WHITE,
       outlineColor: Cesium.Color.BLACK,
       outlineWidth: 2,
-      verticalOrigin: Cesium.VerticalOrigin.TOP,
+      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
       horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-      distanceDisplayCondition: new Cesium.DistanceDisplayCondition(100, 1000000),
+      pixelOffset: new Cesium.Cartesian2(0, -70),
+      showBackground: true,
+      backgroundColor: new Cesium.Color(0, 0, 0, 0.8),
+      backgroundPadding: new Cesium.Cartesian2(5, 3),
+      disableDepthTestDistance: Number.POSITIVE_INFINITY,
     })
 
     map.scene.primitives.add(billboardCollection)

@@ -176,15 +176,16 @@ const toggleControls = (controlType: string) => {
   }
 }
 
-// 设置点位 （通过提供的图片设置点位）
+// 设置点位 （通过提供的图片设置点位）【Entity】
 const toSetPointEntityByImg = () => {
-  // 设置点位 （通过提供的图片设置点位）
+  // 设置点位 （通过提供的图片设置点位）【Entity】
   setPointEntityByImg({id: '1', lng: 117.229619, lat: 31.716288});
 }
 
+// 设置点位 （通过提供的图片设置点位）【Primitive】
 const toSetPointPrimitiveByImg = () => {
-  // 设置点位 （通过提供的图片设置点位）
-  setPointPrimitiveByImg({id: '1', lng: 117.229619, lat: 31.716288});
+  // 设置点位 （通过提供的图片设置点位）【Primitive】
+  setPointPrimitiveByImg({id: '1-primitive', lng: 117.229629, lat: 31.716888});
 }
 
 // 移动点位 （通过提供的图片设置点位）
