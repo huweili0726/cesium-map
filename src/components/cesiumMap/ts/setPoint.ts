@@ -66,8 +66,9 @@ export function setPoint(baseUrl: string) {
         color: Cesium.Color.WHITE, // 图片颜色（WHITE 为原图颜色）
         verticalOrigin: Cesium.VerticalOrigin.BOTTOM, // 垂直对齐方式（底部对齐点位）
         horizontalOrigin: Cesium.HorizontalOrigin.CENTER, // 水平居中
+        clampToGround: true,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 贴地显示，固定在地面上
-        disableDepthTestDistance: Number.POSITIVE_INFINITY, // 禁用深度测试，确保图标始终在最上层，不会被地面遮挡
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
       },
       // 添加标签：黑底白字显示点位名称
       label: {
