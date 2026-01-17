@@ -55,3 +55,36 @@
 .cesium-animation-container {
   border: none !important;
 }
+
+/* 点位div样式 */
+.point-div {
+  position: relative;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1000;
+  border: 1px solid red;
+  height: auto;
+  width: auto;
+  cursor: pointer;
+}
+.point-icon{
+  width: 30px;
+  height: 64px;
+  background-image: url(@/assets/img/point1.png);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+.point-name{
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+
+  text-align: center;
+  transform: translateX(-50%);
+  font: 12px sans-serif;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 3px 5px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}

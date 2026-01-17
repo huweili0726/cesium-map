@@ -179,7 +179,8 @@ const toggleControls = (controlType: string) => {
 // 设置点位 （通过提供的图片设置点位）【Entity】
 const toSetPointEntityByImg = () => {
   // 设置点位 （通过提供的图片设置点位）【Entity】
-  setPointEntityByImg({id: '1', lng: 117.229619, lat: 31.716288});
+  // setPointEntityByImg({id: '1', lng: 117.229619, lat: 31.716288});
+  setPointEntityByImg({id: '1', lng: 117.229629, lat: 31.716888});
 }
 
 // 设置点位 （通过提供的图片设置点位）【Primitive】

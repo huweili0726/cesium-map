@@ -115,86 +115,133 @@ export function setPoint(baseUrl: string) {
    * @param options.name 点位名称
    * @returns 点位Primitive
    */
-  const setPointPrimitiveByImg = (options: { 
+const setPointPrimitiveByImg = (options: { 
     id: string, 
     lng: number, 
     lat: number,
     name?: string
-  }) => {
+}) => {
     // 获取地图实例
     const map = mapStore.getMap()
     if (!map) {
-      console.error('地图实例不存在')
-      return null
+        console.error('地图实例不存在')
+        return null
     }
 
     // 检查是否已存在相同id的点位，如果存在直接返回
     if (mapStore.hasGraphicMap(options.id)) {
-      console.warn(`点位已存在，ID: ${options.id}`)
-      return mapStore.getGraphicMap(options.id)
+        console.warn(`点位已存在，ID: ${options.id}`)
+        return mapStore.getGraphicMap(options.id)
     }
 
-    // 创建点位位置
-    const position = Cesium.Cartesian3.fromDegrees(options.lng, options.lat, 0)
+    // 1. 创建经纬度转笛卡尔坐标
+    const position = Cesium.Cartesian3.fromDegrees(options.lng, options.lat, 0);
 
-    // 创建BillboardCollection
-    const billboardCollection = new Cesium.BillboardCollection({
-      scene: map.scene,
-      blendOption: Cesium.BlendOption.OPAQUE_AND_TRANSLUCENT,
-    })
-
-    // 添加Billboard
-    const billboard = billboardCollection.add({
-      id: options.id,
-      position: position,
-      image: new URL('@/assets/img/point.png', import.meta.url).href,
-      width: 30,
-      height: 64,
-      verticalOrigin: Cesium.VerticalOrigin.BOTTOM, // 垂直对齐方式：底部对齐点位
-      horizontalOrigin: Cesium.HorizontalOrigin.CENTER, // 水平居中
-      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 贴地显示，固定在地面上
-      disableDepthTestDistance: Number.POSITIVE_INFINITY, // 禁用深度测试，确保图标始终在最上层
-    })
-
-    // 创建LabelCollection并添加Label
-    const labelCollection = new Cesium.LabelCollection({
-      scene: map.scene,
-      blendOption: Cesium.BlendOption.OPAQUE_AND_TRANSLUCENT,
-    })
-
-    const label = labelCollection.add({
-      id: `${options.id}_label`,
-      position: position,
-      text: options.name || `点位${options.id}`,
-      font: '12px sans-serif',
-      fillColor: Cesium.Color.WHITE,
-      outlineColor: Cesium.Color.BLACK,
-      outlineWidth: 2,
-      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-      horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-      pixelOffset: new Cesium.Cartesian2(0, -70), // 偏移量：在图标上方70像素处
-      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-      showBackground: true,
-      backgroundColor: new Cesium.Color(0, 0, 0, 0.8),
-      backgroundPadding: new Cesium.Cartesian2(5, 3),
-      disableDepthTestDistance: Number.POSITIVE_INFINITY,
-    })
-
-    map.scene.primitives.add(billboardCollection)
-    map.scene.primitives.add(labelCollection)
+    // 尝试使用可见的图片，如果不存在则使用默认样式
+    let imageUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAACXBIWXMAAAsTAAALEwEAmpwYAAABhGlDQ1BJQ0MgUHJvZmlsZQAAeJx9kT1Iw0AcxV9TpSIVBzuIOGSoDmTBsRoS2KbXkUYW5CCoHhiYV14VWoXTr0f1I7r80D4R4h9L7uKrR+GdWD73ydlIB+6hgref1QTlmgmbM3/LeX5GI1Ux1RWpgxpLuZ2+I+IjzZ8wqE4nilvQdkUdfhzI5QDWy+kw5Wgg2pGpeEVeCCA7b85BO3F9DzxB3cdqvBzWcmzbyMiqhzuYqtHRVG2y4x+KOlnyqla8AoWWpuBoYRxzXrfKuILl6SfiWCbjxoZJUaCBj1CjH7GIaDbc9kqBY3W/Rgjda1iqQcOJu2WW+76pZC9QG7M00dffe9hNnseupFL53r8F7YHSwJWUKP2q+k7RdsxyOB11n0xtOvnW4irMMFNV4H0uqwS5ExsmP9AxbDTc9JwgneAT5vTiUSm1E7BSflSt3bfa1tv8Di3R8n3Af7MNWzs49hmauE2wP+ttrq+AsWpFG2awvsuOqbipWHgtuvuaAE+A1Z/7gC9hesnr+7wqCwG8c5yAg3AL1fm8T9AZtp/bbJGwl1pNrE7RuOX7PeMRUERVaPpEs+yqeoSmuOlokqw49pgomjLeh7icHNlG19yjs6XXOMedYm5xH2YxpV2tc0Ro2jJfxC50ApuxGob7lMsxfTbeUv07TyYxpeLucEH1gNd4IKH2LAg5TdVhlCafZvpskfncCfx8pOhJzd76bJWeYFnFciwcYfubRc12Ip/ppIhA1/mSZ/RxjFDrJC5xifFjJpY2Xl5zXdguFqYyTR1zSp1Y9p+tktDYYSNflcxI0iyO4TPBdlRcpeqjK/piF5bklq77VSEaA+z8qmJTFzIWiitbnzR794USKBUaT0NTEsVjZqLaFVqJoPN9ODG70IPbfBHKK+/q/AWR0tJzYHRULOa4MP+W/HfGadZUbfw177G7j/OGbIs8TahLyynl4X4RinF793Oz+BU0saXtUHrVBFT/DnA3ctNPoGbs4hRIjTok8i+algT1lTHi4SxFvONKNrgQFAq2/gFnWMXgwffgYMJpiKYkmW3tTg3ZQ9Jq+f8XN+A5eeUKHWvJWJ2sgJ1Sop+wwhqFVijqWaJhwtD8MNlSBeWNNWTa5Z5kPZw5+LbVT99wqTdx29lMUH4OIG/D86ruKEauBjvH5xy6um/Sfj7ei6UUVk4AIl3MyD4MSSTOFgSwsH/QJWaQ5as7ZcmgBZkzjjU1UrQ74ci1gWBCSGHtuV1H2mhSnO3Wp/3fEV5a+4wz//6qy8JxjZsmxxy5+4w9CDNJY09T072iKG0EnOS0arEYgXqYnXcYHwjTtUNAcMelOd4xpkoqiTYICWFq0JSiPfPDQdnt+4/wuqcXY47QILbgAAAABJRU5ErkJggg==';
     
-    // 将创建的对象存储到mapStore
-    const pointObject = {
-      billboard,
-      label,
-      billboardCollection,
-      labelCollection
+    try {
+        // 尝试使用项目中的图片
+        imageUrl = new URL('@/assets/img/point.png', import.meta.url).href;
+    } catch (e) {
+        console.warn('使用默认点位图片:', e);
     }
-    mapStore.setGraphicMap(options.id, pointObject)
 
-    return pointObject
-  }
+    // 3. 创建简单的DIV元素显示文本
+    const div = document.createElement('div');
+    div.id = `${options.id}_div`;
+    div.className = 'point-div';
+    div.style.position = 'absolute';
+    div.style.display = 'block';
+    div.style.pointerEvents = 'auto';
+    div.style.zIndex = '1000';
+    div.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    div.style.color = 'white';
+    div.style.padding = '4px 8px';
+    div.style.borderRadius = '4px';
+    div.style.fontSize = '12px';
+    div.style.textAlign = 'center';
+    div.style.minWidth = '80px';
+    div.innerHTML = `
+        <div style="margin-bottom: 4px;">
+            <img src="${imageUrl}" style="width: 30px; height: 30px; display: block; margin: 0 auto;">
+        </div>
+        <div>${options.name || '自定义点位'}</div>
+    `;
+    
+    // 添加到地图容器
+    map.container.appendChild(div);
+
+    // 4. 更新DIV位置的函数
+    const updateDivPosition = () => {
+        try {
+            // 使用cartesianToCanvasCoordinates获取屏幕坐标
+            const canvasPosition = map.scene.cartesianToCanvasCoordinates(position);
+            
+            if (canvasPosition && !isNaN(canvasPosition.x) && !isNaN(canvasPosition.y)) {
+                // 计算DIV位置，使其显示在点位上方
+                const rect = div.getBoundingClientRect();
+                const left = canvasPosition.x - (rect.width / 2);
+                const top = canvasPosition.y - rect.height - 10; // 向上偏移10px
+                
+                div.style.left = `${left}px`;
+                div.style.top = `${top}px`;
+                div.style.display = 'block';
+                
+                // 距离判断
+                // const distance = Cesium.Cartesian3.distance(map.camera.position, position);
+                // if (distance > 100000) {
+                //     div.style.display = 'none';
+                // }
+            } else {
+                div.style.display = 'none';
+            }
+        } catch (e) {
+            console.warn('更新点位位置失败:', e);
+            div.style.display = 'none';
+        }
+    };
+
+    // 5. 添加事件监听
+    const listeners: Array<{ remove: () => void }> = [];
+    listeners.push(map.scene.postRender.addEventListener(updateDivPosition));
+    
+    // 初始更新位置
+    updateDivPosition();
+
+    // 6. 组装返回对象
+    const result = {
+        id: options.id,
+        position: position,
+        div: div,
+        listeners: listeners,
+        destroy: () => {
+            // 移除监听器
+            listeners.forEach(listener => {
+                try {
+                    listener.remove();
+                } catch (e) {
+                    console.warn('移除监听器失败:', e);
+                }
+            });
+            
+            // 移除DIV
+            if (div && div.parentElement) {
+                div.parentElement.removeChild(div);
+            }
+            
+            // 从mapStore中移除
+            if (mapStore.removeGraphicMap) {
+                mapStore.removeGraphicMap(options.id);
+            }
+        }
+    };
+
+    // 存入mapStore
+    mapStore.setGraphicMap(options.id, result);
+
+    return result;
+};
 
   /**
    * 批量设置点位 （直接把图片设置成点位, 1万+个点位）【海量点位的最优解：BillboardCollection（批量 Primitive）】
