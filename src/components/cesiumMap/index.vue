@@ -137,9 +137,10 @@ const initCesium = async () => {
       pitch: mapOptions.scene.center.pitch,
       roll: mapOptions.scene.center.roll,
       duration: mapOptions.scene.center.duration,
+      alt: mapOptions.scene.center.alt,
     })
     // 使用 flyTo 方法实现相机看向中心点的效果
-    setMapCenter({lng: mapOptions.scene.center.lng, lat: mapOptions.scene.center.lat, height: mapOptions.scene.center.alt, map: map}) // 设置地图中心点
+    setMapCenter({lng: mapOptions.scene.center.lng, lat: mapOptions.scene.center.lat, alt: mapOptions.scene.center.alt, map: map}) // 设置地图中心点
 
     console.log('Cesium 地图加载成功')
     emit("onload", map)

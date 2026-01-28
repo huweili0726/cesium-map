@@ -53,16 +53,16 @@ export function basicConfig() {
    * @param options - 包含地图中心点经纬度和高度的对象
    * @param options.lng - 地图中心点经度
    * @param options.lat - 地图中心点纬度
-   * @param options.height - 地图中心点高度
+   * @param options.alt - 可选，地图中心点高度，默认0
    * @param options.map - 地图实例，可选，默认从store中获取
    */
   const setMapCenter = (options: { 
     lng: number, 
     lat: number, 
-    height: number,
+    alt?: number,
     map?: any
   }) => {
-    const { lng, lat, height, map: mapInstance } = options
+    const { lng, lat, alt: altitude, map: mapInstance } = options
     const map = mapInstance || mapStore.getMap()
     if (!map) {
       console.error('地图实例不存在')
@@ -70,7 +70,7 @@ export function basicConfig() {
     }
 
     // 转换为笛卡尔坐标
-    const cartesian = Cesium.Cartesian3.fromDegrees(lng, lat - 0.05, height);
+    const cartesian = Cesium.Cartesian3.fromDegrees(lng, lat - 0.05, altitude || mapStore.getMapInfo('center')?.alt);
     // 设置相机位置
     map.camera.setView({
       destination: cartesian,
