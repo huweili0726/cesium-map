@@ -1,5 +1,5 @@
 <template>
-  <div class="cesium-container" ref="cesiumContainer"></div>
+  <div class="cesium-container" ref="cesiumContainer" />
 </template>
 
 <script setup lang="ts">
@@ -7,6 +7,7 @@ import * as Cesium from 'cesium'
 import { ref, onMounted, onUnmounted, toRaw } from 'vue'
 import { jsonUtils } from '@/utils/json'
 import { objectUtils } from '@/utils/object'
+import { basicConfig } from '@/components/cesiumMap/ts/basis'
 import { useMapStore } from '@/stores/modules/mapStore'
 
 // 获取store实例，保持响应性
@@ -146,6 +147,8 @@ const initCesium = async () => {
     // 开启地形深度测试，确保在地形上的实体正确渲染
     map.scene.globe.depthTestAgainstTerrain = true;
 
+    mouseController(map); // 初始化鼠标控制器
+
     console.log('Cesium 地图加载成功')
     emit("onload", map)
   } catch (error) {
@@ -168,11 +171,13 @@ onUnmounted(() => {
 
 const { getJsonFile } = jsonUtils()
 const { merge } = objectUtils()
+const { mouseController } = basicConfig()
 </script>
 
 <style scoped lang="less">
 .cesium-container {
   width: 100vw;
   height: 100vh;
+  position: relative;
 }
 </style>
