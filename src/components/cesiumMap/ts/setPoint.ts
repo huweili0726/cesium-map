@@ -157,7 +157,7 @@ export function setPoint(baseUrl: string) {
       });
 
       // 定义尺寸（可根据实际需求调整）
-      const x_imgSize = 40; // 图片大小
+      const x_imgSize = 30; // 图片大小
       const y_imgSize = 64; // 图片大小
       const textHeight = 20; // 文字区域高度
       const bodyPadding = 0; // 容器内边距
