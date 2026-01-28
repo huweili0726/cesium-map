@@ -625,101 +625,96 @@ export function geometryConfig() {
 
     // 提取经纬度和高度
     const [lng, lat, height = 0] = options.positions;
-   
 
+    let frustum = new Cesium.PerspectiveFrustum({
+      fov: Cesium.Math.toRadians(options.horizontalAngle || 30),
+      aspectRatio: 1.4,
+      near: 1,
+      far: options.length,
+    });
 
-    
+    let origin = Cesium.Cartesian3.fromDegrees(lng, lat, height);
 
-            let frustum = new Cesium.PerspectiveFrustum({
-              fov: Cesium.Math.toRadians(options.horizontalAngle || 30),
-              aspectRatio: 1.4,
-              near: 1,
-              far: options.length,
-            });
+    let headingRad = Cesium.Math.toRadians(options.heading);
+    let pitchRad = Cesium.Math.toRadians(options.pitch);
 
-            let origin = Cesium.Cartesian3.fromDegrees(lng, lat, 14);
-            
-            let headingRad = Cesium.Math.toRadians(options.heading);
-            let pitchRad = Cesium.Math.toRadians(options.pitch);
-            
-            let cosPitch = Math.cos(pitchRad);
-            let sinPitch = Math.sin(pitchRad);
-            let cosHeading = Math.cos(headingRad);
-            let sinHeading = Math.sin(headingRad);
-            
-            let direction = new Cesium.Cartesian3(
-              sinPitch * cosHeading,
-              sinPitch * sinHeading,
-              cosPitch
-            );
-            
-            let enuToFixed = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
-            let enuRotation = new Cesium.Matrix3();
-            Cesium.Matrix4.getRotation(enuToFixed, enuRotation);
-            
-            let worldDirection = new Cesium.Cartesian3();
-            Cesium.Matrix3.multiplyByVector(enuRotation, direction, worldDirection);
-            
-            Cesium.Cartesian3.negate(worldDirection, worldDirection);
-            
-            let up = new Cesium.Cartesian3(0, 0, 1);
-            let right = new Cesium.Cartesian3();
-            Cesium.Cartesian3.cross(worldDirection, up, right);
-            Cesium.Cartesian3.normalize(right, right);
-            Cesium.Cartesian3.cross(right, worldDirection, up);
-            
-            let rotationMatrix = new Cesium.Matrix3(
-              right.x, worldDirection.x, up.x,
-              right.y, worldDirection.y, up.y,
-              right.z, worldDirection.z, up.z
-            );
-            
-            let orientation = Cesium.Quaternion.fromRotationMatrix(rotationMatrix);
-            
-            let instanceGeo = new Cesium.GeometryInstance({
-                geometry: new Cesium.FrustumGeometry({
-                    frustum: frustum,
-                    origin: origin,
-                    orientation: orientation,
-                    vertexFormat: Cesium.VertexFormat.POSITION_ONLY,
-                }),
-                attributes: {
-                    color: Cesium.ColorGeometryInstanceAttribute.fromColor(
-                      Cesium.Color.fromCssColorString(options.color || 'rgba(1,0,0,0.3)')
-                    ),
-                },
-            });
-            let instanceGeoLine = new Cesium.GeometryInstance({
-                geometry: new Cesium.FrustumOutlineGeometry({
-                    frustum: frustum,
-                    origin: origin,
-                    orientation: orientation,
-                }),
-                attributes: {
-                    color: Cesium.ColorGeometryInstanceAttribute.fromColor(
-                        new Cesium.Color(1.0, 1.0, 1.0, 1)
-                    ),
-                },
-            });
+    let cosPitch = Math.cos(pitchRad);
+    let sinPitch = Math.sin(pitchRad);
+    let cosHeading = Math.cos(headingRad);
+    let sinHeading = Math.sin(headingRad);
 
+    let direction = new Cesium.Cartesian3(
+      sinPitch * cosHeading,
+      sinPitch * sinHeading,
+      cosPitch
+    );
 
-            rectangularPrimitive = new Cesium.Primitive({
-                geometryInstances: [instanceGeo],
-                appearance: new Cesium.PerInstanceColorAppearance({
-                    closed: true,
-                    flat: true,
-                }),
-                asynchronous: false,
-            });
+    let enuToFixed = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
+    let enuRotation = new Cesium.Matrix3();
+    Cesium.Matrix4.getRotation(enuToFixed, enuRotation);
 
-            rectangularPrimitive1 = new Cesium.Primitive({
-                geometryInstances: [instanceGeoLine],
-                appearance: new Cesium.PerInstanceColorAppearance({
-                    closed: true,
-                    flat: true,
-                }),
-                asynchronous: false,
-            });
+    let worldDirection = new Cesium.Cartesian3();
+    Cesium.Matrix3.multiplyByVector(enuRotation, direction, worldDirection);
+
+    Cesium.Cartesian3.negate(worldDirection, worldDirection);
+
+    let up = new Cesium.Cartesian3(0, 0, 1);
+    let right = new Cesium.Cartesian3();
+    Cesium.Cartesian3.cross(worldDirection, up, right);
+    Cesium.Cartesian3.normalize(right, right);
+    Cesium.Cartesian3.cross(right, worldDirection, up);
+
+    let rotationMatrix = new Cesium.Matrix3(
+      right.x, worldDirection.x, up.x,
+      right.y, worldDirection.y, up.y,
+      right.z, worldDirection.z, up.z
+    );
+
+    let orientation = Cesium.Quaternion.fromRotationMatrix(rotationMatrix);
+
+    let instanceGeo = new Cesium.GeometryInstance({
+      geometry: new Cesium.FrustumGeometry({
+        frustum: frustum,
+        origin: origin,
+        orientation: orientation,
+        vertexFormat: Cesium.VertexFormat.POSITION_ONLY,
+      }),
+      attributes: {
+        color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+          Cesium.Color.fromCssColorString(options.color || 'rgba(1,0,0,0.3)')
+        ),
+      },
+    });
+    let instanceGeoLine = new Cesium.GeometryInstance({
+      geometry: new Cesium.FrustumOutlineGeometry({
+        frustum: frustum,
+        origin: origin,
+        orientation: orientation,
+      }),
+      attributes: {
+        color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+          new Cesium.Color(1.0, 1.0, 1.0, 1)
+        ),
+      },
+    });
+
+    rectangularPrimitive = new Cesium.Primitive({
+      geometryInstances: [instanceGeo],
+      appearance: new Cesium.PerInstanceColorAppearance({
+        closed: true,
+        flat: true,
+      }),
+      asynchronous: false,
+    });
+
+    rectangularPrimitive1 = new Cesium.Primitive({
+      geometryInstances: [instanceGeoLine],
+      appearance: new Cesium.PerInstanceColorAppearance({
+        closed: true,
+        flat: true,
+      }),
+      asynchronous: false,
+    });
 
 
 
