@@ -605,9 +605,12 @@ const clearAllCones = () => {
 }
 
 // 创建四棱锥特效
-let rectangularPyramidTimer: number | null = null;
+let rectangularPyramidTimer: any = null;
+let rectangularPyramidTimer1: any = null;
 let currentPyramidHeading = 0;
 let currentPyramidPitch = 120;
+let currentPyramidHeading1 = 0;
+let currentPyramidPitch1 = 120;
 let pyramidIds: string[] = [];
 
 const toCreateRectangularPyramidEffect = () => {
@@ -684,27 +687,50 @@ const clearAllRectangularPyramids = () => {
 
 // 创建四棱锥方法2
 const toCreateRectangularPyramidEffect1 = () => {
+  // 如果已有定时器，先清除
+  if (rectangularPyramidTimer1) {
+    clearInterval(rectangularPyramidTimer1);
+    rectangularPyramidTimer1 = null;
+  }
+
+  // 重置当前角度
+  currentPyramidHeading1 = 0;
+  currentPyramidPitch1 = 120;
+
+  // 创建四棱锥
   rectangularPyramidWave1({
     id: 'rectangular_pyramid_wave_002',
     positions: [117.229629, 31.716888, 0],
-    heading: 0,
-    pitch: 120,
+    heading: currentPyramidHeading1,
+    pitch: currentPyramidPitch1,
     length: 5000, // 四棱锥高度（米）
     horizontalAngle: 20, // 水平展开角度（度）
     verticalAngle: 15, // 垂直展开角度（度）
     color: 'rgba(0,255,0,0.4)',
-  })
-
-  updateRectangularPyramidWavePose1({
-    id: 'rectangular_pyramid_wave_002',
-    heading: 180, // 新的水平方位角（度）
-    pitch: 90, // 新的垂直方位角（度）
-    length: 5000, // 四棱锥长度
-    horizontalAngle: 20, // 水平角度
-    verticalAngle: 15, // 垂直角度
-    color: 'rgba(0,255,0,0.4)', // 颜色
   });
-}
+
+  // 设置定时器，每秒更新一次heading和pitch
+  rectangularPyramidTimer1 = setInterval(() => {
+    // 更新heading和pitch值
+    currentPyramidHeading1 += 5; // 每秒增加5度
+    currentPyramidPitch1 += 2; // 每秒增加2度
+    
+    // 限制值在合理范围内
+    if (currentPyramidHeading1 > 360) {
+      currentPyramidHeading1 -= 360;
+    }
+    if (currentPyramidPitch1 > 360) {
+      currentPyramidPitch1 -= 360;
+    }
+
+    // 更新四棱锥朝向
+    updateRectangularPyramidWavePose1({
+      id: 'rectangular_pyramid_wave_002',
+      heading: currentPyramidHeading1, // 新的水平方位角（度）
+      pitch: currentPyramidPitch1, // 新的垂直方位角（度）
+    });
+  }, 1000); // 每秒执行一次
+};
 
 onBeforeUnmount(() => {
   // 组件卸载时清除定时器和所有几何体
@@ -717,6 +743,10 @@ onBeforeUnmount(() => {
   if (rectangularPyramidTimer) {
     clearInterval(rectangularPyramidTimer);
     rectangularPyramidTimer = null;
+  }
+  if (rectangularPyramidTimer1) {
+    clearInterval(rectangularPyramidTimer1);
+    rectangularPyramidTimer1 = null;
   }
   clearAllRectangularPyramids();
 })
