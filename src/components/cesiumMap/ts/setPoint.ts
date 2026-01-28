@@ -157,11 +157,10 @@ export function setPoint(baseUrl: string) {
       });
 
       // 定义尺寸（可根据实际需求调整）
-      const textPadding = 8;
       const x_imgSize = 40; // 图片大小
       const y_imgSize = 64; // 图片大小
       const textHeight = 20; // 文字区域高度
-      const bodyPadding = 4; // 容器内边距
+      const bodyPadding = 0; // 容器内边距
 
       // Canvas总尺寸 = 图片尺寸 + 文字高度 + 内边距
       canvas.width = x_imgSize + bodyPadding * 2;
@@ -169,7 +168,7 @@ export function setPoint(baseUrl: string) {
 
       // 绘制icon-text文字（含背景色）
       const text = options.name || '自定义图片点位';
-      ctx.font = '12px Microsoft YaHei';
+      ctx.font = '14px Microsoft YaHei';
 
       // === 新增：绘制文字背景 ===
       const textBgColor = '#FFB413'; // 文字背景色
@@ -177,26 +176,32 @@ export function setPoint(baseUrl: string) {
       const textBgPaddingY = 2; // 文字上下内边距
       const textWidth = ctx.measureText(text).width; // 动态计算文字宽度
       // 背景矩形坐标计算
-      const textBgX = (canvas.width / 2) - (textWidth / 2) - textBgPaddingX;
+      const textBgX = 0;
       const textY = textHeight / 2 + bodyPadding; // 原有文字Y坐标
       const textBgY = textY - (textHeight / 2) - textBgPaddingY;
       const textBgWidth = textWidth + textBgPaddingX * 2;
       const textBgHeight = textHeight + textBgPaddingY * 2;
+
+      // 计算 Canvas 所需最小宽度（取图片宽度和文字背景宽度的较大值）
+      const minCanvasWidth = Math.max(x_imgSize, textBgWidth) + bodyPadding * 2;
+      // 设置 Canvas 宽度
+      canvas.width = minCanvasWidth;
+
       // 绘制圆角背景
       ctx.fillStyle = textBgColor;
-      ctx.roundRect(textBgX, textBgY, textBgWidth, textBgHeight, 3);
+      ctx.roundRect(textBgX, textBgY, minCanvasWidth, textBgHeight, 3);
       ctx.fill();
 
       // === 原有文字绘制 ===
       ctx.fillStyle = '#000000'; // 文字白色
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(text, canvas.width / 2, textY);
+      ctx.font = '14px Microsoft YaHei';
+      ctx.fillText(text, canvas.width / 2, textY + textBgPaddingY);
 
       // 3. 绘制cesium-point-img图片（模拟<img>）
-      const imgX = bodyPadding;
       const imgY = textHeight + bodyPadding * 2;
-      ctx.drawImage(img, imgX, imgY, x_imgSize, y_imgSize);
+      ctx.drawImage(img, (canvas.width - x_imgSize)/2, imgY, x_imgSize, y_imgSize);
 
       return canvas.toDataURL('image/png');
     };
@@ -212,11 +217,7 @@ export function setPoint(baseUrl: string) {
       // 4. 创建BillboardCollection（核心Primitive）
       const billboardCollection = new Cesium.BillboardCollection({
         scene: map.scene,
-        // heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 贴地
-        // disableDepthTestDistance: Number.POSITIVE_INFINITY // 始终显示在最上层
       });
-
-
 
       // 5. 创建自定义纹理的Billboard（还原完整DOM结构）
       const billboard = billboardCollection.add({
@@ -227,7 +228,6 @@ export function setPoint(baseUrl: string) {
         // 对齐方式（和原DOM逻辑一致：底部居中）
         horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
         verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-
         show: true,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 贴地
         // ✅ 正确位置：始终显示在最上层（禁用深度测试）
@@ -255,6 +255,8 @@ export function setPoint(baseUrl: string) {
         map.scene.primitives.remove(billboardCollection);
         billboardCollection.destroy();
       };
+
+      mapStore.setGraphicMap(options.id, billboard)
 
       // 返回完整的Primitive对象
       return {
