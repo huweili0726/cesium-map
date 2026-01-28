@@ -769,14 +769,13 @@ export function geometryConfig() {
       
       if (existingPrimitive) {
         map.scene.primitives.remove(existingPrimitive);
+        mapStore.removeGraphicMap(options.id);
       }
       if (existingPrimitiveLine) {
         map.scene.primitives.remove(existingPrimitiveLine);
+        mapStore.removeGraphicMap(options.id + '_line');
       }
-      
-      mapStore.removeGraphicMap(options.id);
-      mapStore.removeGraphicMap(options.id + '_line');
-      
+
       // 读取原始参数
       const originalOptions = (existingPrimitive as any)?._originalOptions || {};
       
