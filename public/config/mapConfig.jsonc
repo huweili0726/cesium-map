@@ -7,7 +7,7 @@
       "heading": 359.2,  // 地图中心点 heading 角度
       "pitch": -39.5,  // 地图中心点 pitch 角度
       "roll": 0,  // 地图中心点 roll 角度
-      "duration": 3  // 地图中心点动画时间
+      "duration": 0  // 地图中心点动画时间
     },
     "globe": {
       "enableLighting": false  // 是否开启光照效果

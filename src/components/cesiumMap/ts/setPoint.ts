@@ -146,10 +146,10 @@ export function setPoint(baseUrl: string) {
 
     // 插入你原有的HTML结构
     container.innerHTML = `
-        <div class="cesium-point-body">
-            <div class="icon-text">${options.name || '自定义图片点位'}</div>
-            <img class="cesium-point-img" src="${options.imageUrl}" />
-        </div>
+      <div class="cesium-point-body">
+          <div class="icon-text">${options.name || '自定义图片点位'}</div>
+          <img class="cesium-point-img" src="${options.imageUrl}" />
+      </div>
     `;
 
     // 2. 临时挂载到body，通过display: flex确保渲染，同时避免影响布局
@@ -175,10 +175,7 @@ export function setPoint(baseUrl: string) {
         logging: false, // 关闭日志
         width: container.offsetWidth,
         height: container.offsetHeight,
-        // ✅ 关键配置：关闭默认白色背景，保留透明
-        backgroundColor: null,
-        // 可选：进一步确保透明渲染（部分版本需要）
-        // foreignObjectRendering: true
+        backgroundColor: null, // ✅ 关键配置：关闭默认白色背景，保留透明
       });
 
       // 4. 移除临时DOM元素
