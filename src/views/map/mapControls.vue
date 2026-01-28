@@ -184,22 +184,13 @@ const toSetPointEntityByImg = () => {
 
 // 设置点位 （通过提供的图片设置点位）【Primitive】
 const toSetPointPrimitiveByImg = () => {
-  // 创建2000个点位
-  for (let i = 0; i < 2; i++) {
-    // 在原始位置附近生成随机坐标
-    const baseLng = 117.229629;
-    const baseLat = 31.716888;
-    const randomLng = baseLng + (Math.random() - 0.5) * 0.05; // 0.05度的范围
-    const randomLat = baseLat + (Math.random() - 0.5) * 0.05;
-    
-    setPointPrimitiveByImg({
-      id: `point-primitive-${i}`, 
-      lng: randomLng, 
-      lat: randomLat, 
-      name: `雷达位置${i}`, 
-      imageUrl: new URL('@/assets/img/point1.png', import.meta.url).href
-    });
-  }
+  setPointPrimitiveByImg({
+    id: `point-primitive-1`, 
+    lng: 117.229629, 
+    lat: 31.716888, 
+    name: `雷达位置`, 
+    imageUrl: new URL('@/assets/img/point1.png', import.meta.url).href
+  });
 }
 
 // 移动点位 （通过提供的图片设置点位）

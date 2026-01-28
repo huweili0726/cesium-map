@@ -199,7 +199,7 @@ export function setPoint(baseUrl: string) {
       ctx.font = '14px Microsoft YaHei';
       ctx.fillText(text, canvas.width / 2, textY + textBgPaddingY);
 
-      // 3. 绘制cesium-point-img图片（模拟<img>）
+      // 绘制cesium-point-img图片（模拟<img>）
       const imgY = textHeight + bodyPadding * 2;
       ctx.drawImage(img, (canvas.width - x_imgSize)/2, imgY, x_imgSize, y_imgSize);
 
