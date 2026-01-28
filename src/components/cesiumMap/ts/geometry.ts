@@ -586,14 +586,13 @@ export function geometryConfig() {
 
 
 
-
   /**
    * 创建四棱锥波效果（方法2）
    * @param {string} options.id - 效果唯一标识符
    * @param {number[]} options.positions - 四棱锥顶点位置 [经度, 纬度, 高度]
    * @param {number} options.heading - 水平方位角（度）
    * @param {number} options.pitch - 俯仰角（度）
-   * @param {number} options.height - 四棱锥高度（米）
+   * @param {number} options.length - 四棱锥高度（米）
    * @param {number} options.horizontalAngle - 水平展开角度（度）
    * @param {number} options.verticalAngle - 垂直展开角度（度）
    * @param {string} options.color - 颜色（默认 '#00FFFF'）
@@ -716,9 +715,6 @@ export function geometryConfig() {
       asynchronous: false,
     });
 
-
-
-
     // 将primitive添加到mapStore中进行管理
     mapStore.setGraphicMap(options.id, rectangularPrimitive);
     mapStore.setGraphicMap(options.id + '_line', rectangularPrimitive1);
@@ -730,6 +726,74 @@ export function geometryConfig() {
     return rectangularPrimitive;
   }
 
+  /**
+   * 更新四棱锥特效的朝向
+   * @param {Object} options 更新配置参数
+   * @param {string} options.id - 四棱锥ID
+   * @param {number} options.heading - 新的水平方位角（度）
+   * @param {number} options.pitch - 新的垂直方位角（度）
+   * @param {number[]} options.positions - 位置坐标 [lng, lat, height]
+   * @param {number} options.length - 四棱锥长度
+   * @param {number} options.horizontalAngle - 水平角度
+   * @param {number} options.verticalAngle - 垂直角度
+   * @param {string} options.color - 颜色
+   * @returns {boolean} 更新成功返回true，否则返回false
+   */
+  const updateRectangularPyramidWavePose1 = (options: {
+    id: string, 
+    heading?: number,
+    pitch?: number,
+    positions?: number[],
+    length?: number,
+    horizontalAngle?: number,
+    verticalAngle?: number,
+    color?: string,
+  }) => {
+    const map = mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return false
+    }
+    
+    if (!mapStore.getGraphicMap(options.id) || !mapStore.getGraphicMap(options.id + '_line')) {
+      console.log(`id: ${options.id} 效果不存在`)
+      return false
+    }
+
+    try {
+      const existingPrimitive = mapStore.getGraphicMap(options.id);
+      const existingPrimitiveLine = mapStore.getGraphicMap(options.id + '_line');
+      
+      if (existingPrimitive) {
+        map.scene.primitives.remove(existingPrimitive);
+      }
+      if (existingPrimitiveLine) {
+        map.scene.primitives.remove(existingPrimitiveLine);
+      }
+      
+      mapStore.removeGraphicMap(options.id);
+      mapStore.removeGraphicMap(options.id + '_line');
+      
+      if (options.positions) {
+        rectangularPyramidWave1({
+          id: options.id,
+          positions: options.positions,
+          heading: options.heading || 0,
+          pitch: options.pitch || 0,
+          length: options.length || 3000,
+          horizontalAngle: options.horizontalAngle || 30,
+          verticalAngle: options.verticalAngle || 20,
+          color: options.color || 'rgba(1,0,0,0.3)',
+        });
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('更新四棱锥朝向失败:', error);
+      return false;
+    }
+  }
+
   return {
     conicalWave,
     updateConeLengthOrPosition,
@@ -738,5 +802,6 @@ export function geometryConfig() {
     updateRectangularPyramidWavePose,
     updateRectangularPyramidLengthOrPosition,
     rectangularPyramidWave1,
+    updateRectangularPyramidWavePose1
   }
 }

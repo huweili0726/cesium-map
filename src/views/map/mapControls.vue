@@ -694,6 +694,17 @@ const toCreateRectangularPyramidEffect1 = () => {
     verticalAngle: 15, // 垂直展开角度（度）
     color: 'rgba(0,255,0,0.4)',
   })
+
+  updateRectangularPyramidWavePose1({
+    id: 'rectangular_pyramid_wave_002',
+    heading: 180, // 新的水平方位角（度）
+    pitch: 90, // 新的垂直方位角（度）
+    positions: [117.229629, 31.716888, 0], // 位置坐标
+    length: 5000, // 四棱锥长度
+    horizontalAngle: 20, // 水平角度
+    verticalAngle: 15, // 垂直角度
+    color: 'rgba(0,255,0,0.4)', // 颜色
+  });
 }
 
 onBeforeUnmount(() => {
@@ -758,7 +769,8 @@ const {
   rectangularPyramidWave,
   updateRectangularPyramidWavePose,
   updateRectangularPyramidLengthOrPosition,
-  rectangularPyramidWave1
+  rectangularPyramidWave1,
+  updateRectangularPyramidWavePose1
 } = geometryConfig()
 </script>
 
