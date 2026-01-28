@@ -161,10 +161,11 @@ export function setPoint(baseUrl: string) {
       const y_imgSize = 64; // 图片大小
       const textHeight = 20; // 文字区域高度
       const bodyPadding = 0; // 容器内边距
+      const textDivMarginBottom = 8; // 文字的div 与 图标的div之间的间距
 
       // Canvas总尺寸 = 图片尺寸 + 文字高度 + 内边距
       canvas.width = x_imgSize + bodyPadding * 2;
-      canvas.height = y_imgSize + textHeight + bodyPadding * 2;
+      canvas.height = y_imgSize + textHeight + bodyPadding * 2 + textDivMarginBottom;
 
       // 绘制icon-text文字（含背景色）
       const text = options.name || '自定义图片点位';
@@ -177,8 +178,8 @@ export function setPoint(baseUrl: string) {
       const textWidth = ctx.measureText(text).width; // 动态计算文字宽度
       // 背景矩形坐标计算
       const textBgX = 0;
+      const textBgY = 0;
       const textY = textHeight / 2 + bodyPadding; // 原有文字Y坐标
-      const textBgY = textY - (textHeight / 2) - textBgPaddingY;
       const textBgWidth = textWidth + textBgPaddingX * 2;
       const textBgHeight = textHeight + textBgPaddingY * 2;
 
@@ -187,9 +188,9 @@ export function setPoint(baseUrl: string) {
       // 设置 Canvas 宽度
       canvas.width = minCanvasWidth;
 
-      // 绘制圆角背景
+      // === 绘制圆角背景 ===
       ctx.fillStyle = textBgColor;
-      ctx.roundRect(textBgX, textBgY, minCanvasWidth, textBgHeight, 3);
+      ctx.roundRect(textBgX, textBgY, minCanvasWidth, textBgHeight, 20);
       ctx.fill();
 
       // === 原有文字绘制 ===
@@ -200,7 +201,7 @@ export function setPoint(baseUrl: string) {
       ctx.fillText(text, canvas.width / 2, textY + textBgPaddingY);
 
       // 绘制cesium-point-img图片（模拟<img>）
-      const imgY = textHeight + bodyPadding * 2;
+      const imgY = textHeight + bodyPadding * 2 + textDivMarginBottom;
       ctx.drawImage(img, (canvas.width - x_imgSize)/2, imgY, x_imgSize, y_imgSize);
 
       return canvas.toDataURL('image/png');
