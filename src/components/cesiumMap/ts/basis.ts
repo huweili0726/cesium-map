@@ -75,11 +75,11 @@ export function basicConfig() {
     map.camera.setView({
       destination: cartesian,
       orientation: {
-        heading: Cesium.Math.toRadians(359.2),
-        pitch: Cesium.Math.toRadians(-39.5),
-        roll: 0.0
+        heading: Cesium.Math.toRadians(mapStore.getMapInfo('center')?.heading || 0),
+        pitch: Cesium.Math.toRadians(mapStore.getMapInfo('center')?.pitch || 0),
+        roll: Cesium.Math.toRadians(mapStore.getMapInfo('center')?.roll || 0)
       },
-      duration: 0
+      duration: mapStore.getMapInfo('center')?.duration || 0
     });
   }
 

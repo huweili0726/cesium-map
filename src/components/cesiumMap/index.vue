@@ -131,6 +131,13 @@ const initCesium = async () => {
     // 初始化鼠标控制器
     mouseController(map); 
 
+    // 保存地图中心点、旋转角度、俯仰角度
+    mapStore.setMapInfo('center', {
+      heading: mapOptions.scene.center.heading,
+      pitch: mapOptions.scene.center.pitch,
+      roll: mapOptions.scene.center.roll,
+      duration: mapOptions.scene.center.duration,
+    })
     // 使用 flyTo 方法实现相机看向中心点的效果
     setMapCenter({lng: mapOptions.scene.center.lng, lat: mapOptions.scene.center.lat, height: mapOptions.scene.center.alt, map: map}) // 设置地图中心点
 

@@ -31,6 +31,8 @@ export const useMapStore = defineStore('map', () => {
   const isLayerInitialized = ref(false)
   // 使用Map缓存图形对象，优化查找性能（从O(n)降到O(1)）
   const graphicMap = new Map<string, any>()
+  // 地图信息，包含地图中心点、缩放级别、旋转角度等
+  const mapInfo = new Map<string, any>()
   // 展示最近多少时间的轨迹，之前的轨迹渐影式移除（单位：秒）
   const trailTime = ref<number>(30)
 
@@ -82,6 +84,14 @@ export const useMapStore = defineStore('map', () => {
 
   const removeGraphicMap = (id: string) => {
     graphicMap.delete(id)
+  }
+
+  const setMapInfo = (key: string, value: any) => {
+    mapInfo.set(key, value)
+  }
+
+  const getMapInfo = (key: string) => {
+    return mapInfo.get(key)
   }
 
   // 设置无人机轨迹
@@ -161,6 +171,9 @@ export const useMapStore = defineStore('map', () => {
     clearLayer,
     resetLayer,
     setTrailTime,
-    getTrailTime
+    getTrailTime,
+    mapInfo,
+    setMapInfo,
+    getMapInfo
   }
 })
