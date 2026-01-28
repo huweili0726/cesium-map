@@ -587,147 +587,178 @@ export function geometryConfig() {
 
 
   /**
-   * 创建四棱锥波效果（方法2）
-   * @param {string} options.id - 效果唯一标识符
-   * @param {number[]} options.positions - 四棱锥顶点位置 [经度, 纬度, 高度]
-   * @param {number} options.heading - 水平方位角（度）
-   * @param {number} options.pitch - 俯仰角（度）
-   * @param {number} options.length - 四棱锥高度（米）
-   * @param {number} options.horizontalAngle - 水平展开角度（度）
-   * @param {number} options.verticalAngle - 垂直展开角度（度）
-   * @param {string} options.color - 颜色（默认 '#00FFFF'）
-   * @returns {Cesium.Primitive|null} 创建的四棱锥波实体，若创建失败则返回null
-   */
-  let rectangularPrimitive: any;
-  let rectangularPrimitive1: any;
-  const rectangularPyramidWave1 = (options: {
-    id: string,
-    positions: number[],
-    heading: number,
-    pitch: number,
-    length: number,
-    horizontalAngle: number,
-    verticalAngle: number,
-    color: string,
-  }) => {
-    const map = mapStore.getMap()
-    if (!map) {
-      console.error('地图实例不存在')
-      return null
-    }
-
-    // 检查是否已存在相同ID的效果
-    if (mapStore.getGraphicMap(options.id) || mapStore.getGraphicMap(options.id + '_line')) {
-      console.log(`id: ${options.id} 效果已存在`)
-      return null
-    }
-
-    // 提取经纬度和高度
-    const [lng, lat, height = 0] = options.positions;
-
-    let frustum = new Cesium.PerspectiveFrustum({
-      fov: Cesium.Math.toRadians(options.horizontalAngle || 30),// 30 度表示锥体水平方向张开 30 度，值越大"口子"越大
-      aspectRatio: 1.4, // 宽高比：水平角度与垂直角度的比例
-      near: 1, // 1 表示从锥顶点往前 1 米处才开始画，避免锥顶附近的变形【推荐：1-10 米 原因：雷达发射源本身有一定体积，不需要从数学"点"开始画】
-      far: options.length, // 四棱锥的长度【far 值越大，GPU 负担越重，因为需要渲染更深范围内的地形和物体。如果只需要视觉效果，可以设小一点（比如 500）】
-    });
-
-    let origin = Cesium.Cartesian3.fromDegrees(lng, lat, height);
-
-    let headingRad = Cesium.Math.toRadians(options.heading);
-    let pitchRad = Cesium.Math.toRadians(options.pitch);
-
-    let cosPitch = Math.cos(pitchRad);
-    let sinPitch = Math.sin(pitchRad);
-    let cosHeading = Math.cos(headingRad);
-    let sinHeading = Math.sin(headingRad);
-
-    let direction = new Cesium.Cartesian3(
-      sinPitch * cosHeading,
-      sinPitch * sinHeading,
-      cosPitch
-    );
-
-    let enuToFixed = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
-    let enuRotation = new Cesium.Matrix3();
-    Cesium.Matrix4.getRotation(enuToFixed, enuRotation);
-
-    let worldDirection = new Cesium.Cartesian3();
-    Cesium.Matrix3.multiplyByVector(enuRotation, direction, worldDirection);
-
-    Cesium.Cartesian3.negate(worldDirection, worldDirection);
-
-    let up = new Cesium.Cartesian3(0, 0, 1);
-    let right = new Cesium.Cartesian3();
-    Cesium.Cartesian3.cross(worldDirection, up, right);
-    Cesium.Cartesian3.normalize(right, right);
-    Cesium.Cartesian3.cross(right, worldDirection, up);
-
-    let rotationMatrix = new Cesium.Matrix3(
-      right.x, worldDirection.x, up.x,
-      right.y, worldDirection.y, up.y,
-      right.z, worldDirection.z, up.z
-    );
-
-    let orientation = Cesium.Quaternion.fromRotationMatrix(rotationMatrix);
-
-    let instanceGeo = new Cesium.GeometryInstance({
-      geometry: new Cesium.FrustumGeometry({
-        frustum: frustum, // 视锥体参数（张开角度、远近裁剪面）
-        origin: origin, // 锥顶位置（就是你传入的 lng, lat, height）
-        orientation: orientation, // 朝向（heading/pitch 决定它指向哪）
-        vertexFormat: Cesium.VertexFormat.POSITION_ONLY,
-      }),
-      attributes: {
-        color: Cesium.ColorGeometryInstanceAttribute.fromColor(
-          Cesium.Color.fromCssColorString(options.color || 'rgba(1,0,0,0.3)')
-        ),
-      },
-    });
-    let instanceGeoLine = new Cesium.GeometryInstance({
-      geometry: new Cesium.FrustumOutlineGeometry({
-        frustum: frustum,
-        origin: origin,
-        orientation: orientation,
-      }),
-      attributes: {
-        color: Cesium.ColorGeometryInstanceAttribute.fromColor(
-          new Cesium.Color(1.0, 1.0, 1.0, 1)
-        ),
-      },
-    });
-
-    rectangularPrimitive = new Cesium.Primitive({
-      geometryInstances: [instanceGeo],
-      appearance: new Cesium.PerInstanceColorAppearance({
-        closed: true,
-        flat: true,
-      }),
-      asynchronous: false,
-    });
-
-    rectangularPrimitive1 = new Cesium.Primitive({
-      geometryInstances: [instanceGeoLine],
-      appearance: new Cesium.PerInstanceColorAppearance({
-        closed: true,
-        flat: true,
-      }),
-      asynchronous: false,
-    });
-
-    // 存储原始参数，用于后续更新
-    (rectangularPrimitive as any)._originalOptions = { ...options };
-
-    // 将primitive添加到mapStore中进行管理
-    mapStore.setGraphicMap(options.id, rectangularPrimitive);
-    mapStore.setGraphicMap(options.id + '_line', rectangularPrimitive1);
-
-    // 添加primitive到场景
-    map.scene.primitives.add(rectangularPrimitive);
-    map.scene.primitives.add(rectangularPrimitive1);
-
-    return rectangularPrimitive;
+ * 创建四棱锥波效果（方法2）
+ * @param {string} options.id - 效果唯一标识符
+ * @param {number[]} options.positions - 四棱锥顶点位置 [经度, 纬度, 高度]
+ * @param {number} options.heading - 水平方位角（度）
+ * @param {number} options.pitch - 俯仰角（度）
+ * @param {number} options.length - 四棱锥高度（米）
+ * @param {number} options.horizontalAngle - 水平展开角度（度）
+ * @param {number} options.verticalAngle - 垂直展开角度（度）
+ * @param {string} options.color - 颜色（默认 '#00FFFF'）
+ * @returns {Cesium.Primitive|null} 创建的四棱锥波实体，若创建失败则返回null
+ */
+// 存储四棱锥主体Primitive
+let rectangularPrimitive: any;
+// 存储四棱锥轮廓Primitive
+let rectangularPrimitive1: any;
+// 定义创建四棱锥波效果的函数
+const rectangularPyramidWave1 = (options: {
+  id: string,                // 效果唯一标识符
+  positions: number[],       // 四棱锥顶点位置 [经度, 纬度, 高度]
+  heading: number,           // 水平方位角（度）
+  pitch: number,             // 俯仰角（度）
+  length: number,            // 四棱锥高度（米）
+  horizontalAngle: number,   // 水平展开角度（度）
+  verticalAngle: number,     // 垂直展开角度（度）
+  color: string,             // 颜色
+}) => {
+  // 获取地图实例
+  const map = mapStore.getMap()
+  // 检查地图实例是否存在
+  if (!map) {
+    console.error('地图实例不存在')
+    return null
   }
+
+  // 检查是否已存在相同ID的效果
+  if (mapStore.getGraphicMap(options.id) || mapStore.getGraphicMap(options.id + '_line')) {
+    console.log(`id: ${options.id} 效果已存在`)
+    return null
+  }
+
+  // 提取经纬度和高度，高度默认为0
+  const [lng, lat, height = 0] = options.positions;
+
+  // 创建视锥体，用于定义四棱锥的形状
+  let frustum = new Cesium.PerspectiveFrustum({
+    fov: Cesium.Math.toRadians(options.horizontalAngle || 30),  // 水平方向张开角度（弧度）
+    aspectRatio: 1.4,  // 宽高比：水平角度与垂直角度的比例
+    near: 1,  // 近裁剪面：从锥顶点往前1米处开始绘制，避免锥顶附近变形
+    far: options.length,  // 远裁剪面：四棱锥的长度
+  });
+
+  // 将经纬度和高度转换为地固坐标系下的笛卡尔坐标（锥顶位置）
+  let origin = Cesium.Cartesian3.fromDegrees(lng, lat, height);
+
+  // 将heading（水平方位角）从度转换为弧度
+  let headingRad = Cesium.Math.toRadians(options.heading);
+  // 将pitch（俯仰角）从度转换为弧度
+  let pitchRad = Cesium.Math.toRadians(options.pitch);
+
+  // 计算pitch的余弦值
+  let cosPitch = Math.cos(pitchRad);
+  // 计算pitch的正弦值
+  let sinPitch = Math.sin(pitchRad);
+  // 计算heading的余弦值
+  let cosHeading = Math.cos(headingRad);
+  // 计算heading的正弦值
+  let sinHeading = Math.sin(headingRad);
+
+  // 根据pitch和heading计算方向向量（ENU坐标系下）
+  let direction = new Cesium.Cartesian3(
+    sinPitch * cosHeading,  // 东向分量
+    sinPitch * sinHeading,  // 北向分量
+    cosPitch                // 天向分量
+  );
+
+  // 创建ENU（东北天）坐标系到地固坐标系的转换矩阵
+  let enuToFixed = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
+  // 从转换矩阵中提取旋转部分
+  let enuRotation = new Cesium.Matrix3();
+  Cesium.Matrix4.getRotation(enuToFixed, enuRotation);
+
+  // 将方向向量从ENU坐标系转换到地固坐标系
+  let worldDirection = new Cesium.Cartesian3();
+  Cesium.Matrix3.multiplyByVector(enuRotation, direction, worldDirection);
+
+  // 取反方向向量，使四棱锥朝向正确的方向
+  Cesium.Cartesian3.negate(worldDirection, worldDirection);
+
+  // 定义初始上方向向量（ENU坐标系下）
+  let up = new Cesium.Cartesian3(0, 0, 1);
+  // 计算右方向向量：方向向量与上方向向量的叉乘
+  let right = new Cesium.Cartesian3();
+  Cesium.Cartesian3.cross(worldDirection, up, right);
+  // 归一化右方向向量
+  Cesium.Cartesian3.normalize(right, right);
+  // 重新计算上方向向量：右方向向量与方向向量的叉乘
+  Cesium.Cartesian3.cross(right, worldDirection, up);
+
+  // 构建旋转矩阵：基于右、前、上三个方向向量
+  let rotationMatrix = new Cesium.Matrix3(
+    right.x, worldDirection.x, up.x,  // 第一列：右方向
+    right.y, worldDirection.y, up.y,  // 第二列：前方向
+    right.z, worldDirection.z, up.z   // 第三列：上方向
+  );
+
+  // 将旋转矩阵转换为四元数，用于表示四棱锥的朝向
+  let orientation = Cesium.Quaternion.fromRotationMatrix(rotationMatrix);
+
+  // 创建几何体实例，包含四棱锥的形状和颜色
+  let instanceGeo = new Cesium.GeometryInstance({
+    geometry: new Cesium.FrustumGeometry({
+      frustum: frustum,        // 视锥体参数，定义四棱锥的形状
+      origin: origin,          // 锥顶位置
+      orientation: orientation, // 朝向
+      vertexFormat: Cesium.VertexFormat.POSITION_ONLY,  // 顶点格式，仅包含位置信息
+    }),
+    attributes: {
+      // 设置颜色属性
+      color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+        Cesium.Color.fromCssColorString(options.color || 'rgba(1,0,0,0.3)')
+      ),
+    },
+  });
+
+  // 创建几何体轮廓实例，用于绘制四棱锥的边框
+  let instanceGeoLine = new Cesium.GeometryInstance({
+    geometry: new Cesium.FrustumOutlineGeometry({
+      frustum: frustum,        // 视锥体参数
+      origin: origin,          // 锥顶位置
+      orientation: orientation, // 朝向
+    }),
+    attributes: {
+      // 设置轮廓颜色为白色
+      color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+        new Cesium.Color(1.0, 1.0, 1.0, 1)
+      ),
+    },
+  });
+
+  // 创建四棱锥主体的Primitive，用于渲染填充部分
+  rectangularPrimitive = new Cesium.Primitive({
+    geometryInstances: [instanceGeo],  // 几何体实例
+    appearance: new Cesium.PerInstanceColorAppearance({
+      closed: true,  // 封闭几何体
+      flat: true,    // 平面着色
+    }),
+    asynchronous: false,  // 同步创建，确保立即显示
+  });
+
+  // 创建四棱锥轮廓的Primitive，用于渲染边框
+  rectangularPrimitive1 = new Cesium.Primitive({
+    geometryInstances: [instanceGeoLine],  // 几何体轮廓实例
+    appearance: new Cesium.PerInstanceColorAppearance({
+      closed: true,  // 封闭几何体
+      flat: true,    // 平面着色
+    }),
+    asynchronous: false,  // 同步创建，确保立即显示
+  });
+
+  // 存储原始参数，用于后续更新
+  (rectangularPrimitive as any)._originalOptions = { ...options };
+
+  // 将primitive添加到mapStore中进行管理
+  mapStore.setGraphicMap(options.id, rectangularPrimitive);
+  mapStore.setGraphicMap(options.id + '_line', rectangularPrimitive1);
+
+  // 添加primitive到场景
+  map.scene.primitives.add(rectangularPrimitive);
+  map.scene.primitives.add(rectangularPrimitive1);
+
+  return rectangularPrimitive;
+}
 
   /**
    * 更新四棱锥特效的朝向
