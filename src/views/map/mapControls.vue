@@ -185,8 +185,7 @@ const toSetPointEntityByImg = () => {
 
 // 设置点位 （通过提供的图片设置点位）【Primitive】
 const toSetPointPrimitiveByImg = () => {
-  // 设置点位 （通过提供的图片设置点位）【Primitive】
-  setPointPrimitiveByImg({id: '1-primitive', lng: 117.229629, lat: 31.716888, imageUrl: `${process.env.BASE_URL}/img/red.png`});
+  setPointPrimitiveByImg({id: '1-primitive', lng: 117.229629, lat: 31.716888, name: '雷达位置', imageUrl: new URL('@/assets/img/point1.png', import.meta.url).href});
 }
 
 // 移动点位 （通过提供的图片设置点位）

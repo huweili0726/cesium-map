@@ -135,44 +135,19 @@ const setPointPrimitiveByImg = (options: {
         return mapStore.getGraphicMap(options.id)
     }
 
-        // 2. 默认样式配置（和Mars3D示例保持一致）
-    const defaultLabelStyle = `
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255,255,255,0.8);
-        border-radius: 8px;
-        padding: 2px 8px;
-        font-size: 12px;
-        color: #333;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        pointer-events: auto;
-        cursor: pointer;
-    `;
-    const defaultIconStyle = `
-        width: 30px;
-        height: 30px;
-        margin-right: 4px;
-        border-radius: 50%;
-    `;
-
-    // 3. 合并样式（用户传入样式优先级更高）
-    const labelStyle = defaultLabelStyle;
-    const iconStyle = defaultIconStyle;
-    const text = options.name || "";
-
     // 4. 创建DOM元素（核心：模拟Mars3D的DivGraphic）
     const div = document.createElement("div");
     div.id = options.id; // 绑定ID，方便查找
-    div.classList.add('divcs');
+    div.classList.add('cesium-point-div');
     div.style.position = "absolute";
     div.style.pointerEvents = "none"; // 不遮挡Cesium的鼠标交互
     div.style.display = "none"; // 初始隐藏
     // 插入和Mars3D示例一致的HTML结构
     div.innerHTML = `
    
-            <div class="iconDotLabel" style="${labelStyle.replace(/\s+/g, ' ').trim()}">
-                <img src="${options.imageUrl}" style="${iconStyle.replace(/\s+/g, ' ').trim()}">${text}
+            <div class="cesium-point-body">
+                <div class="icon-text">${options.name || '自定义图片点位'}</div>
+                <img class="cesium-point-img" src="${options.imageUrl}" />
             </div>
      
     `;
