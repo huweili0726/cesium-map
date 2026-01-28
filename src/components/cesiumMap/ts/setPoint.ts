@@ -151,50 +151,69 @@ const setPointPrimitiveByImg = (options: {
     const groundPosition = Cesium.Cartesian3.fromDegrees(options.lng, options.lat, terrainHeight);
 
     // 2. 【核心】创建自定义Canvas纹理（还原cesium-point-body的DOM结构）
-    const createCustomTexture = async () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return null;
+const createCustomTexture = async () => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
 
-        // 先加载图片
-        const img = new Image();
-        img.crossOrigin = 'anonymous'; // 解决跨域问题
-        await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-            img.src = options.imageUrl;
-        });
+    // 先加载图片
+    const img = new Image();
+    img.crossOrigin = 'anonymous'; // 解决跨域问题
+    await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = options.imageUrl;
+    });
 
-        // 定义尺寸（可根据实际需求调整）
-        const textPadding = 8;
-        const x_imgSize = 40; // 图片大小
-        const y_imgSize = 64; // 图片大小
-        const textHeight = 25; // 文字区域高度
-        const bodyPadding = 4; // 容器内边距
+    // 定义尺寸（可根据实际需求调整）
+    const textPadding = 8;
+    const x_imgSize = 40; // 图片大小
+    const y_imgSize = 64; // 图片大小
+    const textHeight = 20; // 文字区域高度
+    const bodyPadding = 4; // 容器内边距
 
-        // Canvas总尺寸 = 图片尺寸 + 文字高度 + 内边距
-        canvas.width = 30;
-        canvas.height = 64 + textHeight;
- 
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; // 半透明背景
-        ctx.roundRect(0, 0, canvas.width, canvas.height, 4); // 圆角
-        ctx.fill();
+    // Canvas总尺寸 = 图片尺寸 + 文字高度 + 内边距
+    canvas.width = x_imgSize + bodyPadding * 2;
+    canvas.height = y_imgSize + textHeight + bodyPadding * 2;
 
-        // 2. 绘制icon-text文字（模拟<div class="icon-text">）
-        ctx.fillStyle = '#ffffff'; // 文字白色
-        ctx.font = '12px Microsoft YaHei';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const textY = textHeight / 2 + bodyPadding;
-        ctx.fillText(options.name || '自定义图片点位', canvas.width / 2, textY);
+    // 1. 绘制cesium-point-body容器背景（模拟CSS）
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; // 半透明背景
+    ctx.roundRect(0, 0, canvas.width, canvas.height, 4); // 圆角
+    ctx.fill();
 
-        // 3. 绘制cesium-point-img图片（模拟<img>）
-        const imgX = bodyPadding;
-        const imgY = textHeight + bodyPadding * 2;
-        ctx.drawImage(img, 0, textHeight, x_imgSize, y_imgSize);
+    // 2. 绘制icon-text文字（含背景色）
+    const text = options.name || '自定义图片点位';
+    ctx.font = '12px Microsoft YaHei';
+    
+    // === 新增：绘制文字背景 ===
+    const textBgColor = 'rgba(0, 0, 0, 0.8)'; // 文字背景色
+    const textBgPaddingX = 6; // 文字左右内边距
+    const textBgPaddingY = 2; // 文字上下内边距
+    const textWidth = ctx.measureText(text).width; // 动态计算文字宽度
+    // 背景矩形坐标计算
+    const textBgX = (canvas.width / 2) - (textWidth / 2) - textBgPaddingX;
+    const textY = textHeight / 2 + bodyPadding; // 原有文字Y坐标
+    const textBgY = textY - (textHeight / 2) - textBgPaddingY;
+    const textBgWidth = textWidth + textBgPaddingX * 2;
+    const textBgHeight = textHeight + textBgPaddingY * 2;
+    // 绘制圆角背景
+    ctx.fillStyle = textBgColor;
+    ctx.roundRect(textBgX, textBgY, textBgWidth, textBgHeight, 3);
+    ctx.fill();
 
-        return canvas.toDataURL('image/png');
-    };
+    // === 原有文字绘制 ===
+    ctx.fillStyle = '#ffffff'; // 文字白色
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, canvas.width / 2, textY);
+
+    // 3. 绘制cesium-point-img图片（模拟<img>）
+    const imgX = bodyPadding;
+    const imgY = textHeight + bodyPadding * 2;
+    ctx.drawImage(img, imgX, imgY, x_imgSize, y_imgSize);
+
+    return canvas.toDataURL('image/png');
+};
 
     // 3. 创建Primitive主逻辑
     const createPointPrimitive = async () => {
