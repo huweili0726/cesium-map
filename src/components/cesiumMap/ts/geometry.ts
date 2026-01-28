@@ -626,10 +626,10 @@ export function geometryConfig() {
     const [lng, lat, height = 0] = options.positions;
 
     let frustum = new Cesium.PerspectiveFrustum({
-      fov: Cesium.Math.toRadians(options.horizontalAngle || 30),
-      aspectRatio: 1.4,
-      near: 1,
-      far: options.length,
+      fov: Cesium.Math.toRadians(options.horizontalAngle || 30),// 30 度表示锥体水平方向张开 30 度，值越大"口子"越大
+      aspectRatio: 1.4, // 宽高比：水平角度与垂直角度的比例
+      near: 1, // 1 表示从锥顶点往前 1 米处才开始画，避免锥顶附近的变形【推荐：1-10 米 原因：雷达发射源本身有一定体积，不需要从数学"点"开始画】
+      far: options.length, // 四棱锥的长度【far 值越大，GPU 负担越重，因为需要渲染更深范围内的地形和物体。如果只需要视觉效果，可以设小一点（比如 500）】
     });
 
     let origin = Cesium.Cartesian3.fromDegrees(lng, lat, height);
@@ -673,9 +673,9 @@ export function geometryConfig() {
 
     let instanceGeo = new Cesium.GeometryInstance({
       geometry: new Cesium.FrustumGeometry({
-        frustum: frustum,
-        origin: origin,
-        orientation: orientation,
+        frustum: frustum, // 视锥体参数（张开角度、远近裁剪面）
+        origin: origin, // 锥顶位置（就是你传入的 lng, lat, height）
+        orientation: orientation, // 朝向（heading/pitch 决定它指向哪）
         vertexFormat: Cesium.VertexFormat.POSITION_ONLY,
       }),
       attributes: {
