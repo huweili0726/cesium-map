@@ -233,7 +233,7 @@ const toSetHemisphere = () => {
 // 移动半球 （通过提供的glb模型设置点位）
 const toMoveHemisphere = () => {
   // 移动半球 （通过提供的glb模型设置点位）
-  moveHemisphere({hemisphereId: '6', center: [117.236334, 31.715287, 0]});
+  moveHemisphere({hemisphereId: '6', radius: 1000, center: [117.236334, 31.715287, 0]});
 }
 
 // 更新半球半径 （通过提供的glb模型设置点位）

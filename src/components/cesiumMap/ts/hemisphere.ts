@@ -107,7 +107,11 @@ export function hemisphereConfig() {
    * @param {number[]} options.center 新的中心经纬度坐标 [longitude, latitude]
    * @returns {null} 无返回值
    */
-  const moveHemisphere = (options: { hemisphereId: string, center: any[] }) => {
+  const moveHemisphere = (options: { 
+    hemisphereId: string, 
+    radius: number,
+    center: any[] 
+  }) => {
     const map = mapStore.getMap()
     if (!map) {
       console.error('地图实例不存在')
@@ -127,10 +131,12 @@ export function hemisphereConfig() {
     // 检查是否存在独立的文本框Entity
     const labelEntity = mapStore.getGraphicMap(`${options.hemisphereId}_label`);
     if (labelEntity) {
-      // 计算新的顶部位置
-      const radius = hemisphereEntity.ellipsoid.radii.x; // 假设三个半径相等
-      // 直接使用经纬度创建顶部位置，高度设置为半径
-      const newTopPosition = Cesium.Cartesian3.fromDegrees(options.center[0], options.center[1], radius);
+      // 获取半球体的经纬度位置
+      const cartographic = Cesium.Cartographic.fromCartesian(hemisphereEntity.position.getValue(Cesium.JulianDate.now()));
+      const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+      const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+      // 直接使用经纬度创建顶部位置，高度设置为新的半径
+      const newTopPosition = Cesium.Cartesian3.fromDegrees(longitude, latitude, options.radius);
       
       labelEntity.position = newTopPosition;
     }
