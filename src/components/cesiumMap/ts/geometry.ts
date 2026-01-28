@@ -715,6 +715,9 @@ export function geometryConfig() {
       asynchronous: false,
     });
 
+    // 存储原始参数，用于后续更新
+    (rectangularPrimitive as any)._originalOptions = { ...options };
+
     // 将primitive添加到mapStore中进行管理
     mapStore.setGraphicMap(options.id, rectangularPrimitive);
     mapStore.setGraphicMap(options.id + '_line', rectangularPrimitive1);
@@ -774,18 +777,16 @@ export function geometryConfig() {
       mapStore.removeGraphicMap(options.id);
       mapStore.removeGraphicMap(options.id + '_line');
       
-      if (options.positions) {
-        rectangularPyramidWave1({
-          id: options.id,
-          positions: options.positions,
-          heading: options.heading || 0,
-          pitch: options.pitch || 0,
-          length: options.length || 3000,
-          horizontalAngle: options.horizontalAngle || 30,
-          verticalAngle: options.verticalAngle || 20,
-          color: options.color || 'rgba(1,0,0,0.3)',
-        });
-      }
+      // 读取原始参数
+      const originalOptions = (existingPrimitive as any)?._originalOptions || {};
+      
+      // 使用原始参数或新参数
+      const updateOptions = {
+        ...originalOptions,
+        ...options,
+      };
+      
+      rectangularPyramidWave1(updateOptions);
       
       return true;
     } catch (error) {
