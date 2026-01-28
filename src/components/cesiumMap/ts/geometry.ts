@@ -606,7 +606,7 @@ export function geometryConfig() {
     positions: number[],
     heading: number,
     pitch: number,
-    height: number,
+    length: number,
     horizontalAngle: number,
     verticalAngle: number,
     color: string,
@@ -634,10 +634,10 @@ export function geometryConfig() {
               fov: Cesium.Math.toRadians(options.horizontalAngle || 30),
               aspectRatio: 1.4,
               near: 1,
-              far: 3000,
+              far: options.length,
             });
 
-            let origin = Cesium.Cartesian3.fromDegrees(lng, lat, height);
+            let origin = Cesium.Cartesian3.fromDegrees(lng, lat, 14);
             
             let headingRad = Cesium.Math.toRadians(options.heading);
             let pitchRad = Cesium.Math.toRadians(options.pitch);

@@ -686,10 +686,10 @@ const clearAllRectangularPyramids = () => {
 const toCreateRectangularPyramidEffect1 = () => {
   rectangularPyramidWave1({
     id: 'rectangular_pyramid_wave_002',
-    positions: [117.228433, 31.703159, 0],
+    positions: [117.229629, 31.716888, 0],
     heading: 0,
     pitch: 120,
-    height: 5000, // 四棱锥高度（米）
+    length: 5000, // 四棱锥高度（米）
     horizontalAngle: 20, // 水平展开角度（度）
     verticalAngle: 15, // 垂直展开角度（度）
     color: 'rgba(0,255,0,0.4)',

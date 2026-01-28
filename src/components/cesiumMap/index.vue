@@ -143,6 +143,8 @@ const initCesium = async () => {
     map.scene.globe.enableLighting = mapOptions.scene.globe.enableLighting
     // 显示帧速（FPS）
     map.scene.debugShowFramesPerSecond = true;
+    // 开启地形深度测试，确保在地形上的实体正确渲染
+    map.scene.globe.depthTestAgainstTerrain = true;
 
     console.log('Cesium 地图加载成功')
     emit("onload", map)
