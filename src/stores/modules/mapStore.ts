@@ -68,37 +68,6 @@ export const useMapStore = defineStore('map', () => {
     return trailTime.value
   }
 
-  /**
-   * 获取或初始化GraphicLayer实例
-   * 确保只创建一次图层实例
-   * @returns GraphicLayer实例
-   */
-  const getOrCreateGraphicLayer = () => {
-    // // 如果地图未初始化，返回null
-    // if (!map.value) {
-    //   console.warn('地图对象未初始化，无法创建GraphicLayer')
-    //   return null
-    // }
-
-    // // 如果图层已初始化，直接返回现有实例
-    // if (isLayerInitialized.value && graphicLayer.value) {
-    //   return graphicLayer.value
-    // }
-
-    // // 创建新的图层实例
-    // graphicLayer.value = new mars3d.layer.GraphicLayer({
-    //   allowDrillPick: true // 如果存在坐标完全相同的图标点，可以打开该属性，click事件通过graphics判断
-    // })
-    
-    // // 添加图层到地图
-    // map.value.addLayer(graphicLayer.value)
-    
-    // // 标记图层已初始化
-    // isLayerInitialized.value = true
-    
-    // return graphicLayer.value
-  }
-
   const setGraphicMap = (id: string, graphic: any) => {
     graphicMap.set(id, graphic)
   }
@@ -189,7 +158,6 @@ export const useMapStore = defineStore('map', () => {
     clearAllDroneTrails,
     setMap,
     getMap,
-    getOrCreateGraphicLayer,
     clearLayer,
     resetLayer,
     setTrailTime,

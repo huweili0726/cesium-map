@@ -18,6 +18,7 @@ import * as Cesium from 'cesium'
 import CesiumMap from '@/components/cesiumMap/index.vue'
 import MapControls from '@/views/map/mapControls.vue'
 import { useMapStore, MapLoadStatus } from '@/stores/modules/mapStore'
+import { basicConfig } from '@/components/cesiumMap/ts/basis'
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()
@@ -46,7 +47,7 @@ const options = {
 const mapOnLoad = (map: any) => {
   mapStore.setMapLoadSta(MapLoadStatus.LOADED) // 地图加载完成，设置状态为已加载
   mapStore.setMap(map); // 地图加载完成, 全局设置地图对象到store中
-
+  setMapCenter({lng: 117.129619, lat: 31.726288, height: 5000})// 设置地图中心点
   setBeiJingTime(); // 地图加载完成后设置为当前北京时间
 }
 
@@ -65,6 +66,7 @@ const setBeiJingTime = () => {
   console.log('Cesium时间已调整为北京时间')
 }
 
+const { setMapCenter } = basicConfig()
 </script>
 
 <style scoped lang="less">

@@ -17,7 +17,8 @@ export function basicConfig() {
   /**
    * 鼠标事件控制器
    * 
-   * 处理地图上的鼠标事件，包括点击、拖动、缩放等
+   * 处理地图上的鼠标事件，包括点击、拖动、缩放等、
+   * @param map - 地图实例
    */
   const mouseController = (map: any) => {
     // 添加右键点击事件监听
@@ -46,7 +47,44 @@ export function basicConfig() {
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
   }
 
+  /**
+   * 设置地图中心点
+   * 
+   * @param options - 包含地图中心点经纬度和高度的对象
+   * @param options.lng - 地图中心点经度
+   * @param options.lat - 地图中心点纬度
+   * @param options.height - 地图中心点高度
+   * @param options.map - 地图实例，可选，默认从store中获取
+   */
+  const setMapCenter = (options: { 
+    lng: number, 
+    lat: number, 
+    height: number,
+    map?: any
+  }) => {
+    const { lng, lat, height, map: mapInstance } = options
+    const map = mapInstance || mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return null
+    }
+
+    // 转换为笛卡尔坐标
+    const cartesian = Cesium.Cartesian3.fromDegrees(lng, lat - 0.05, height);
+    // 设置相机位置
+    map.camera.setView({
+      destination: cartesian,
+      orientation: {
+        heading: Cesium.Math.toRadians(359.2),
+        pitch: Cesium.Math.toRadians(-39.5),
+        roll: 0.0
+      },
+      duration: 0
+    });
+  }
+
   return {
-    mouseController
+    mouseController,
+    setMapCenter
   }
 }

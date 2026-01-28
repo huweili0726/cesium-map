@@ -120,25 +120,6 @@ const initCesium = async () => {
         map.selectedEntity = undefined;   // 永远不让实体被选中
       });
     }
- 
-    // 使用 flyTo 方法实现相机看向中心点的效果
-    map.camera.flyTo({
-      // 计算相机位置：从中心点向后方（y轴负方向）移动一段距离，并向上（z轴正方向）移动一段距离
-      destination: Cesium.Cartesian3.fromDegrees(
-        mapOptions.scene.center.lng, 
-        mapOptions.scene.center.lat - 0.05, // 向纬度负方向（南方）移动一点，形成距离
-        mapOptions.scene.center.alt // 相机高度
-      ),
-      // 设置相机朝向中心点
-      orientation: {
-        // 计算看向中心点的方向角
-        heading: Cesium.Math.toRadians(mapOptions.scene.center.heading),
-        // 俯仰角：负值表示向下看
-        pitch: Cesium.Math.toRadians(mapOptions.scene.center.pitch),
-        roll: Cesium.Math.toRadians(mapOptions.scene.center.roll)
-      },
-      duration: mapOptions.scene.center.duration // 飞行时长（秒）
-    })
 
     // 开启/关闭 地球光照效果
     map.scene.globe.enableLighting = mapOptions.scene.globe.enableLighting
@@ -147,7 +128,11 @@ const initCesium = async () => {
     // 开启地形深度测试，确保在地形上的实体正确渲染
     map.scene.globe.depthTestAgainstTerrain = true;
 
-    mouseController(map); // 初始化鼠标控制器
+    // 初始化鼠标控制器
+    mouseController(map); 
+
+    // 使用 flyTo 方法实现相机看向中心点的效果
+    setMapCenter({lng: mapOptions.scene.center.lng, lat: mapOptions.scene.center.lat, height: mapOptions.scene.center.alt, map: map}) // 设置地图中心点
 
     console.log('Cesium 地图加载成功')
     emit("onload", map)
@@ -171,7 +156,7 @@ onUnmounted(() => {
 
 const { getJsonFile } = jsonUtils()
 const { merge } = objectUtils()
-const { mouseController } = basicConfig()
+const { mouseController, setMapCenter } = basicConfig()
 </script>
 
 <style scoped lang="less">
