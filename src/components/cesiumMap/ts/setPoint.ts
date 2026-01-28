@@ -116,36 +116,26 @@ export function setPoint(baseUrl: string) {
    * @param options.name 点位名称
    * @returns 点位Primitive
    */
-/**
- * 设置点位 （通过提供的图片设置点位）【Primitive】
- * @param options 点位参数
- * @param options.id 点位id
- * @param options.lng 点位经度
- * @param options.lat 点位纬度
- * @param options.name 点位名称
- * @returns 点位Primitive
- */
-const setPointPrimitiveByImg = async (options: { 
-    id: string, 
-    lng: number, 
+  const setPointPrimitiveByImg = async (options: {
+    id: string,
+    lng: number,
     lat: number,
     name?: string,
     imageUrl: string,
     cssStyle?: string,
-}) => {
+  }) => {
     // 获取地图实例
     const map = mapStore.getMap()
     if (!map) {
-        console.error('地图实例不存在')
-        return null
+      console.error('地图实例不存在')
+      return null
     }
 
     // 检查是否已存在相同id的点位，如果存在直接返回
     if (mapStore.hasGraphicMap(options.id)) {
-        console.warn(`点位已存在，ID: ${options.id}`)
-        return mapStore.getGraphicMap(options.id)
+      console.warn(`点位已存在，ID: ${options.id}`)
+      return mapStore.getGraphicMap(options.id)
     }
-
 
     // 1. 【核心】创建内存中的HTML元素（和你原结构完全一致）
     const container = document.createElement('div');
@@ -162,23 +152,23 @@ const setPointPrimitiveByImg = async (options: {
         </div>
     `;
 
-    // 2. 临时挂载到body，但定位到屏幕外避免影响布局
+    // 2. 临时挂载到body，通过display: flex确保渲染，同时避免影响布局
     container.style.position = 'fixed';
-    container.style.left = '-9999px';
-    container.style.top = '-9999px';
     container.style.visibility = 'visible';
     document.body.appendChild(container);
-    
+
     // 等待图片加载完成（避免canvas中图片缺失）
     await new Promise((resolve) => {
-        const img = container.querySelector('.cesium-point-img') as HTMLImageElement;
-        if (img.complete) resolve(null);
-        img.onload = resolve;
-        img.onerror = resolve; // 图片加载失败也继续
+      const img = container.querySelector('.cesium-point-img') as HTMLImageElement;
+      if (img.complete) resolve(null);
+      img.onload = () => resolve(null);
+      img.onerror = () => resolve(null); // 图片加载失败也继续
     });
 
     // 3. 【核心】用html2canvas将HTML转Canvas
-    const canvas = await html2canvas(container, {
+    let textureUrl: string;
+    try {
+      const canvas = await html2canvas(container, {
         scale: 1, // 2倍分辨率，避免模糊
         useCORS: true, // 解决图片跨域
         allowTaint: true,
@@ -189,13 +179,19 @@ const setPointPrimitiveByImg = async (options: {
         backgroundColor: null,
         // 可选：进一步确保透明渲染（部分版本需要）
         // foreignObjectRendering: true
-    });
+      });
 
-    // 4. 移除临时DOM元素
-    document.body.removeChild(container);
+      // 4. 移除临时DOM元素
+      document.body.removeChild(container);
 
-    // 5. Canvas转纹理URL
-    const textureUrl = canvas.toDataURL('image/png');
+      // 5. Canvas转纹理URL
+      textureUrl = canvas.toDataURL('image/png');
+      console.log('Generated textureUrl:', typeof textureUrl, textureUrl.length > 50 ? textureUrl.substring(0, 50) + '...' : textureUrl);
+    } catch (error) {
+      console.error('Error generating canvas:', error);
+      // 移除临时DOM元素
+      document.body.removeChild(container);
+    }
 
     // 6. 经纬度转Cesium坐标（贴地）
     const position = Cesium.Cartesian3.fromDegrees(options.lng, options.lat, 0);
@@ -205,28 +201,27 @@ const setPointPrimitiveByImg = async (options: {
 
     // 7. 创建BillboardCollection和Billboard
     const billboardCollection = new Cesium.BillboardCollection({
-        scene: map.scene
+      scene: map.scene
     });
 
     const billboard = billboardCollection.add({
-        id: options.id,
-        position: groundPosition,
-        image: textureUrl, // 使用HTML转的Canvas纹理
-        scale: 1,
-        horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-        show: true,
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
-        // pickable: false // 等效原pointerEvents: none
+      id: options.id,
+      position: groundPosition,
+      image: textureUrl, // 使用HTML转的Canvas纹理
+      scale: 1,
+      horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+      show: true,
+      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+      disableDepthTestDistance: Number.POSITIVE_INFINITY,
     });
 
     // 8. 距离显示条件控制
     const updateShowStatus = () => {
-        if (!map) return;
-        const cameraHeight = Cesium.Cartographic.fromCartesian(map.camera.position).height;
-        const isInRange = cameraHeight >= 0 && cameraHeight <= 500000;
-        billboard.show = isInRange;
+      if (!map) return;
+      const cameraHeight = Cesium.Cartographic.fromCartesian(map.camera.position).height;
+      const isInRange = cameraHeight >= 0 && cameraHeight <= 500000;
+      billboard.show = isInRange;
     };
 
     // 9. 监听视角变化
@@ -238,20 +233,20 @@ const setPointPrimitiveByImg = async (options: {
 
     // 11. 销毁方法
     const destroy = () => {
-        map.scene.postRender.removeEventListener(postRenderListener);
-        map.scene.primitives.remove(billboardCollection);
-        billboardCollection.destroy();
+      map.scene.postRender.removeEventListener(postRenderListener);
+      map.scene.primitives.remove(billboardCollection);
+      billboardCollection.destroy();
     };
 
     // 返回Primitive对象
     return {
-        id: options.id,
-        position: groundPosition,
-        billboardCollection: billboardCollection,
-        billboard: billboard,
-        destroy: destroy
+      id: options.id,
+      position: groundPosition,
+      billboardCollection: billboardCollection,
+      billboard: billboard,
+      destroy: destroy
     };
-};
+  };
   /**
    * 批量设置点位 （直接把图片设置成点位, 1万+个点位）【海量点位的最优解：BillboardCollection（批量 Primitive）】
    * @param options 配置选项
