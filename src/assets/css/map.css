@@ -88,3 +88,55 @@
   border-radius: 3px;
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
+
+
+
+        .aaa {
+            width: 200px;
+            height: 100px;
+            pointer-events: none;
+            position: absolute;
+            color: aqua;
+            z-index: 99;
+        }
+
+        .arrow_box {
+            position: relative;
+            background: #0e00d5;
+            border: 4px solid #f50b02;
+            left: -50%;
+            top: -80%;
+        }
+
+        .arrow_box:after,
+        .arrow_box:before {
+            top: 100%;
+            left: 50%;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+        }
+
+        .arrow_box:after {
+            border-color: rgba(14, 0, 213, 0);
+            border-top-color: #0e00d5;
+            border-width: 30px;
+            margin-left: -30px;
+        }
+
+        .arrow_box:before {
+            border-color: rgba(245, 11, 2, 0);
+            border-top-color: #f50b02;
+            border-width: 36px;
+            margin-left: -36px;
+        }
+
+
+
+ .divcs{
+  border: 1px solid red;
+ } 
+

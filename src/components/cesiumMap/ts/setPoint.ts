@@ -119,7 +119,8 @@ const setPointPrimitiveByImg = (options: {
     id: string, 
     lng: number, 
     lat: number,
-    name?: string
+    name?: string,
+    imageUrl: string,
 }) => {
     // 获取地图实例
     const map = mapStore.getMap()
@@ -134,113 +135,114 @@ const setPointPrimitiveByImg = (options: {
         return mapStore.getGraphicMap(options.id)
     }
 
-    // 1. 创建经纬度转笛卡尔坐标
-    const position = Cesium.Cartesian3.fromDegrees(options.lng, options.lat, 0);
-
-    // 尝试使用可见的图片，如果不存在则使用默认样式
-    let imageUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAACXBIWXMAAAsTAAALEwEAmpwYAAABhGlDQ1BJQ0MgUHJvZmlsZQAAeJx9kT1Iw0AcxV9TpSIVBzuIOGSoDmTBsRoS2KbXkUYW5CCoHhiYV14VWoXTr0f1I7r80D4R4h9L7uKrR+GdWD73ydlIB+6hgref1QTlmgmbM3/LeX5GI1Ux1RWpgxpLuZ2+I+IjzZ8wqE4nilvQdkUdfhzI5QDWy+kw5Wgg2pGpeEVeCCA7b85BO3F9DzxB3cdqvBzWcmzbyMiqhzuYqtHRVG2y4x+KOlnyqla8AoWWpuBoYRxzXrfKuILl6SfiWCbjxoZJUaCBj1CjH7GIaDbc9kqBY3W/Rgjda1iqQcOJu2WW+76pZC9QG7M00dffe9hNnseupFL53r8F7YHSwJWUKP2q+k7RdsxyOB11n0xtOvnW4irMMFNV4H0uqwS5ExsmP9AxbDTc9JwgneAT5vTiUSm1E7BSflSt3bfa1tv8Di3R8n3Af7MNWzs49hmauE2wP+ttrq+AsWpFG2awvsuOqbipWHgtuvuaAE+A1Z/7gC9hesnr+7wqCwG8c5yAg3AL1fm8T9AZtp/bbJGwl1pNrE7RuOX7PeMRUERVaPpEs+yqeoSmuOlokqw49pgomjLeh7icHNlG19yjs6XXOMedYm5xH2YxpV2tc0Ro2jJfxC50ApuxGob7lMsxfTbeUv07TyYxpeLucEH1gNd4IKH2LAg5TdVhlCafZvpskfncCfx8pOhJzd76bJWeYFnFciwcYfubRc12Ip/ppIhA1/mSZ/RxjFDrJC5xifFjJpY2Xl5zXdguFqYyTR1zSp1Y9p+tktDYYSNflcxI0iyO4TPBdlRcpeqjK/piF5bklq77VSEaA+z8qmJTFzIWiitbnzR794USKBUaT0NTEsVjZqLaFVqJoPN9ODG70IPbfBHKK+/q/AWR0tJzYHRULOa4MP+W/HfGadZUbfw177G7j/OGbIs8TahLyynl4X4RinF793Oz+BU0saXtUHrVBFT/DnA3ctNPoGbs4hRIjTok8i+algT1lTHi4SxFvONKNrgQFAq2/gFnWMXgwffgYMJpiKYkmW3tTg3ZQ9Jq+f8XN+A5eeUKHWvJWJ2sgJ1Sop+wwhqFVijqWaJhwtD8MNlSBeWNNWTa5Z5kPZw5+LbVT99wqTdx29lMUH4OIG/D86ruKEauBjvH5xy6um/Sfj7ei6UUVk4AIl3MyD4MSSTOFgSwsH/QJWaQ5as7ZcmgBZkzjjU1UrQ74ci1gWBCSGHtuV1H2mhSnO3Wp/3fEV5a+4wz//6qy8JxjZsmxxy5+4w9CDNJY09T072iKG0EnOS0arEYgXqYnXcYHwjTtUNAcMelOd4xpkoqiTYICWFq0JSiPfPDQdnt+4/wuqcXY47QILbgAAAABJRU5ErkJggg==';
-    
-    try {
-        // 尝试使用项目中的图片
-        imageUrl = new URL('@/assets/img/point.png', import.meta.url).href;
-    } catch (e) {
-        console.warn('使用默认点位图片:', e);
-    }
-
-    // 3. 创建简单的DIV元素显示文本
-    const div = document.createElement('div');
-    div.id = `${options.id}_div`;
-    div.className = 'point-div';
-    div.style.position = 'absolute';
-    div.style.display = 'block';
-    div.style.pointerEvents = 'auto';
-    div.style.zIndex = '1000';
-    div.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-    div.style.color = 'white';
-    div.style.padding = '4px 8px';
-    div.style.borderRadius = '4px';
-    div.style.fontSize = '12px';
-    div.style.textAlign = 'center';
-    div.style.minWidth = '80px';
-    div.innerHTML = `
-        <div style="margin-bottom: 4px;">
-            <img src="${imageUrl}" style="width: 30px; height: 30px; display: block; margin: 0 auto;">
-        </div>
-        <div>${options.name || '自定义点位'}</div>
+        // 2. 默认样式配置（和Mars3D示例保持一致）
+    const defaultLabelStyle = `
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.8);
+        border-radius: 8px;
+        padding: 2px 8px;
+        font-size: 12px;
+        color: #333;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        pointer-events: auto;
+        cursor: pointer;
     `;
-    
-    // 添加到地图容器
+    const defaultIconStyle = `
+        width: 30px;
+        height: 30px;
+        margin-right: 4px;
+        border-radius: 50%;
+    `;
+
+    // 3. 合并样式（用户传入样式优先级更高）
+    const labelStyle = defaultLabelStyle;
+    const iconStyle = defaultIconStyle;
+    const text = options.name || "";
+
+    // 4. 创建DOM元素（核心：模拟Mars3D的DivGraphic）
+    const div = document.createElement("div");
+    div.id = options.id; // 绑定ID，方便查找
+    div.classList.add('divcs');
+    div.style.position = "absolute";
+    div.style.pointerEvents = "none"; // 不遮挡Cesium的鼠标交互
+    div.style.display = "none"; // 初始隐藏
+    // 插入和Mars3D示例一致的HTML结构
+    div.innerHTML = `
+   
+            <div class="iconDotLabel" style="${labelStyle.replace(/\s+/g, ' ').trim()}">
+                <img src="${options.imageUrl}" style="${iconStyle.replace(/\s+/g, ' ').trim()}">${text}
+            </div>
+     
+    `;
+    // 将DOM添加到Cesium容器
     map.container.appendChild(div);
 
-    // 4. 更新DIV位置的函数
-    const updateDivPosition = () => {
-        try {
-            // 使用cartesianToCanvasCoordinates获取屏幕坐标
-            const canvasPosition = map.scene.cartesianToCanvasCoordinates(position);
-            
-            if (canvasPosition && !isNaN(canvasPosition.x) && !isNaN(canvasPosition.y)) {
-                // 计算DIV位置，使其显示在点位上方
-                const rect = div.getBoundingClientRect();
-                const left = canvasPosition.x - (rect.width / 2);
-                const top = canvasPosition.y - rect.height - 10; // 向上偏移10px
-                
-                div.style.left = `${left}px`;
-                div.style.top = `${top}px`;
-                div.style.display = 'block';
-                
-                // 距离判断
-                // const distance = Cesium.Cartesian3.distance(map.camera.position, position);
-                // if (distance > 100000) {
-                //     div.style.display = 'none';
-                // }
-            } else {
-                div.style.display = 'none';
-            }
-        } catch (e) {
-            console.warn('更新点位位置失败:', e);
-            div.style.display = 'none';
+    // 5. 经纬度转Cesium笛卡尔坐标（支持贴地）
+    const position = Cesium.Cartesian3.fromDegrees(options.lng, options.lat, 0);
+    // 如果需要贴地，修正坐标到地形表面
+    const cartographic = Cesium.Cartographic.fromCartesian(position);
+    const terrainHeight = map.scene.globe.getHeight(cartographic) || 0;
+    const groundPosition = Cesium.Cartesian3.fromDegrees(options.lng, options.lat, terrainHeight);
+
+    // 6. 定义位置更新函数（核心：实时映射3D坐标到屏幕像素）
+    const updatePosition = () => {
+        if (!div || !map) return;
+
+        // 将3D坐标转为屏幕像素坐标
+        const canvasPosition = map.scene.cartesianToCanvasCoordinates(groundPosition);
+        
+        // 不在视口内则隐藏
+        if (!canvasPosition || Cesium.Cartesian2.equals(canvasPosition, Cesium.Cartesian2.ZERO)) {
+            div.style.display = "none";
+            return;
+        }
+
+        // 距离显示条件（和Mars3D示例一致：0-500000米）
+        const cameraHeight = Cesium.Cartographic.fromCartesian(map.camera.position).height;
+        if (cameraHeight < 0 || cameraHeight > 500000) {
+            div.style.display = "none";
+            return;
+        }
+
+        // 计算最终位置（模拟Mars3D的对齐和偏移逻辑）
+        let x = canvasPosition.x;
+        let y = canvasPosition.y; // pixelOffsetY: -45
+
+        // 水平居中对齐（HorizontalOrigin.CENTER）
+        x -= div.offsetWidth / 2;
+        // 垂直底部对齐（VerticalOrigin.BOTTOM）
+        y -= div.offsetHeight;
+
+        // 应用位置
+        div.style.left = `${x}px`;
+        div.style.top = `${y}px`;
+        div.style.display = "block";
+    };
+
+    // 7. 监听视角变化，实时更新位置
+    const postRenderListener = map.scene.postRender.addEventListener(updatePosition);
+    // 首次执行更新位置
+    updatePosition();
+
+    // 8. 定义销毁方法（避免内存泄漏）
+    const destroy = () => {
+        // 移除事件监听
+        map.scene.postRender.removeEventListener(postRenderListener);
+        // 移除DOM元素
+        if (div.parentElement) {
+            div.parentElement.removeChild(div);
         }
     };
 
-    // 5. 添加事件监听
-    const listeners: Array<{ remove: () => void }> = [];
-    listeners.push(map.scene.postRender.addEventListener(updateDivPosition));
-    
-    // 初始更新位置
-    updateDivPosition();
-
-    // 6. 组装返回对象
-    const result = {
+    // 返回实例对象，包含销毁方法，方便后续管理
+    return {
         id: options.id,
-        position: position,
-        div: div,
-        listeners: listeners,
-        destroy: () => {
-            // 移除监听器
-            listeners.forEach(listener => {
-                try {
-                    listener.remove();
-                } catch (e) {
-                    console.warn('移除监听器失败:', e);
-                }
-            });
-            
-            // 移除DIV
-            if (div && div.parentElement) {
-                div.parentElement.removeChild(div);
-            }
-            
-            // 从mapStore中移除
-            if (mapStore.removeGraphicMap) {
-                mapStore.removeGraphicMap(options.id);
-            }
-        }
+        domElement: div,
+        position: groundPosition,
+        destroy: destroy
     };
-
-    // 存入mapStore
-    mapStore.setGraphicMap(options.id, result);
-
-    return result;
 };
 
   /**

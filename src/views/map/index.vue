@@ -9,6 +9,7 @@
       :url="mapConfigUrl"
       :options="options"
       @onload="mapOnLoad"/>
+
   </div>
 </template>
 
