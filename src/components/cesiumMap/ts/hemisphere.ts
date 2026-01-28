@@ -35,7 +35,7 @@ export function hemisphereConfig() {
    * @param {string} options.color 半球体颜色（CSS颜色字符串）
    * @returns {Cesium.Entity|null} 创建的半球体实体，若创建失败则返回null
    */
-  const setHemisphere = (options: { id: string, center: any[]; radius: number, color: string }) => {
+  const setHemisphere = (options: { id: string, center: any[]; radius: number, color: string, label?: string }) => {
     const map = mapStore.getMap()
     if (!map) {
       console.error('地图实例不存在')
@@ -51,6 +51,10 @@ export function hemisphereConfig() {
     // 确保球心的高度为0，紧贴地面
     const centerCartesian = Cesium.Cartesian3.fromDegrees(options.center[0], options.center[1], 0);
 
+    // 计算半球顶部位置（球心上方半径高度）
+    // 直接使用经纬度创建顶部位置，高度设置为半径
+    const topPosition = Cesium.Cartesian3.fromDegrees(options.center[0], options.center[1], options.radius);
+
     // 使用Entity方式创建半球体（更稳定可靠）
     const hemisphereEntity = map.entities.add({
       position: centerCartesian,
@@ -62,6 +66,30 @@ export function hemisphereConfig() {
         minimumCone: Math.PI / 2 // 从z轴正方向到水平面（90度）
       }
     });
+
+    // 创建独立的文本框Entity
+    let labelEntity = null;
+    if (options.label) {
+      labelEntity = map.entities.add({
+        position: topPosition,
+        label: {
+          text: options.label,
+          font: '16px Microsoft YaHei',
+          fillColor: Cesium.Color.WHITE,
+          style: Cesium.LabelStyle.FILL,
+          background: true, // 启用背景
+          backgroundColor: Cesium.Color.BLACK.withAlpha(0.7), // 添加半透明黑色背景
+          backgroundPadding: new Cesium.Cartesian2(10, 5), // 添加背景内边距
+          verticalOrigin: Cesium.VerticalOrigin.TOP,
+          horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+          pixelOffset: new Cesium.Cartesian2(0, -10), // 向上偏移10像素
+          eyeOffset: new Cesium.Cartesian3(0, 0, 0),
+          distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 100000)
+        }
+      });
+      // 将文本框Entity也缓存到store中，使用id+_label作为键
+      mapStore.setGraphicMap(`${options.id}_label`, labelEntity);
+    }
 
     // 将半球体缓存到 graphicMap 中，防止重复创建
     mapStore.setGraphicMap(`${options.id}`, hemisphereEntity);
@@ -93,7 +121,19 @@ export function hemisphereConfig() {
     }
 
     // 更新半球体位置
-    hemisphereEntity.position = Cesium.Cartesian3.fromDegrees(options.center[0], options.center[1], 0);
+    const newPosition = Cesium.Cartesian3.fromDegrees(options.center[0], options.center[1], 0);
+    hemisphereEntity.position = newPosition;
+
+    // 检查是否存在独立的文本框Entity
+    const labelEntity = mapStore.getGraphicMap(`${options.hemisphereId}_label`);
+    if (labelEntity) {
+      // 计算新的顶部位置
+      const radius = hemisphereEntity.ellipsoid.radii.x; // 假设三个半径相等
+      // 直接使用经纬度创建顶部位置，高度设置为半径
+      const newTopPosition = Cesium.Cartesian3.fromDegrees(options.center[0], options.center[1], radius);
+      
+      labelEntity.position = newTopPosition;
+    }
   }
 
   /**
@@ -120,6 +160,19 @@ export function hemisphereConfig() {
 
     // 更新半球体半径
     hemisphereEntity.ellipsoid.radii = new Cesium.Cartesian3(options.radius, options.radius, options.radius);
+
+    // 检查是否存在独立的文本框Entity
+    const labelEntity = mapStore.getGraphicMap(`${options.hemisphereId}_label`);
+    if (labelEntity) {
+      // 获取半球体的经纬度位置
+      const cartographic = Cesium.Cartographic.fromCartesian(hemisphereEntity.position.getValue(Cesium.JulianDate.now()));
+      const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+      const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+      // 直接使用经纬度创建顶部位置，高度设置为新的半径
+      const newTopPosition = Cesium.Cartesian3.fromDegrees(longitude, latitude, options.radius);
+      
+      labelEntity.position = newTopPosition;
+    }
   }
 
   /**
@@ -147,6 +200,13 @@ export function hemisphereConfig() {
     map.entities.remove(hemisphereEntity);
     // 从缓存中移除
     mapStore.removeGraphicMap(`${options.hemisphereId}`);
+
+    // 检查并删除独立的文本框Entity
+    const labelEntity = mapStore.getGraphicMap(`${options.hemisphereId}_label`);
+    if (labelEntity) {
+      map.entities.remove(labelEntity);
+      mapStore.removeGraphicMap(`${options.hemisphereId}_label`);
+    }
   }
 
   return {
