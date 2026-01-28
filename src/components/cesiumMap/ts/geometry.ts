@@ -631,26 +631,51 @@ export function geometryConfig() {
     
 
             let frustum = new Cesium.PerspectiveFrustum({
-              // 查看的视场角，绕Z轴旋转，以弧度方式输入
               fov: Cesium.Math.toRadians(options.horizontalAngle || 30),
-              // 视锥体的宽度/高度
               aspectRatio: 1.4,
-              // 近面距视点的距离
               near: 1,
-              // 远面距视点的距离
               far: 3000,
             });
 
-            var hpr = new Cesium.HeadingPitchRoll(
-              Cesium.Math.toRadians(options.heading),
-              Cesium.Math.toRadians(options.pitch),
-              0
-            );
             let origin = Cesium.Cartesian3.fromDegrees(lng, lat, height);
-            let orientation = Cesium.Transforms.headingPitchRollQuaternion(
-              Cesium.Cartesian3.fromDegrees(lng, lat, height),
-              hpr
-            )
+            
+            let headingRad = Cesium.Math.toRadians(options.heading);
+            let pitchRad = Cesium.Math.toRadians(options.pitch);
+            
+            let cosPitch = Math.cos(pitchRad);
+            let sinPitch = Math.sin(pitchRad);
+            let cosHeading = Math.cos(headingRad);
+            let sinHeading = Math.sin(headingRad);
+            
+            let direction = new Cesium.Cartesian3(
+              sinPitch * cosHeading,
+              sinPitch * sinHeading,
+              cosPitch
+            );
+            
+            let enuToFixed = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
+            let enuRotation = new Cesium.Matrix3();
+            Cesium.Matrix4.getRotation(enuToFixed, enuRotation);
+            
+            let worldDirection = new Cesium.Cartesian3();
+            Cesium.Matrix3.multiplyByVector(enuRotation, direction, worldDirection);
+            
+            Cesium.Cartesian3.negate(worldDirection, worldDirection);
+            
+            let up = new Cesium.Cartesian3(0, 0, 1);
+            let right = new Cesium.Cartesian3();
+            Cesium.Cartesian3.cross(worldDirection, up, right);
+            Cesium.Cartesian3.normalize(right, right);
+            Cesium.Cartesian3.cross(right, worldDirection, up);
+            
+            let rotationMatrix = new Cesium.Matrix3(
+              right.x, worldDirection.x, up.x,
+              right.y, worldDirection.y, up.y,
+              right.z, worldDirection.z, up.z
+            );
+            
+            let orientation = Cesium.Quaternion.fromRotationMatrix(rotationMatrix);
+            
             let instanceGeo = new Cesium.GeometryInstance({
                 geometry: new Cesium.FrustumGeometry({
                     frustum: frustum,
