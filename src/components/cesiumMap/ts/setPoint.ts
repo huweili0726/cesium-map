@@ -115,6 +115,15 @@ export function setPoint(baseUrl: string) {
    * @param options.name 点位名称
    * @returns 点位Primitive
    */
+/**
+ * 设置点位 （通过提供的图片设置点位）【Primitive】
+ * @param options 点位参数
+ * @param options.id 点位id
+ * @param options.lng 点位经度
+ * @param options.lat 点位纬度
+ * @param options.name 点位名称
+ * @returns 点位Primitive
+ */
 const setPointPrimitiveByImg = (options: { 
     id: string, 
     lng: number, 
@@ -135,91 +144,126 @@ const setPointPrimitiveByImg = (options: {
         return mapStore.getGraphicMap(options.id)
     }
 
-    // 4. 创建DOM元素（核心：模拟Mars3D的DivGraphic）
-    const div = document.createElement("div");
-    div.id = options.id; // 绑定ID，方便查找
-    div.classList.add('cesium-point-div');
-    div.style.position = "absolute";
-    div.style.pointerEvents = "none"; // 不遮挡Cesium的鼠标交互
-    div.style.display = "none"; // 初始隐藏
-    // 插入和Mars3D示例一致的HTML结构
-    div.innerHTML = `
-   
-            <div class="cesium-point-body">
-                <div class="icon-text">${options.name || '自定义图片点位'}</div>
-                <img class="cesium-point-img" src="${options.imageUrl}" />
-            </div>
-     
-    `;
-    // 将DOM添加到Cesium容器
-    map.container.appendChild(div);
-
-    // 5. 经纬度转Cesium笛卡尔坐标（支持贴地）
+    // 1. 经纬度转Cesium笛卡尔坐标（支持贴地）
     const position = Cesium.Cartesian3.fromDegrees(options.lng, options.lat, 0);
-    // 如果需要贴地，修正坐标到地形表面
     const cartographic = Cesium.Cartographic.fromCartesian(position);
     const terrainHeight = map.scene.globe.getHeight(cartographic) || 0;
     const groundPosition = Cesium.Cartesian3.fromDegrees(options.lng, options.lat, terrainHeight);
 
-    // 6. 定义位置更新函数（核心：实时映射3D坐标到屏幕像素）
-    const updatePosition = () => {
-        if (!div || !map) return;
+    // 2. 【核心】创建自定义Canvas纹理（还原cesium-point-body的DOM结构）
+    const createCustomTexture = async () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
 
-        // 将3D坐标转为屏幕像素坐标
-        const canvasPosition = map.scene.cartesianToCanvasCoordinates(groundPosition);
-        
-        // 不在视口内则隐藏
-        if (!canvasPosition || Cesium.Cartesian2.equals(canvasPosition, Cesium.Cartesian2.ZERO)) {
-            div.style.display = "none";
-            return;
-        }
+        // 先加载图片
+        const img = new Image();
+        img.crossOrigin = 'anonymous'; // 解决跨域问题
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = options.imageUrl;
+        });
 
-        // 距离显示条件（和Mars3D示例一致：0-500000米）
-        const cameraHeight = Cesium.Cartographic.fromCartesian(map.camera.position).height;
-        if (cameraHeight < 0 || cameraHeight > 500000) {
-            div.style.display = "none";
-            return;
-        }
+        // 定义尺寸（可根据实际需求调整）
+        const textPadding = 8;
+        const x_imgSize = 40; // 图片大小
+        const y_imgSize = 64; // 图片大小
+        const textHeight = 25; // 文字区域高度
+        const bodyPadding = 4; // 容器内边距
 
-        // 计算最终位置（模拟Mars3D的对齐和偏移逻辑）
-        let x = canvasPosition.x;
-        let y = canvasPosition.y; // pixelOffsetY: -45
+        // Canvas总尺寸 = 图片尺寸 + 文字高度 + 内边距
+        canvas.width = 30;
+        canvas.height = 64 + textHeight;
+ 
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; // 半透明背景
+        ctx.roundRect(0, 0, canvas.width, canvas.height, 4); // 圆角
+        ctx.fill();
 
-        // 水平居中对齐（HorizontalOrigin.CENTER）
-        x -= div.offsetWidth / 2;
-        // 垂直底部对齐（VerticalOrigin.BOTTOM）
-        y -= div.offsetHeight;
+        // 2. 绘制icon-text文字（模拟<div class="icon-text">）
+        ctx.fillStyle = '#ffffff'; // 文字白色
+        ctx.font = '12px Microsoft YaHei';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const textY = textHeight / 2 + bodyPadding;
+        ctx.fillText(options.name || '自定义图片点位', canvas.width / 2, textY);
 
-        // 应用位置
-        div.style.left = `${x}px`;
-        div.style.top = `${y}px`;
-        div.style.display = "block";
+        // 3. 绘制cesium-point-img图片（模拟<img>）
+        const imgX = bodyPadding;
+        const imgY = textHeight + bodyPadding * 2;
+        ctx.drawImage(img, 0, textHeight, x_imgSize, y_imgSize);
+
+        return canvas.toDataURL('image/png');
     };
 
-    // 7. 监听视角变化，实时更新位置
-    const postRenderListener = map.scene.postRender.addEventListener(updatePosition);
-    // 首次执行更新位置
-    updatePosition();
-
-    // 8. 定义销毁方法（避免内存泄漏）
-    const destroy = () => {
-        // 移除事件监听
-        map.scene.postRender.removeEventListener(postRenderListener);
-        // 移除DOM元素
-        if (div.parentElement) {
-            div.parentElement.removeChild(div);
+    // 3. 创建Primitive主逻辑
+    const createPointPrimitive = async () => {
+        const textureUrl = await createCustomTexture();
+        if (!textureUrl) {
+            console.error('创建自定义纹理失败');
+            return null;
         }
+
+        // 4. 创建BillboardCollection（核心Primitive）
+        const billboardCollection = new Cesium.BillboardCollection({
+            scene: map.scene,
+            // heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 贴地
+            // disableDepthTestDistance: Number.POSITIVE_INFINITY // 始终显示在最上层
+        });
+
+
+
+        // 5. 创建自定义纹理的Billboard（还原完整DOM结构）
+        const billboard = billboardCollection.add({
+            id: options.id,
+            position: groundPosition,
+            image: textureUrl, // 使用Canvas生成的纹理
+            scale: 1, // 缩放比例
+            // 对齐方式（和原DOM逻辑一致：底部居中）
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+
+            show: true,
+                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 贴地
+                  // ✅ 正确位置：始终显示在最上层（禁用深度测试）
+    disableDepthTestDistance: Number.POSITIVE_INFINITY
+        });
+
+        // 6. 距离显示条件控制（和原逻辑一致）
+        const updateShowStatus = () => {
+            if (!map) return;
+            const cameraHeight = Cesium.Cartographic.fromCartesian(map.camera.position).height;
+            const isInRange = cameraHeight >= 0 && cameraHeight <= 500000;
+            billboard.show = isInRange;
+        };
+
+        // 7. 监听视角变化
+        const postRenderListener = map.scene.postRender.addEventListener(updateShowStatus);
+        updateShowStatus(); // 首次执行
+
+        // 8. 添加到地图场景
+        map.scene.primitives.add(billboardCollection);
+
+        // 9. 销毁方法
+        const destroy = () => {
+            map.scene.postRender.removeEventListener(postRenderListener);
+            map.scene.primitives.remove(billboardCollection);
+            billboardCollection.destroy();
+        };
+
+        // 返回完整的Primitive对象
+        return {
+            id: options.id,
+            position: groundPosition,
+            billboardCollection: billboardCollection,
+            billboard: billboard,
+            destroy: destroy
+        };
     };
 
-    // 返回实例对象，包含销毁方法，方便后续管理
-    return {
-        id: options.id,
-        domElement: div,
-        position: groundPosition,
-        destroy: destroy
-    };
+    // 执行创建逻辑并返回
+    return createPointPrimitive();
 };
-
   /**
    * 批量设置点位 （直接把图片设置成点位, 1万+个点位）【海量点位的最优解：BillboardCollection（批量 Primitive）】
    * @param options 配置选项
