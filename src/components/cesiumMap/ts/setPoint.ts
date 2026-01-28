@@ -161,7 +161,7 @@ export function setPoint(baseUrl: string) {
       const y_imgSize = 64; // 图片大小
       const textHeight = 20; // 文字区域高度
       const bodyPadding = 0; // 容器内边距
-      const textDivMarginBottom = 8; // 文字的div 与 图标的div之间的间距
+      const textDivMarginBottom = 4*2; // 文字的div 与 图标的div之间的间距
 
       // Canvas总尺寸 = 图片尺寸 + 文字高度 + 内边距
       canvas.width = x_imgSize + bodyPadding * 2;
@@ -174,7 +174,7 @@ export function setPoint(baseUrl: string) {
       // === 新增：绘制文字背景 ===
       const textBgColor = '#FFB413'; // 文字背景色
       const textBgPaddingX = 10; // 文字左右内边距
-      const textBgPaddingY = 2; // 文字上下内边距
+      const textBgPaddingY = 4; // 文字上下内边距
       const textWidth = ctx.measureText(text).width; // 动态计算文字宽度
       // 背景矩形坐标计算
       const textBgX = 0;
