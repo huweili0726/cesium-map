@@ -611,6 +611,7 @@ let currentPyramidHeading = 0;
 let currentPyramidPitch = 120;
 let currentPyramidHeading1 = 0;
 let currentPyramidPitch1 = 120;
+let currentPyramidLength1 = 5000;
 let pyramidIds: string[] = [];
 
 const toCreateRectangularPyramidEffect = () => {
@@ -693,9 +694,10 @@ const toCreateRectangularPyramidEffect1 = () => {
     rectangularPyramidTimer1 = null;
   }
 
-  // 重置当前角度
+  // 重置当前角度和长度
   currentPyramidHeading1 = 0;
   currentPyramidPitch1 = 120;
+  currentPyramidLength1 = 5000;
 
   // 创建四棱锥
   rectangularPyramidWave1({
@@ -703,17 +705,20 @@ const toCreateRectangularPyramidEffect1 = () => {
     positions: [117.229629, 31.716888, 0],
     heading: currentPyramidHeading1,
     pitch: currentPyramidPitch1,
-    length: 5000, // 四棱锥高度（米）
+    length: currentPyramidLength1, // 四棱锥高度（米）
     horizontalAngle: 20, // 水平展开角度（度）
     verticalAngle: 15, // 垂直展开角度（度）
     color: 'rgba(0,255,0,0.4)',
   });
 
-  // 设置定时器，每秒更新一次heading和pitch
+  // 设置定时器，每秒更新一次heading、pitch和length
   rectangularPyramidTimer1 = setInterval(() => {
     // 更新heading和pitch值
     currentPyramidHeading1 += 5; // 每秒增加5度
     currentPyramidPitch1 += 2; // 每秒增加2度
+    
+    // 动态更新长度（使用正弦函数实现周期性变化）
+    currentPyramidLength1 = 5000 + Math.sin(Date.now() / 1000) * 1000; // 在4000-6000米之间变化
     
     // 限制值在合理范围内
     if (currentPyramidHeading1 > 360) {
@@ -723,11 +728,12 @@ const toCreateRectangularPyramidEffect1 = () => {
       currentPyramidPitch1 -= 360;
     }
 
-    // 更新四棱锥朝向
+    // 更新四棱锥朝向和长度
     updateRectangularPyramidWavePose1({
       id: 'rectangular_pyramid_wave_002',
       heading: currentPyramidHeading1, // 新的水平方位角（度）
       pitch: currentPyramidPitch1, // 新的垂直方位角（度）
+      length: currentPyramidLength1, // 新的长度
     });
   }, 1000); // 每秒执行一次
 };
