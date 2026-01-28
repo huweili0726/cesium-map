@@ -116,6 +116,8 @@
             <button @click="toUpdateConicalEffect" class="control-btn">更新圆锥体高度</button>
             <button @click="toCreateRectangularPyramidEffect" class="control-btn">创建四棱锥</button>
             <button @click="toUpdateRectangularPyramidEffect" class="control-btn">更新四棱锥高度</button>
+
+            <button @click="toCreateRectangularPyramidEffect1" class="control-btn">创建四棱锥方法2</button>
         </div>
       </div>
     </div>
@@ -680,6 +682,20 @@ const clearAllRectangularPyramids = () => {
   pyramidIds = [];
 }
 
+// 创建四棱锥方法2
+const toCreateRectangularPyramidEffect1 = () => {
+  rectangularPyramidWave1({
+    id: 'rectangular_pyramid_wave_002',
+    positions: [117.228433, 31.703159, 0],
+    heading: 0,
+    pitch: 120,
+    height: 5000, // 四棱锥高度（米）
+    horizontalAngle: 20, // 水平展开角度（度）
+    verticalAngle: 15, // 垂直展开角度（度）
+    color: 'rgba(0,255,0,0.4)',
+  })
+}
+
 onBeforeUnmount(() => {
   // 组件卸载时清除定时器和所有几何体
   if (conicalTimer) {
@@ -741,7 +757,8 @@ const {
   updateConeLengthOrPosition,
   rectangularPyramidWave,
   updateRectangularPyramidWavePose,
-  updateRectangularPyramidLengthOrPosition
+  updateRectangularPyramidLengthOrPosition,
+  rectangularPyramidWave1
 } = geometryConfig()
 </script>
 

@@ -583,6 +583,133 @@ export function geometryConfig() {
     }
   }
 
+
+
+
+
+  /**
+   * 创建四棱锥波效果（方法2）
+   * @param {string} options.id - 效果唯一标识符
+   * @param {number[]} options.positions - 四棱锥顶点位置 [经度, 纬度, 高度]
+   * @param {number} options.heading - 水平方位角（度）
+   * @param {number} options.pitch - 俯仰角（度）
+   * @param {number} options.height - 四棱锥高度（米）
+   * @param {number} options.horizontalAngle - 水平展开角度（度）
+   * @param {number} options.verticalAngle - 垂直展开角度（度）
+   * @param {string} options.color - 颜色（默认 '#00FFFF'）
+   * @returns {Cesium.Primitive|null} 创建的四棱锥波实体，若创建失败则返回null
+   */
+  let rectangularPrimitive: any;
+  let rectangularPrimitive1: any;
+  const rectangularPyramidWave1 = (options: {
+    id: string,
+    positions: number[],
+    heading: number,
+    pitch: number,
+    height: number,
+    horizontalAngle: number,
+    verticalAngle: number,
+    color: string,
+  }) => {
+    const map = mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return null
+    }
+
+    // 检查是否已存在相同ID的效果
+    if (mapStore.getGraphicMap(options.id) || mapStore.getGraphicMap(options.id + '_line')) {
+      console.log(`id: ${options.id} 效果已存在`)
+      return null
+    }
+
+    // 提取经纬度和高度
+    const [lng, lat, height = 0] = options.positions;
+   
+
+
+    
+
+            let frustum = new Cesium.PerspectiveFrustum({
+              // 查看的视场角，绕Z轴旋转，以弧度方式输入
+              fov: Cesium.Math.toRadians(options.horizontalAngle || 30),
+              // 视锥体的宽度/高度
+              aspectRatio: 1.4,
+              // 近面距视点的距离
+              near: 1,
+              // 远面距视点的距离
+              far: 3000,
+            });
+
+            var hpr = new Cesium.HeadingPitchRoll(
+              Cesium.Math.toRadians(options.heading),
+              Cesium.Math.toRadians(options.pitch),
+              0
+            );
+            let origin = Cesium.Cartesian3.fromDegrees(lng, lat, height);
+            let orientation = Cesium.Transforms.headingPitchRollQuaternion(
+              Cesium.Cartesian3.fromDegrees(lng, lat, height),
+              hpr
+            )
+            let instanceGeo = new Cesium.GeometryInstance({
+                geometry: new Cesium.FrustumGeometry({
+                    frustum: frustum,
+                    origin: origin,
+                    orientation: orientation,
+                    vertexFormat: Cesium.VertexFormat.POSITION_ONLY,
+                }),
+                attributes: {
+                    color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+                      Cesium.Color.fromCssColorString(options.color || 'rgba(1,0,0,0.3)')
+                    ),
+                },
+            });
+            let instanceGeoLine = new Cesium.GeometryInstance({
+                geometry: new Cesium.FrustumOutlineGeometry({
+                    frustum: frustum,
+                    origin: origin,
+                    orientation: orientation,
+                }),
+                attributes: {
+                    color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+                        new Cesium.Color(1.0, 1.0, 1.0, 1)
+                    ),
+                },
+            });
+
+
+            rectangularPrimitive = new Cesium.Primitive({
+                geometryInstances: [instanceGeo],
+                appearance: new Cesium.PerInstanceColorAppearance({
+                    closed: true,
+                    flat: true,
+                }),
+                asynchronous: false,
+            });
+
+            rectangularPrimitive1 = new Cesium.Primitive({
+                geometryInstances: [instanceGeoLine],
+                appearance: new Cesium.PerInstanceColorAppearance({
+                    closed: true,
+                    flat: true,
+                }),
+                asynchronous: false,
+            });
+
+
+
+
+    // 将primitive添加到mapStore中进行管理
+    mapStore.setGraphicMap(options.id, rectangularPrimitive);
+    mapStore.setGraphicMap(options.id + '_line', rectangularPrimitive1);
+
+    // 添加primitive到场景
+    map.scene.primitives.add(rectangularPrimitive);
+    map.scene.primitives.add(rectangularPrimitive1);
+
+    return rectangularPrimitive;
+  }
+
   return {
     conicalWave,
     updateConeLengthOrPosition,
@@ -590,5 +717,6 @@ export function geometryConfig() {
     rectangularPyramidWave,
     updateRectangularPyramidWavePose,
     updateRectangularPyramidLengthOrPosition,
+    rectangularPyramidWave1,
   }
 }
