@@ -69,7 +69,7 @@ export function hemisphereConfig() {
       position: centerCartesian,
       ellipsoid: {
         radii: new Cesium.Cartesian3(options.radius, options.radius, options.radius),
-        material: Cesium.Color.fromCssColorString(options.sphericalColor).withAlpha(0.4), // 设置半透明效果，0.5为透明度值（范围0-1）
+        material: Cesium.Color.fromCssColorString(options.sphericalColor), // 设置半透明效果，0.5为透明度值（范围0-1）
         // 使用maximumCone和minimumCone创建半球
         maximumCone: 0, // 上半球（z轴正方向）
         minimumCone: Math.PI / 2 // 从z轴正方向到水平面（90度）
