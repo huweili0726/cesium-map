@@ -83,7 +83,7 @@ export function hemisphereConfig() {
           outlineWidth: 2,
           // 确保背景显示的关键属性
           showBackground: true,
-          backgroundColor: new Cesium.Color(0, 0, 0, 0.8), // 明确设置黑色半透明背景
+          backgroundColor: Cesium.Color.fromCssColorString('rgba(0, 118, 131, 1)'), // 明确设置黑色半透明背景  rgba(0, 118, 131, 0.3)
           backgroundPadding: new Cesium.Cartesian2(12, 6),
           // 定位属性
           verticalOrigin: Cesium.VerticalOrigin.TOP,

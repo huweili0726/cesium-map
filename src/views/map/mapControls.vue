@@ -227,7 +227,7 @@ const toMovePointByGlb = () => {
 // 设置半球 （通过提供的glb模型设置点位）
 const toSetHemisphere = () => {
   // 设置半球 （通过提供的glb模型设置点位）
-  setHemisphere({id: '6', center: [117.228433, 31.723159, 0], radius: 1000, color: '#64ffda', label: '半球体'});
+  setHemisphere({id: '6', center: [117.228433, 31.723159, 0], radius: 1000, color: 'rgba(20, 239, 255, 0.5)', label: '半球体'});
 }
 
 // 移动半球 （通过提供的glb模型设置点位）
