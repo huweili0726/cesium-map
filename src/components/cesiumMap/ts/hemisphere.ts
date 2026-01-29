@@ -67,6 +67,9 @@ export function hemisphereConfig() {
       }
     });
 
+    // 保存原始参数，用于后面计算
+    (hemisphereEntity as any)._originalOptions = { ...options };
+
     // 创建独立的文本框Entity
     let labelEntity = null;
     if (options.label) {
@@ -116,7 +119,6 @@ export function hemisphereConfig() {
    */
   const moveHemisphere = (options: { 
     hemisphereId: string, 
-    radius: number,
     center: any[] 
   }) => {
     const map = mapStore.getMap()
@@ -138,12 +140,17 @@ export function hemisphereConfig() {
     // 检查是否存在独立的文本框Entity
     const labelEntity = mapStore.getGraphicMap(`${options.hemisphereId}_label`);
     if (labelEntity) {
+      // 从保存的原始参数中获取半径值
+      let radius = 1000; // 默认半径值
+      if ((hemisphereEntity as any)._originalOptions && (hemisphereEntity as any)._originalOptions.radius) {
+        radius = (hemisphereEntity as any)._originalOptions.radius;
+      }
       // 获取半球体的经纬度位置
       const cartographic = Cesium.Cartographic.fromCartesian(hemisphereEntity.position.getValue(Cesium.JulianDate.now()));
       const longitude = Cesium.Math.toDegrees(cartographic.longitude);
       const latitude = Cesium.Math.toDegrees(cartographic.latitude);
-      // 直接使用经纬度创建顶部位置，高度设置为新的半径
-      const newTopPosition = Cesium.Cartesian3.fromDegrees(longitude, latitude, options.radius);
+      // 直接使用经纬度创建顶部位置，高度设置为当前半径
+      const newTopPosition = Cesium.Cartesian3.fromDegrees(longitude, latitude, radius);
       
       // 使用CallbackProperty确保位置平滑更新
       labelEntity.position = new Cesium.CallbackProperty(() => {
@@ -176,6 +183,11 @@ export function hemisphereConfig() {
 
     // 更新半球体半径
     hemisphereEntity.ellipsoid.radii = new Cesium.Cartesian3(options.radius, options.radius, options.radius);
+
+    // 更新保存的原始参数中的半径值
+    if ((hemisphereEntity as any)._originalOptions) {
+      (hemisphereEntity as any)._originalOptions.radius = options.radius;
+    }
 
     // 检查是否存在独立的文本框Entity
     const labelEntity = mapStore.getGraphicMap(`${options.hemisphereId}_label`);
