@@ -32,10 +32,19 @@ export function hemisphereConfig() {
    * @param {string} options.id 半球体唯一标识
    * @param {number[]} options.center 半球体中心经纬度坐标 [longitude, latitude]
    * @param {number} options.radius 半球体半径（米）
-   * @param {string} options.color 半球体颜色（CSS颜色字符串）
+   * @param {string} options.sphericalColor 半球体颜色（CSS颜色字符串）
+   * @param {string} options.label 半球体标签文本（可选）
+   * @param {string} options.labelBgColor 半球体标签背景颜色（CSS颜色字符串）
    * @returns {Cesium.Entity|null} 创建的半球体实体，若创建失败则返回null
    */
-  const setHemisphere = (options: { id: string, center: any[]; radius: number, color: string, label?: string }) => {
+  const setHemisphere = (options: {
+    id: string, 
+    center: any[]; 
+    radius: number, 
+    sphericalColor : string, 
+    label?: string,
+    labelBgColor: string,
+  }) => {
     const map = mapStore.getMap()
     if (!map) {
       console.error('地图实例不存在')
@@ -60,7 +69,7 @@ export function hemisphereConfig() {
       position: centerCartesian,
       ellipsoid: {
         radii: new Cesium.Cartesian3(options.radius, options.radius, options.radius),
-        material: Cesium.Color.fromCssColorString(options.color).withAlpha(0.4), // 设置半透明效果，0.5为透明度值（范围0-1）
+        material: Cesium.Color.fromCssColorString(options.sphericalColor).withAlpha(0.4), // 设置半透明效果，0.5为透明度值（范围0-1）
         // 使用maximumCone和minimumCone创建半球
         maximumCone: 0, // 上半球（z轴正方向）
         minimumCone: Math.PI / 2 // 从z轴正方向到水平面（90度）
@@ -86,7 +95,7 @@ export function hemisphereConfig() {
           outlineWidth: 2,
           // 确保背景显示的关键属性
           showBackground: true,
-          backgroundColor: Cesium.Color.fromCssColorString('rgba(0, 118, 131, 1)'), // 明确设置黑色半透明背景  rgba(0, 118, 131, 0.3)
+          backgroundColor: Cesium.Color.fromCssColorString(options.labelBgColor), // 背景颜色
           backgroundPadding: new Cesium.Cartesian2(12, 6),
           // 定位属性
           verticalOrigin: Cesium.VerticalOrigin.TOP,
@@ -168,7 +177,10 @@ export function hemisphereConfig() {
    * @param {number} options.radius 新的半球体半径（米）
    * @returns {null} 无返回值
    */
-  const updateHemisphere = (options: { hemisphereId: string, radius: number }) => {
+  const updateHemisphere = (options: { 
+    hemisphereId: string, 
+    radius: number 
+  }) => {
     const map = mapStore.getMap()
     if (!map) {
       console.error('地图实例不存在')
