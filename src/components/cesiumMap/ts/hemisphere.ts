@@ -71,18 +71,25 @@ export function hemisphereConfig() {
     let labelEntity = null;
     if (options.label) {
       labelEntity = map.entities.add({
-        position: topPosition,
+        position: new Cesium.CallbackProperty(() => {
+          return topPosition;
+        }, false),
         label: {
           text: options.label,
           font: '16px Microsoft YaHei',
           fillColor: Cesium.Color.WHITE,
-          style: Cesium.LabelStyle.FILL,
-          background: true, // 启用背景
-          backgroundColor: Cesium.Color.BLACK.withAlpha(0.7), // 添加半透明黑色背景
-          backgroundPadding: new Cesium.Cartesian2(10, 5), // 添加背景内边距
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 2,
+          // 确保背景显示的关键属性
+          showBackground: true,
+          backgroundColor: new Cesium.Color(0, 0, 0, 0.8), // 明确设置黑色半透明背景
+          backgroundPadding: new Cesium.Cartesian2(12, 6),
+          // 定位属性
           verticalOrigin: Cesium.VerticalOrigin.TOP,
           horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-          pixelOffset: new Cesium.Cartesian2(0, -10), // 向上偏移10像素
+          pixelOffset: new Cesium.Cartesian2(0, -10),
+          // 其他属性
           eyeOffset: new Cesium.Cartesian3(0, 0, 0),
           distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 100000)
         }
@@ -138,7 +145,10 @@ export function hemisphereConfig() {
       // 直接使用经纬度创建顶部位置，高度设置为新的半径
       const newTopPosition = Cesium.Cartesian3.fromDegrees(longitude, latitude, options.radius);
       
-      labelEntity.position = newTopPosition;
+      // 使用CallbackProperty确保位置平滑更新
+      labelEntity.position = new Cesium.CallbackProperty(() => {
+        return newTopPosition;
+      }, false);
     }
   }
 
@@ -177,7 +187,10 @@ export function hemisphereConfig() {
       // 直接使用经纬度创建顶部位置，高度设置为新的半径
       const newTopPosition = Cesium.Cartesian3.fromDegrees(longitude, latitude, options.radius);
       
-      labelEntity.position = newTopPosition;
+      // 使用CallbackProperty确保位置平滑更新
+      labelEntity.position = new Cesium.CallbackProperty(() => {
+        return newTopPosition;
+      }, false);
     }
   }
 
