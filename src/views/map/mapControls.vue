@@ -764,6 +764,7 @@ const toCreateRectangularPyramidEffect1 = () => {
     //   length: currentPyramidLength1, // 新的长度
     // });
 
+    // 高性能更新四棱锥姿态
     updateRectangularPyramidPoseFast({
       id: 'rectangular_pyramid_wave_002',
       // positions: [117.229629, 31.706888, 0],
