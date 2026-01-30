@@ -821,7 +821,9 @@ export function geometryConfig() {
   }
 
   /**
-   * 高性能更新（仅修改朝向，不重建几何体）
+   * 高性能更新四棱锥姿态（仅修改矩阵，不重建几何体）
+   * 
+   *  适用场景：实时跟踪、雷达扫描等高频更新（60fps无压力）
    * 
    *  这种高性能方式只能修改位置、heading、pitch。
    *  如果 length、horizontalAngle、verticalAngle 或 color 变化，必须重新创建 Primitive（调用之前的 updateRectangularPyramidWavePose1）
@@ -833,99 +835,96 @@ export function geometryConfig() {
    * @param {number} options.pitch - 新的垂直方位角（度）
    * @returns 
    */
-/**
- * 高性能更新四棱锥姿态（仅修改矩阵，不重建几何体）
- * 适用场景：实时跟踪、雷达扫描等高频更新（60fps无压力）
- * 限制：不能修改 length/horizontalAngle/verticalAngle/color，只能改位置/角度
- */
-const updateRectangularPyramidPoseFast = (options: {
-    id: string, 
+  const updateRectangularPyramidPoseFast = (options: {
+    id: string,
     heading?: number,
     pitch?: number,
     positions?: number[],
   }): boolean => {
-    const { id, heading = 0, pitch = 0, positions = [] } = options;
+    const { id, heading = 0, pitch = 0 } = options;
 
-  const map = mapStore.getMap();
-  if (!map) return false;
-  
-  const primitive = mapStore.getGraphicMap(id);
-  const linePrimitive = mapStore.getGraphicMap(id + '_line');
-  
-  if (!primitive || !linePrimitive) {
-    console.warn(`ID ${id} 不存在`);
-    return false;
-  }
+    const map = mapStore.getMap();
+    if (!map) return false;
 
-  try {
-    const [lng, lat, height = 0] = positions;
-    const origin = Cesium.Cartesian3.fromDegrees(lng, lat, height);
-    
-    // 复用创建时的旋转计算逻辑
-    const headingRad = Cesium.Math.toRadians(heading);
-    const pitchRad = Cesium.Math.toRadians(pitch);
-    const cosPitch = Math.cos(pitchRad);
-    const sinPitch = Math.sin(pitchRad);
-    const cosHeading = Math.cos(headingRad);
-    const sinHeading = Math.sin(headingRad);
+    const primitive = mapStore.getGraphicMap(id);
+    const linePrimitive = mapStore.getGraphicMap(id + '_line');
 
-    const direction = new Cesium.Cartesian3(
-      sinPitch * cosHeading,
-      sinPitch * sinHeading,
-      cosPitch
-    );
-
-    const enuToFixed = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
-    const enuRotation = new Cesium.Matrix3();
-    Cesium.Matrix4.getRotation(enuToFixed, enuRotation);
-
-    let worldDirection = new Cesium.Cartesian3();
-    Cesium.Matrix3.multiplyByVector(enuRotation, direction, worldDirection);
-    Cesium.Cartesian3.negate(worldDirection, worldDirection);
-
-    const up = new Cesium.Cartesian3(0, 0, 1);
-    const right = new Cesium.Cartesian3();
-    Cesium.Cartesian3.cross(worldDirection, up, right);
-    
-    // 处理万向节锁
-    if (Cesium.Cartesian3.magnitudeSquared(right) < 0.000001) {
-      const arbitrary = Math.abs(worldDirection.z) > 0.9 
-        ? new Cesium.Cartesian3(1, 0, 0) 
-        : new Cesium.Cartesian3(0, 0, 1);
-      Cesium.Cartesian3.cross(worldDirection, arbitrary, right);
+    if (!primitive || !linePrimitive) {
+      console.warn(`ID ${id} 不存在`);
+      return false;
     }
-    
-    Cesium.Cartesian3.normalize(right, right);
-    const newUp = new Cesium.Cartesian3();
-    Cesium.Cartesian3.cross(right, worldDirection, newUp);
 
-    const rotationMatrix = new Cesium.Matrix3(
-      right.x, worldDirection.x, newUp.x,
-      right.y, worldDirection.y, newUp.y,
-      right.z, worldDirection.z, newUp.z
-    );
+    try {
+      // 当没传递positions参数时，使用之前的_originalOptions里面的positions
+      const positions = options?.positions || (primitive as any)._originalOptions?.positions || [0, 0, 0];
+      const [lng, lat, height = 0] = positions;
+      const origin = Cesium.Cartesian3.fromDegrees(lng, lat, height);
 
-    // 直接更新矩阵（GPU 开销极小）
-    const modelMatrix = Cesium.Matrix4.fromRotationTranslation(
-      rotationMatrix,
-      origin,
-      new Cesium.Matrix4()
-    );
+      // 复用创建时的旋转计算逻辑
+      const headingRad = Cesium.Math.toRadians(heading);
+      const pitchRad = Cesium.Math.toRadians(pitch);
+      const cosPitch = Math.cos(pitchRad);
+      const sinPitch = Math.sin(pitchRad);
+      const cosHeading = Math.cos(headingRad);
+      const sinHeading = Math.sin(headingRad);
 
-    primitive.modelMatrix = modelMatrix;
-    linePrimitive.modelMatrix = modelMatrix;
-    
-    // 更新存储的参数（供后续逻辑使用）
-    (primitive as any)._originalOptions.heading = heading;
-    (primitive as any)._originalOptions.pitch = pitch;
-    (primitive as any)._originalOptions.positions = positions;
+      const direction = new Cesium.Cartesian3(
+        sinPitch * cosHeading,
+        sinPitch * sinHeading,
+        cosPitch
+      );
 
-    return true;
-  } catch (error) {
-    console.error('更新姿态失败:', error);
-    return false;
-  }
-};
+      const enuToFixed = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
+      const enuRotation = new Cesium.Matrix3();
+      Cesium.Matrix4.getRotation(enuToFixed, enuRotation);
+
+      let worldDirection = new Cesium.Cartesian3();
+      Cesium.Matrix3.multiplyByVector(enuRotation, direction, worldDirection);
+      Cesium.Cartesian3.negate(worldDirection, worldDirection);
+
+      const up = new Cesium.Cartesian3(0, 0, 1);
+      const right = new Cesium.Cartesian3();
+      Cesium.Cartesian3.cross(worldDirection, up, right);
+
+      // 处理万向节锁
+      if (Cesium.Cartesian3.magnitudeSquared(right) < 0.000001) {
+        const arbitrary = Math.abs(worldDirection.z) > 0.9
+          ? new Cesium.Cartesian3(1, 0, 0)
+          : new Cesium.Cartesian3(0, 0, 1);
+        Cesium.Cartesian3.cross(worldDirection, arbitrary, right);
+      }
+
+      Cesium.Cartesian3.normalize(right, right);
+      const newUp = new Cesium.Cartesian3();
+      Cesium.Cartesian3.cross(right, worldDirection, newUp);
+
+      const rotationMatrix = new Cesium.Matrix3(
+        right.x, worldDirection.x, newUp.x,
+        right.y, worldDirection.y, newUp.y,
+        right.z, worldDirection.z, newUp.z
+      );
+
+      // 直接更新矩阵（GPU 开销极小）
+      const modelMatrix = Cesium.Matrix4.fromRotationTranslation(
+        rotationMatrix,
+        origin,
+        new Cesium.Matrix4()
+      );
+
+      primitive.modelMatrix = modelMatrix;
+      linePrimitive.modelMatrix = modelMatrix;
+
+      // 更新存储的参数（供后续逻辑使用）
+      (primitive as any)._originalOptions.heading = heading;
+      (primitive as any)._originalOptions.pitch = pitch;
+      (primitive as any)._originalOptions.positions = positions;
+
+      return true;
+    } catch (error) {
+      console.error('更新姿态失败:', error);
+      return false;
+    }
+  };
 
   return {
     conicalWave,

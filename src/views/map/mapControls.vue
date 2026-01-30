@@ -766,7 +766,7 @@ const toCreateRectangularPyramidEffect1 = () => {
 
     updateRectangularPyramidPoseFast({
       id: 'rectangular_pyramid_wave_002',
-          positions: [117.229629, 31.716888, 0],
+      // positions: [117.229629, 31.706888, 0],
       heading: currentPyramidHeading1, // 新的水平方位角（度）
       pitch: currentPyramidPitch1, // 新的垂直方位角（度）
     })

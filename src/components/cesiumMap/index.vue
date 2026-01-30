@@ -82,6 +82,25 @@ const initCesium = async () => {
         requestWaterMask: mapOptions.terrain.coastlineData, // 请求水体效果所需要的海岸线数据
         requestVertexNormals: mapOptions.terrain.lightingData, // 请求地形照明数据
       }) : undefined, // 加载自定义地形服务
+
+      contextOptions: {
+        webgl: {
+          // 是否启用透明度通道
+          alpha: false,
+          // 是否启用深度缓冲区
+          depth: true,
+          // 是否启用模板缓冲区
+          stencil: false,
+          // 是否启用抗锯齿
+          antialias: true,
+          // 是否启用预乘透明度
+          premultipliedAlpha: true,
+          // 是否保留绘制缓冲区
+          preserveDrawingBuffer: false,
+          // 关键：允许在性能受限环境（如软件渲染、虚拟机）中运行
+          failIfMajorPerformanceCaveat: false
+        },
+      }
     })
 
     // 从配置中加载底图
