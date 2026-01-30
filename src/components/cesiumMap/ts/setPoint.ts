@@ -518,7 +518,10 @@ export function setPoint(baseUrl: string) {
     modelEntity.entity.position = modelEntity.positionProperty
 
     // 创建独立的轨迹实体
-    setDroneTrail(options.id, modelEntity.currentPosition)
+    setDroneTrail({
+      pointId: options.id,
+      startPosition: modelEntity.currentPosition
+    })
 
     mapStore.setGraphicMap(options.id, modelEntity)
     return modelEntity

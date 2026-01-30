@@ -39,7 +39,10 @@ export function movePathConfig() {
 
     if (!trailData) {
       console.warn(`轨迹 ${trailId} 不存在，创建新的轨迹`)
-      return setDroneTrail(droneId, newPosition)
+      return setDroneTrail({
+        pointId: droneId,
+        startPosition: newPosition
+      })
     }
 
     const currentTime = map.clock.currentTime

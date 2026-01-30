@@ -109,7 +109,10 @@ export function setReplay(baseUrl: string) {
         sortedData[0].lat,
         sortedData[0].height || 0
       )
-      trailData = setDroneTrail(options.droneId, firstCartesian)
+      trailData = setDroneTrail({
+        pointId: options.droneId,
+        startPosition: firstCartesian
+      })
     }
 
     // 清空现有轨迹点

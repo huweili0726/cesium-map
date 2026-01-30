@@ -17,15 +17,19 @@ export function setPath() {
 
   /**
    * 创建无人机轨迹
-   * @param droneId 无人机ID
+   * @param pointId 无人机ID
    * @param startPosition 初始位置
    * @returns 轨迹数据
    */
-  const setDroneTrail = (droneId: string, startPosition: Cesium.Cartesian3) => {
+  const setDroneTrail = (options: {
+    pointId: string,
+    startPosition: Cesium.Cartesian3
+  }) => {
     const map = mapStore.getMap()
     if (!map) return
 
-    const trailId = `${droneId}_trail`
+    const { pointId, startPosition } = options
+    const trailId = `${pointId}_trail`
 
     // 如果轨迹已存在，直接返回
     if (mapStore.hasDroneTrail(trailId)) {
@@ -42,7 +46,7 @@ export function setPath() {
     }
     trailData.entity = map.entities.add({
       id: trailId,
-      name: `无人机轨迹：${droneId}`,
+      name: `无人机轨迹：${pointId}`,
       show: true,
       polyline: {
         positions: new Cesium.CallbackProperty(() => {
@@ -80,6 +84,9 @@ export function setPath() {
 
   /**
    * 显示/隐藏无人机轨迹
+   * @param options 配置选项
+   * @param options.pointId 点ID
+   * @param options.visible 是否显示
    */
   const toggleDroneTrail = (options: { 
     pointId: string, 
