@@ -632,7 +632,11 @@ export function geometryConfig() {
     let origin = Cesium.Cartesian3.fromDegrees(lng, lat, height);
 
     // 使用抽取的函数计算旋转矩阵
-    let rotationMatrix = calculateRotationMatrix(origin, options.heading, options.pitch);
+    let rotationMatrix = calculateRotationMatrix({
+      origin,
+      heading: options.heading,
+      pitch: options.pitch,
+    });
 
     // 🎯 几何体定义在单位坐标系（原点0,0,0，无旋转）
     let instanceGeo = new Cesium.GeometryInstance({
@@ -821,7 +825,11 @@ export function geometryConfig() {
       const origin = Cesium.Cartesian3.fromDegrees(lng, lat, height);
 
       // 使用抽取的函数计算旋转矩阵
-      const rotationMatrix = calculateRotationMatrix(origin, heading, pitch);
+      const rotationMatrix = calculateRotationMatrix({
+        origin,
+        heading,
+        pitch,
+      });
 
       // 直接更新矩阵（GPU 开销极小）
       const modelMatrix = Cesium.Matrix4.fromRotationTranslation(
@@ -852,7 +860,13 @@ export function geometryConfig() {
    * @param pitch 垂直方位角（度）
    * @returns 旋转矩阵
    */
-  const calculateRotationMatrix = (origin: Cesium.Cartesian3, heading: number, pitch: number): Cesium.Matrix3 => {
+  const calculateRotationMatrix = (options: {
+    origin: Cesium.Cartesian3,
+    heading: number,
+    pitch: number,
+  }): Cesium.Matrix3 => {
+    const { origin, heading, pitch } = options;
+
     // 计算旋转矩阵（保持原有逻辑不变）
     let headingRad = Cesium.Math.toRadians(heading);
     let pitchRad = Cesium.Math.toRadians(pitch);
