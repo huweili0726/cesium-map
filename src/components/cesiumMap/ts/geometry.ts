@@ -1,13 +1,3 @@
-/**
- * 几何体管理模块
- * 
- * 提供在Cesium地图上创建、更新、移动和删除几何体实体的功能
- * 
- * @author huweili
- * @email czxyhuweili@163.com
- * @version 1.0.0
- * @date 2025-12-27
- */
 import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
 
