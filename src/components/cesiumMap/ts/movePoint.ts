@@ -12,6 +12,7 @@ import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { setPoint } from '@/components/cesiumMap/ts/setPoint'
 import { movePathConfig } from '@/components/cesiumMap/ts/movePath'
+import { setPath } from '@/components/cesiumMap/ts/setPath'
 
 export function movePointConfig(baseUrl: string) {
   // 获取地图store实例
@@ -23,6 +24,10 @@ export function movePointConfig(baseUrl: string) {
   const {
     moveDroneTrail,
   } = movePathConfig()
+
+  const {
+    toggleDroneTrail,
+  } = setPath()
 
   /**
    * 移动点位到新的坐标位置
@@ -287,8 +292,33 @@ export function movePointConfig(baseUrl: string) {
     // if (map.viewer) map.viewer.trackedEntity = modelEntity.entity;
   };
 
+  /**
+   * 控制无人机和轨迹的显隐状态
+   * @param droneId 无人机ID
+   * @param visible 是否显示
+   * @returns 是否操作成功
+   */
+  const toggleDroneAndTrailVisibility = (droneId: string, visible: boolean): boolean => {
+    let success = true
+    
+    // 控制无人机显隐
+    const modelEntity = mapStore.getGraphicMap(droneId)
+    if (modelEntity && modelEntity.entity) {
+      modelEntity.entity.show = visible
+    } else {
+      console.warn(`无人机实体不存在，ID: ${droneId}`)
+      success = false
+    }
+    
+    // 控制轨迹显隐
+    toggleDroneTrail(droneId, visible)
+    
+    return success
+  }
+
   return {
     movePoint,
     moveDronePoint,
+    toggleDroneAndTrailVisibility
   }
 }
