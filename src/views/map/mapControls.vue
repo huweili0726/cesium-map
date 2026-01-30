@@ -56,6 +56,9 @@
         <div v-if="isDroneControlsOpen" class="controls-content">
           <button @click="toMoveDronePoint" class="control-btn">move(无人机1)</button>
           <button @click="toMoveDronePoint1" class="control-btn">move(无人机2)</button>
+
+          <button @click="toHideDronePoint" class="control-btn">hide(无人机1)</button>
+          <button @click="toShowDronePoint" class="control-btn">show(无人机1)</button>
         </div>
       </div>
 
@@ -272,6 +275,17 @@ const toMoveDronePoint1 = () => {
 
   // 平滑飞行到新位置 （通过提供的glb模型设置点位）
   moveDronePoint({pointId: '5', lng: newLng, lat: newLat, height: newHeight, speed: 100});
+}
+
+const toHideDronePoint = () => {
+  // 隐藏无人机+轨迹
+  toggleDroneAndTrailVisibility({pointId: '4', visible: false});
+}
+
+// 显示无人机点位
+const toShowDronePoint = () => {
+  // 显示无人机+轨迹
+  toggleDroneAndTrailVisibility({pointId: '4', visible: true});
 }
 
 // 回放控制器
@@ -772,6 +786,7 @@ const {
 const {
   movePoint,
   moveDronePoint,
+  toggleDroneAndTrailVisibility
 } = movePointConfig(process.env.BASE_URL)
 
 const {
