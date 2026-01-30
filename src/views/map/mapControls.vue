@@ -325,7 +325,12 @@ const toReplayDronePath = () => {
   })
 
   // 配置时钟，设置回放时间范围
-  configureClock(1710000000, 1710000015, 1, false)
+  configureClock({
+    startTime: 1710000000,
+    endTime: 1710000015,
+    speed: 1,
+    loop: false
+  })
 
   // 开始播放
   replayController.play()

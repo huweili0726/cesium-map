@@ -298,8 +298,23 @@ export function setReplay(baseUrl: string) {
     return replayController
   }
 
-  // 回放时钟配置
-  const configureClock = (startTime: number, endTime: number, speed: number, loop: boolean) => {
+  /**
+   * 配置回放时钟
+   * @param options 
+   * @param options.startTime 回放开始时间（秒）
+   * @param options.endTime 回放结束时间（秒）
+   * @param options.speed 回放速度（1为正常速度）
+   * @param options.loop 是否循环回放
+   * @returns 
+   */
+  const configureClock = (options: {
+    startTime: number,
+    endTime: number,
+    speed: number,
+    loop: boolean
+  }) => {
+    const { startTime, endTime, speed, loop } = options
+
     let map = mapStore.getMap()
     if (!map) {
       console.error('地图实例不存在')
