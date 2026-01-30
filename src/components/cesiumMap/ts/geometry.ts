@@ -631,48 +631,8 @@ export function geometryConfig() {
     // 计算原点（地固坐标）
     let origin = Cesium.Cartesian3.fromDegrees(lng, lat, height);
 
-    // 计算旋转矩阵（保持原有逻辑不变）
-    let headingRad = Cesium.Math.toRadians(options.heading);
-    let pitchRad = Cesium.Math.toRadians(options.pitch);
-    let cosPitch = Math.cos(pitchRad);
-    let sinPitch = Math.sin(pitchRad);
-    let cosHeading = Math.cos(headingRad);
-    let sinHeading = Math.sin(headingRad);
-
-    let direction = new Cesium.Cartesian3(
-      sinPitch * cosHeading,
-      sinPitch * sinHeading,
-      cosPitch
-    );
-
-    let enuToFixed = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
-    let enuRotation = new Cesium.Matrix3();
-    Cesium.Matrix4.getRotation(enuToFixed, enuRotation);
-
-    let worldDirection = new Cesium.Cartesian3();
-    Cesium.Matrix3.multiplyByVector(enuRotation, direction, worldDirection);
-    Cesium.Cartesian3.negate(worldDirection, worldDirection);
-
-    let up = new Cesium.Cartesian3(0, 0, 1);
-    let right = new Cesium.Cartesian3();
-    Cesium.Cartesian3.cross(worldDirection, up, right);
-    
-    // 处理万向节锁
-    if (Cesium.Cartesian3.magnitudeSquared(right) < 0.000001) {
-      const arbitrary = Math.abs(worldDirection.z) > 0.9 
-        ? new Cesium.Cartesian3(1, 0, 0) 
-        : new Cesium.Cartesian3(0, 0, 1);
-      Cesium.Cartesian3.cross(worldDirection, arbitrary, right);
-    }
-    
-    Cesium.Cartesian3.normalize(right, right);
-    Cesium.Cartesian3.cross(right, worldDirection, up);
-
-    let rotationMatrix = new Cesium.Matrix3(
-      right.x, worldDirection.x, up.x,
-      right.y, worldDirection.y, up.y,
-      right.z, worldDirection.z, up.z
-    );
+    // 使用抽取的函数计算旋转矩阵
+    let rotationMatrix = calculateRotationMatrix(origin, options.heading, options.pitch);
 
     // 🎯 几何体定义在单位坐标系（原点0,0,0，无旋转）
     let instanceGeo = new Cesium.GeometryInstance({
@@ -860,49 +820,8 @@ export function geometryConfig() {
       const [lng, lat, height = 0] = positions;
       const origin = Cesium.Cartesian3.fromDegrees(lng, lat, height);
 
-      // 复用创建时的旋转计算逻辑
-      const headingRad = Cesium.Math.toRadians(heading);
-      const pitchRad = Cesium.Math.toRadians(pitch);
-      const cosPitch = Math.cos(pitchRad);
-      const sinPitch = Math.sin(pitchRad);
-      const cosHeading = Math.cos(headingRad);
-      const sinHeading = Math.sin(headingRad);
-
-      const direction = new Cesium.Cartesian3(
-        sinPitch * cosHeading,
-        sinPitch * sinHeading,
-        cosPitch
-      );
-
-      const enuToFixed = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
-      const enuRotation = new Cesium.Matrix3();
-      Cesium.Matrix4.getRotation(enuToFixed, enuRotation);
-
-      let worldDirection = new Cesium.Cartesian3();
-      Cesium.Matrix3.multiplyByVector(enuRotation, direction, worldDirection);
-      Cesium.Cartesian3.negate(worldDirection, worldDirection);
-
-      const up = new Cesium.Cartesian3(0, 0, 1);
-      const right = new Cesium.Cartesian3();
-      Cesium.Cartesian3.cross(worldDirection, up, right);
-
-      // 处理万向节锁
-      if (Cesium.Cartesian3.magnitudeSquared(right) < 0.000001) {
-        const arbitrary = Math.abs(worldDirection.z) > 0.9
-          ? new Cesium.Cartesian3(1, 0, 0)
-          : new Cesium.Cartesian3(0, 0, 1);
-        Cesium.Cartesian3.cross(worldDirection, arbitrary, right);
-      }
-
-      Cesium.Cartesian3.normalize(right, right);
-      const newUp = new Cesium.Cartesian3();
-      Cesium.Cartesian3.cross(right, worldDirection, newUp);
-
-      const rotationMatrix = new Cesium.Matrix3(
-        right.x, worldDirection.x, newUp.x,
-        right.y, worldDirection.y, newUp.y,
-        right.z, worldDirection.z, newUp.z
-      );
+      // 使用抽取的函数计算旋转矩阵
+      const rotationMatrix = calculateRotationMatrix(origin, heading, pitch);
 
       // 直接更新矩阵（GPU 开销极小）
       const modelMatrix = Cesium.Matrix4.fromRotationTranslation(
@@ -924,6 +843,59 @@ export function geometryConfig() {
       console.error('更新姿态失败:', error);
       return false;
     }
+  };
+
+  /**
+   * 计算四棱锥的旋转矩阵
+   * @param origin 原点（地固坐标）
+   * @param heading 水平方位角（度）
+   * @param pitch 垂直方位角（度）
+   * @returns 旋转矩阵
+   */
+  const calculateRotationMatrix = (origin: Cesium.Cartesian3, heading: number, pitch: number): Cesium.Matrix3 => {
+    // 计算旋转矩阵（保持原有逻辑不变）
+    let headingRad = Cesium.Math.toRadians(heading);
+    let pitchRad = Cesium.Math.toRadians(pitch);
+    let cosPitch = Math.cos(pitchRad);
+    let sinPitch = Math.sin(pitchRad);
+    let cosHeading = Math.cos(headingRad);
+    let sinHeading = Math.sin(headingRad);
+
+    let direction = new Cesium.Cartesian3(
+      sinPitch * cosHeading,
+      sinPitch * sinHeading,
+      cosPitch
+    );
+
+    let enuToFixed = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
+    let enuRotation = new Cesium.Matrix3();
+    Cesium.Matrix4.getRotation(enuToFixed, enuRotation);
+
+    let worldDirection = new Cesium.Cartesian3();
+    Cesium.Matrix3.multiplyByVector(enuRotation, direction, worldDirection);
+    Cesium.Cartesian3.negate(worldDirection, worldDirection);
+
+    let up = new Cesium.Cartesian3(0, 0, 1);
+    let right = new Cesium.Cartesian3();
+    Cesium.Cartesian3.cross(worldDirection, up, right);
+    
+    // 处理万向节锁
+    if (Cesium.Cartesian3.magnitudeSquared(right) < 0.000001) {
+      const arbitrary = Math.abs(worldDirection.z) > 0.9 
+        ? new Cesium.Cartesian3(1, 0, 0) 
+        : new Cesium.Cartesian3(0, 0, 1);
+      Cesium.Cartesian3.cross(worldDirection, arbitrary, right);
+    }
+    
+    Cesium.Cartesian3.normalize(right, right);
+    const newUp = new Cesium.Cartesian3();
+    Cesium.Cartesian3.cross(right, worldDirection, newUp);
+
+    return new Cesium.Matrix3(
+      right.x, worldDirection.x, newUp.x,
+      right.y, worldDirection.y, newUp.y,
+      right.z, worldDirection.z, newUp.z
+    );
   };
 
   return {
