@@ -81,13 +81,17 @@ export function setPath() {
   /**
    * 显示/隐藏无人机轨迹
    */
-  const toggleDroneTrail = (droneId: string, show: boolean) => {
-    const trailId = `${droneId}_trail`
+  const toggleDroneTrail = (options: { 
+    pointId: string, 
+    visible: boolean 
+  }) => {
+    const { pointId, visible } = options
+    const trailId = `${pointId}_trail`
     const trailData = mapStore.getDroneTrail(trailId)
 
     if (trailData && trailData.entity) {
-      trailData.entity.show = show
-      trailData.isVisible = show
+      trailData.entity.show = visible
+      trailData.isVisible = visible
     }
   }
 

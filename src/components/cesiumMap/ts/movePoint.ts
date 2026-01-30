@@ -294,24 +294,29 @@ export function movePointConfig(baseUrl: string) {
 
   /**
    * 控制无人机和轨迹的显隐状态
-   * @param droneId 无人机ID
-   * @param visible 是否显示
+   * @param options 配置选项
+   * @param options.pointId 点ID
+   * @param options.visible 是否显示
    * @returns 是否操作成功
    */
-  const toggleDroneAndTrailVisibility = (droneId: string, visible: boolean): boolean => {
+  const toggleDroneAndTrailVisibility = (options: { 
+    pointId: string, 
+    visible: boolean 
+  }): boolean => {
     let success = true
+    const { pointId, visible } = options
     
     // 控制无人机显隐
-    const modelEntity = mapStore.getGraphicMap(droneId)
+    const modelEntity = mapStore.getGraphicMap(pointId)
     if (modelEntity && modelEntity.entity) {
       modelEntity.entity.show = visible
     } else {
-      console.warn(`无人机实体不存在，ID: ${droneId}`)
+      console.warn(`无人机实体不存在，ID: ${pointId}`)
       success = false
     }
     
     // 控制轨迹显隐
-    toggleDroneTrail(droneId, visible)
+    toggleDroneTrail({ pointId, visible })
     
     return success
   }
