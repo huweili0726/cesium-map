@@ -155,7 +155,10 @@ export function movePointConfig(baseUrl: string) {
 
     // ========== 保留轨迹 ==========
     // 在飞行开始前，先更新当前点的轨迹
-    moveDroneTrail(options.pointId, currentRealPosition)
+    moveDroneTrail({
+      pointId: options.pointId,
+      newPosition: currentRealPosition
+    })
 
     // ========== 终止当前所有飞行状态 ==========
     // 1. 移除旧的监听器
@@ -197,7 +200,10 @@ export function movePointConfig(baseUrl: string) {
       modelEntity.entity.position = modelEntity.positionProperty;
 
       // 直接更新轨迹
-      moveDroneTrail(options.pointId, targetPosition)
+      moveDroneTrail({
+        pointId: options.pointId,
+        newPosition: targetPosition
+      })
       return;
     }
 
@@ -252,7 +258,10 @@ export function movePointConfig(baseUrl: string) {
       const currentPosition = modelEntity.positionProperty.getValue(clock.currentTime)
       if (currentPosition) {
         // 实时更新轨迹
-        moveDroneTrail(options.pointId, currentPosition)
+        moveDroneTrail({
+          pointId: options.pointId,
+          newPosition: currentPosition
+        })
       }
     }
 
@@ -267,7 +276,10 @@ export function movePointConfig(baseUrl: string) {
         modelEntity.isFlying = false;
 
         // 确保轨迹包含终点
-        moveDroneTrail(options.pointId, targetPosition)
+        moveDroneTrail({
+          pointId: options.pointId,
+          newPosition: targetPosition
+        })
 
         // 永久锚定目标位置（添加远期采样点）
         if (modelEntity.entity && modelEntity.positionProperty) {

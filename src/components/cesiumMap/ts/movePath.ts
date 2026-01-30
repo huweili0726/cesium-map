@@ -26,7 +26,11 @@ export function movePathConfig() {
    * @param newPosition 新位置
    * @returns 轨迹数据
    */
-  const moveDroneTrail = (droneId: string, newPosition: Cesium.Cartesian3) => {
+  const moveDroneTrail = (options: {
+    pointId: string,
+    newPosition: Cesium.Cartesian3
+  }) => {
+    const { pointId, newPosition } = options
     // 获取地图实例
     const map = mapStore.getMap()
     if (!map) {
@@ -34,13 +38,13 @@ export function movePathConfig() {
       return null
     }
 
-    const trailId = `${droneId}_trail`
+    const trailId = `${pointId}_trail`
     const trailData = mapStore.getDroneTrail(trailId)
 
     if (!trailData) {
       console.warn(`轨迹 ${trailId} 不存在，创建新的轨迹`)
       return setDroneTrail({
-        pointId: droneId,
+        pointId: pointId,
         startPosition: newPosition
       })
     }
