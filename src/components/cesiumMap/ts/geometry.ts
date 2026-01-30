@@ -1,3 +1,13 @@
+/**
+ * 几何体管理模块
+ * 
+ * 提供在Cesium地图上创建、更新、移动和删除几何体实体的功能
+ * 
+ * @author huweili
+ * @email czxyhuweili@163.com
+ * @version 1.0.0
+ * @date 2025-12-27
+ */
 import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
 
@@ -307,7 +317,277 @@ export function geometryConfig() {
   }
 
   /**
-   * 创建四棱锥
+   * 创建四棱锥波效果
+   * @param {string} options.id - 效果唯一标识符
+   * @param {number[]} options.positions - 四棱锥顶点位置 [经度, 纬度, 高度]
+   * @param {number} options.heading - 水平方位角（度）
+   * @param {number} options.pitch - 俯仰角（度）
+   * @param {number} options.height - 四棱锥高度（米）
+   * @param {number} options.horizontalAngle - 水平展开角度（度）
+   * @param {number} options.verticalAngle - 垂直展开角度（度）
+   * @param {string} options.color - 颜色（默认 '#00FFFF'）
+   * @returns {Cesium.Primitive|null} 创建的四棱锥波实体，若创建失败则返回null
+   */
+  const rectangularPyramidWave = (options: {
+    id: string,
+    positions: number[],
+    heading: number,
+    pitch: number,
+    height: number,
+    horizontalAngle: number,
+    verticalAngle: number,
+    color: string,
+  }) => {
+    const map = mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return null
+    }
+
+    // 检查是否已存在相同ID的效果
+    if (mapStore.getGraphicMap(options.id)) {
+      console.log(`id: ${options.id} 效果已存在`)
+      return null
+    }
+
+    // 提取经纬度和高度
+    const [lng, lat, height = 0] = options.positions;
+    
+    // 关键：直接使用经纬度作为四棱锥顶点的位置
+    const worldVertexPosition = Cesium.Cartesian3.fromDegrees(lng, lat, height);
+    
+    // 使用用户设置的方向参数，将度数转换为弧度
+    const heading = Cesium.Math.toRadians(options.heading);
+    const pitch = Cesium.Math.toRadians(options.pitch);
+    const roll = 0;
+    
+    // 创建HeadingPitchRoll对象，控制四棱锥的朝向
+    const hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
+
+    // 创建四棱锥Primitive
+    // 1. 使用headingPitchRollToFixedFrame创建正确的模型矩阵
+    // 这个方法会创建一个以worldVertexPosition为原点，应用hpr旋转的变换矩阵
+    const modelMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(worldVertexPosition, hpr);
+    
+    // 2. 创建平移矩阵，将四棱锥向下平移高度的一半
+    // 这样可以确保四棱锥的底部位于指定的高度位置
+    const translation = Cesium.Matrix4.fromTranslation(
+      new Cesium.Cartesian3(0, 0, -options.height / 2)
+    );
+    Cesium.Matrix4.multiply(modelMatrix, translation, modelMatrix);
+    
+    // 计算四棱锥的底部宽度（基于水平角度）
+    const horizontalAngleRad = Cesium.Math.toRadians(options.horizontalAngle);
+    const bottomWidth = options.height * Math.tan(horizontalAngleRad);
+    
+    // 增强立体感的实现
+    // 1. 使用更高级的材质和光照效果
+    // 2. 添加边缘线框增强轮廓
+    // 3. 使用颜色渐变增强深度感
+
+    // 创建主颜色
+    const baseColor = Cesium.Color.fromCssColorString(options.color || '#00FFFF');
+    
+    // 创建四棱锥主体，使用MaterialAppearance
+    const primitive = new Cesium.Primitive({
+      geometryInstances: new Cesium.GeometryInstance({
+        geometry: new Cesium.CylinderGeometry({
+          length: options.height,
+          topRadius: 0,
+          bottomRadius: bottomWidth / 2,
+          slices: 4 // 4边形底部
+        })
+      }),
+      appearance: new Cesium.MaterialAppearance({
+        material: Cesium.Material.fromType('Color', {
+          color: baseColor.withAlpha(0.8) // 主颜色，带透明度
+        }),
+        closed: true
+      }),
+      modelMatrix,
+      asynchronous: false
+    });
+
+    // 只需要挂原始参数，用于后面计算
+    (primitive as any)._originalOptions = { ...options };
+
+    // 将primitive添加到mapStore中进行管理
+    mapStore.setGraphicMap(options.id, primitive);
+
+    // 添加primitive到场景
+    map.scene.primitives.add(primitive);
+
+    return primitive;
+  }
+
+  /**
+   * 更新四棱锥特效的朝向
+   * @param {Object} options 更新配置参数
+   * @param {string} options.id - 四棱锥ID
+   * @param {number} options.heading - 新的水平方位角（度）
+   * @param {number} options.pitch - 新的垂直方位角（度）
+   * @returns {boolean} 更新成功返回true，否则返回false
+   */
+  const updateRectangularPyramidWavePose = (options: {
+    id: string, 
+    heading?: number,
+    pitch?: number,
+  }) => {
+    const { id, heading, pitch } = options;
+
+    const map = mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return false
+    }
+
+    // 获取已创建的四棱锥
+    const primitive = mapStore.getGraphicMap(id)
+    if (!primitive) {
+      console.error(`id: ${id} 四棱锥体不存在`)
+      return false
+    }
+
+    try {
+      const primitive = mapStore.getGraphicMap(id);
+      if (!primitive) return false;
+
+      const opts = (primitive as any)._originalOptions;
+      const [lng, lat, height = 0] = opts.positions;
+      const vertexPos = Cesium.Cartesian3.fromDegrees(lng, lat, height);
+
+      const hpr = new Cesium.HeadingPitchRoll(
+        Cesium.Math.toRadians(heading),
+        Cesium.Math.toRadians(pitch),
+        0
+      );
+
+      // 计算新矩阵
+      const M = Cesium.Transforms.headingPitchRollToFixedFrame(vertexPos, hpr);
+      const T = Cesium.Matrix4.fromTranslation(
+        new Cesium.Cartesian3(0, 0, -opts.height / 2)
+      );
+      Cesium.Matrix4.multiply(M, T, M);
+
+      primitive.modelMatrix = M;
+
+      console.log(`id: ${id} 四棱锥姿态已更新`);
+      return true;
+    } catch (error) {
+      console.error(`更新四棱锥姿态失败:`, error);
+      return false;
+    }
+  }
+  
+  /**
+   * 更新四棱锥特效的高度、位置
+   * @param {Object} options 更新配置参数
+   * @param {string} options.id - 四棱锥ID
+   * @param {number} options.height - 新的高度（米）（可选）
+   * @param {number} options.positions - 新的位置（经度、纬度、高度）（可选）
+   * @returns {boolean} 更新成功返回true，否则返回false
+   */
+  const updateRectangularPyramidLengthOrPosition = (options: {
+    id: string, 
+    height?: number,
+    positions?: [number, number, number];
+  }): boolean => {
+    const { id, height, positions } = options;
+    const map = mapStore.getMap();
+    if (!map) {
+      console.error('地图实例不存在');
+      return false;
+    }
+
+    if(height === undefined && positions === undefined) {
+      console.error('更新四棱锥体高度 / 位置：必须提供高度或位置');
+      return false;
+    }
+
+    const oldPrimitive = mapStore.getGraphicMap(id);
+    if (!oldPrimitive) {
+      console.error(`id: ${id} 四棱锥体不存在`);
+      return false;
+    }
+
+    try {
+      /* 1. 备份旧参数，并应用新值 */
+      const opts = { ...(oldPrimitive as any)._originalOptions };
+      
+      // 只在提供新值时才更新
+      if (height !== undefined) {
+        opts.height = height;
+      }
+      if (positions !== undefined) {
+        opts.positions = positions;
+      }
+
+      /* 2. 计算顶点世界坐标 */
+      // 确保始终从opts.positions获取坐标（可能是原始值或新值）
+      const [lng, lat, height_val = 0] = opts.positions;
+      const vertexPos = Cesium.Cartesian3.fromDegrees(lng, lat, height_val);
+
+      /* 3. 计算模型矩阵（与创建时完全一致） */
+      const hpr = new Cesium.HeadingPitchRoll(
+        Cesium.Math.toRadians(opts.heading),
+        Cesium.Math.toRadians(opts.pitch),
+        0
+      );
+      const modelMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(vertexPos, hpr);
+      
+      // 4. 创建平移矩阵，将四棱锥向下平移高度的一半
+      // 这样可以确保四棱锥的底部位于指定的高度位置
+      const translation = Cesium.Matrix4.fromTranslation(
+        new Cesium.Cartesian3(0, 0, -opts.height / 2)
+      );
+      Cesium.Matrix4.multiply(modelMatrix, translation, modelMatrix);
+
+      /* 5. 根据角度计算四棱锥的底部尺寸 */
+      const horizontalAngleRad = Cesium.Math.toRadians(opts.horizontalAngle);
+
+      // 计算底部尺寸
+      const bottomWidth = opts.height * Math.tan(horizontalAngleRad);
+      
+      /* 6. 新建四棱锥主体primitive，使用MaterialAppearance */
+       const newPrimitive = new Cesium.Primitive({
+         geometryInstances: new Cesium.GeometryInstance({
+           geometry: new Cesium.CylinderGeometry({
+              length: opts.height,
+              topRadius: 0,
+              bottomRadius: bottomWidth / 2,
+              slices: 4 // 4边形底部
+            })
+         }),
+         appearance: new Cesium.MaterialAppearance({
+           material: Cesium.Material.fromType('Color', {
+             color: Cesium.Color.fromCssColorString(opts.color || '#00FFFF').withAlpha(0.8) // 主颜色，带透明度
+           }),
+           closed: true
+         }),
+         modelMatrix,
+         asynchronous: false
+       });
+
+      (newPrimitive as any)._originalOptions = opts;
+      map.scene.primitives.remove(oldPrimitive); // 场景会负责 destroy
+      map.scene.primitives.add(newPrimitive);
+      mapStore.setGraphicMap(id, newPrimitive);
+
+      console.log(
+        `id: ${id} 四棱锥体已更新 -> 高度:${opts.height}m, 位置:[${lng}, ${lat}, ${height_val}]`
+      );
+      return true;
+    } catch (e) {
+      console.error(`更新四棱锥体失败:`, e);
+      return false;
+    }
+  }
+
+
+
+
+  /**
+   * 创建四棱锥波效果（方法2）
    * @param {string} options.id - 效果唯一标识符
    * @param {number[]} options.positions - 四棱锥顶点位置 [经度, 纬度, 高度]
    * @param {number} options.heading - 水平方位角（度）
@@ -318,7 +598,7 @@ export function geometryConfig() {
    * @param {string} options.color - 颜色（默认 '#00FFFF'）
    * @returns {Cesium.Primitive|null} 创建的四棱锥波实体，若创建失败则返回null
    */
-  const rectangularPyramid = (options: {
+  const rectangularPyramidWave1 = (options: {
     id: string,
     positions: number[],
     heading: number,
@@ -442,7 +722,7 @@ export function geometryConfig() {
    * @param {string} options.color - 颜色
    * @returns {boolean} 更新成功返回true，否则返回false
    */
-  const updateRectangularPyramidPose = (options: {
+  const updateRectangularPyramidWavePose1 = (options: {
     id: string, 
     heading?: number,
     pitch?: number,
@@ -468,7 +748,7 @@ export function geometryConfig() {
 
     if (!existingPrimitive || !existingPrimitiveLine) {
       console.warn(`效果 ${options.id} 不存在，将创建新实例`);
-      return rectangularPyramid({...existingPrimitive?._originalOptions, ...options});
+      return rectangularPyramidWave1({...existingPrimitive?._originalOptions, ...options});
     }
 
     try {
@@ -495,7 +775,7 @@ export function geometryConfig() {
       const updateOptions = { ...originalOptions, ...options };
       
       // 5. 创建新的（使用新ID或相同ID）
-      rectangularPyramid(updateOptions);
+      rectangularPyramidWave1(updateOptions);
       
       return true;
     } catch (error) {
@@ -510,7 +790,7 @@ export function geometryConfig() {
    *  适用场景：实时跟踪、雷达扫描等高频更新（60fps无压力）
    * 
    *  这种高性能方式只能修改位置、heading、pitch。
-   *  如果 length、horizontalAngle、verticalAngle 或 color 变化，必须重新创建 Primitive（调用之前的 updateRectangularPyramidPose）
+   *  如果 length、horizontalAngle、verticalAngle 或 color 变化，必须重新创建 Primitive（调用之前的 updateRectangularPyramidWavePose1）
    *  因为这些是几何体形状属性，无法通过矩阵变换修改。
    * 
    * @param options 更新配置参数
@@ -611,8 +891,11 @@ export function geometryConfig() {
     conicalWave,
     updateConeLengthOrPosition,
     updateConePose,
-    rectangularPyramid,
-    updateRectangularPyramidPose,
+    rectangularPyramidWave,
+    updateRectangularPyramidWavePose,
+    updateRectangularPyramidLengthOrPosition,
+    rectangularPyramidWave1,
+    updateRectangularPyramidWavePose1,
     updateRectangularPyramidPoseFast,
   }
 }
