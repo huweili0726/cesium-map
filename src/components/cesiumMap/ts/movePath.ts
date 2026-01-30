@@ -38,15 +38,35 @@ export function movePathConfig() {
       return null
     }
 
+    // 检查无人机是否存在，如果不存在则不更新轨迹
+    const droneEntity = mapStore.getGraphicMap(pointId)
+    if (!droneEntity) {
+      return null
+    }
+
     const trailId = `${pointId}_trail`
     const trailData = mapStore.getDroneTrail(trailId)
 
+    // if (!trailData) {
+    //   console.warn(`轨迹 ${trailId} 不存在，创建新的轨迹`)
+    //   return setDroneTrail({
+    //     pointId: pointId,
+    //     startPosition: newPosition
+    //   })
+    // }
+
     if (!trailData) {
-      console.warn(`轨迹 ${trailId} 不存在，创建新的轨迹`)
-      return setDroneTrail({
-        pointId: pointId,
-        startPosition: newPosition
-      })
+      return null
+    }
+
+    // 检查轨迹是否可见，如果不可见则不更新轨迹
+    // if (!trailData.isVisible) {
+    //   return trailData
+    // }
+
+    // 检查轨迹实体是否存在，如果不存在则不更新轨迹
+    if (!trailData.entity) {
+      return null
     }
 
     const currentTime = map.clock.currentTime

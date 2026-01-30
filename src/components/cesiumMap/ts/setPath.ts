@@ -75,8 +75,19 @@ export function setPath() {
     if (trailData) {
       const map = mapStore.getMap()
       if (map && trailData.entity) {
+        // 先设置轨迹不可见
+        // trailData.entity.show = false
+        // 强制移除轨迹实体
         map.entities.remove(trailData.entity)
+        trailData.entity = null
       }
+      // 清空轨迹点
+      if (trailData.positions) {
+        trailData.positions = []
+      }
+      // 设置轨迹不可见
+      // trailData.isVisible = false
+      // 从store中清除
       mapStore.clearDroneTrail(trailId)
       console.log(`已清除轨迹: ${trailId}`)
     }

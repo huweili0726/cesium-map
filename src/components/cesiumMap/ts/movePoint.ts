@@ -161,11 +161,15 @@ export function movePointConfig(baseUrl: string) {
       newPosition: currentRealPosition
     })
 
-    // ========== 终止当前所有飞行状态 ==========
+    // ========== 终止当前所有飞行状态 ==========    
     // 1. 移除旧的监听器
     if (modelEntity.flightEndListener) {
       map.clock.onTick.removeEventListener(modelEntity.flightEndListener);
       modelEntity.flightEndListener = null;
+    }
+    if (modelEntity.updateTrailListener) {
+      map.clock.onTick.removeEventListener(modelEntity.updateTrailListener);
+      modelEntity.updateTrailListener = null;
     }
 
     // 2. 重置飞行状态
@@ -298,6 +302,7 @@ export function movePointConfig(baseUrl: string) {
 
     // 保存监听器引用
     modelEntity.flightEndListener = flightEndListener;
+    modelEntity.updateTrailListener = updateTrailListener;
     map.clock.onTick.addEventListener(updateTrailListener)
     map.clock.onTick.addEventListener(flightEndListener);
 
@@ -350,16 +355,32 @@ export function movePointConfig(baseUrl: string) {
       console.error('地图实例不存在')
       return null
     }
-    // 清除轨迹
-    clearDroneTrail(pointId)
     
     // 清除无人机模型
     const droneEntity = mapStore.getGraphicMap(pointId)
-    if (droneEntity && droneEntity.entity) {
-      map.entities.remove(droneEntity.entity)
+    if (droneEntity) {
+      // 移除监听器（关键：避免轨迹继续更新）
+      if (droneEntity.flightEndListener) {
+        map.clock.onTick.removeEventListener(droneEntity.flightEndListener);
+        droneEntity.flightEndListener = null;
+      }
+      if (droneEntity.updateTrailListener) {
+        map.clock.onTick.removeEventListener(droneEntity.updateTrailListener);
+        droneEntity.updateTrailListener = null;
+      }
+      
+      // 清除无人机实体
+      if (droneEntity.entity) {
+        map.entities.remove(droneEntity.entity)
+      }
+      
       mapStore.graphicMap.delete(pointId)
-      console.log(`无人机模型+轨迹${pointId}已清除`)
+      console.log(`无人机模型${pointId}已清除`)
     }
+    
+    // 清除轨迹
+    clearDroneTrail(pointId)
+    console.log(`无人机轨迹${pointId}已清除`)
   }
 
   return {
