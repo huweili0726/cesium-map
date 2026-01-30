@@ -757,12 +757,19 @@ const toCreateRectangularPyramidEffect1 = () => {
     }
 
     // 更新四棱锥朝向和长度
-    updateRectangularPyramidWavePose1({
+    // updateRectangularPyramidWavePose1({
+    //   id: 'rectangular_pyramid_wave_002',
+    //   heading: currentPyramidHeading1, // 新的水平方位角（度）
+    //   pitch: currentPyramidPitch1, // 新的垂直方位角（度）
+    //   length: currentPyramidLength1, // 新的长度
+    // });
+
+    updateRectangularPyramidPoseFast({
       id: 'rectangular_pyramid_wave_002',
+          positions: [117.229629, 31.716888, 0],
       heading: currentPyramidHeading1, // 新的水平方位角（度）
       pitch: currentPyramidPitch1, // 新的垂直方位角（度）
-      length: currentPyramidLength1, // 新的长度
-    });
+    })
   }, 1000); // 每秒执行一次
 };
 
@@ -835,7 +842,8 @@ const {
   updateRectangularPyramidWavePose,
   updateRectangularPyramidLengthOrPosition,
   rectangularPyramidWave1,
-  updateRectangularPyramidWavePose1
+  updateRectangularPyramidWavePose1,
+  updateRectangularPyramidPoseFast
 } = geometryConfig()
 </script>
 
