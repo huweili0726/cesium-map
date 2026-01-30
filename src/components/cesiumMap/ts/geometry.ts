@@ -746,7 +746,7 @@ export function geometryConfig() {
   };
 
   /**
-   * 更新四棱锥特效的朝向
+   * 更新四棱锥姿态 + length、horizontalAngle、verticalAngle 或 color
    * @param {Object} options 更新配置参数
    * @param {string} options.id - 四棱锥ID
    * @param {number} options.heading - 新的水平方位角（度）
