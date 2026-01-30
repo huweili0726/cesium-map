@@ -27,6 +27,7 @@ export function movePointConfig(baseUrl: string) {
 
   const {
     toggleDroneTrail,
+    clearDroneTrail
   } = setPath()
 
   /**
@@ -333,9 +334,38 @@ export function movePointConfig(baseUrl: string) {
     return success
   }
 
+  /**
+   * 销毁无人机模型+轨迹
+   * @param options 
+   * @param options.pointId 点ID
+   * @returns 
+   */
+  const destroyDroneTrail = (options: { 
+    pointId: string, 
+  }) => {
+    const { pointId } = options
+
+    const map = mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return null
+    }
+    // 清除轨迹
+    clearDroneTrail(pointId)
+    
+    // 清除无人机模型
+    const droneEntity = mapStore.getGraphicMap(pointId)
+    if (droneEntity && droneEntity.entity) {
+      map.entities.remove(droneEntity.entity)
+      mapStore.graphicMap.delete(pointId)
+      console.log(`无人机模型+轨迹${pointId}已清除`)
+    }
+  }
+
   return {
     movePoint,
     moveDronePoint,
-    toggleDroneAndTrailVisibility
+    toggleDroneAndTrailVisibility,
+    destroyDroneTrail
   }
 }

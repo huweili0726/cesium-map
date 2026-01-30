@@ -59,6 +59,8 @@
 
           <button @click="toHideDronePoint" class="control-btn">hide(无人机1)</button>
           <button @click="toShowDronePoint" class="control-btn">show(无人机1)</button>
+
+          <button @click="toDestroyDronePoint" class="control-btn">destroy(无人机1)</button>
         </div>
       </div>
 
@@ -277,6 +279,7 @@ const toMoveDronePoint1 = () => {
   moveDronePoint({pointId: '5', lng: newLng, lat: newLat, height: newHeight, speed: 100});
 }
 
+// 隐藏无人机点位
 const toHideDronePoint = () => {
   // 隐藏无人机+轨迹
   toggleDroneAndTrailVisibility({pointId: '4', visible: false});
@@ -286,6 +289,12 @@ const toHideDronePoint = () => {
 const toShowDronePoint = () => {
   // 显示无人机+轨迹
   toggleDroneAndTrailVisibility({pointId: '4', visible: true});
+}
+
+// 销毁无人机模型+轨迹
+const toDestroyDronePoint = () => {
+  // 销毁无人机+轨迹
+  destroyDroneTrail({pointId: '4'});
 }
 
 // 回放控制器
@@ -786,7 +795,8 @@ const {
 const {
   movePoint,
   moveDronePoint,
-  toggleDroneAndTrailVisibility
+  toggleDroneAndTrailVisibility,
+  destroyDroneTrail
 } = movePointConfig(process.env.BASE_URL)
 
 const {
