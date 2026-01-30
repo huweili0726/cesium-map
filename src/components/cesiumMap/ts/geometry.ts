@@ -623,7 +623,7 @@ export function geometryConfig() {
 
     let frustum = new Cesium.PerspectiveFrustum({
       fov: Cesium.Math.toRadians(options.horizontalAngle || 30),
-      aspectRatio: 1.4,
+      aspectRatio: options.verticalAngle/options.horizontalAngle,
       near: 1,
       far: options.length,
     });
@@ -867,49 +867,24 @@ export function geometryConfig() {
   }): Cesium.Matrix3 => {
     const { origin, heading, pitch } = options;
 
-    // 计算旋转矩阵（保持原有逻辑不变）
-    let headingRad = Cesium.Math.toRadians(heading);
-    let pitchRad = Cesium.Math.toRadians(pitch);
-    let cosPitch = Math.cos(pitchRad);
-    let sinPitch = Math.sin(pitchRad);
-    let cosHeading = Math.cos(headingRad);
-    let sinHeading = Math.sin(headingRad);
-
-    let direction = new Cesium.Cartesian3(
-      sinPitch * cosHeading,
-      sinPitch * sinHeading,
-      cosPitch
+    // 使用Cesium标准方法计算旋转矩阵，确保四棱锥绕原点旋转
+    const hpr = new Cesium.HeadingPitchRoll(
+      Cesium.Math.toRadians(heading),
+      Cesium.Math.toRadians(pitch),
+      0
     );
 
-    let enuToFixed = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
-    let enuRotation = new Cesium.Matrix3();
-    Cesium.Matrix4.getRotation(enuToFixed, enuRotation);
-
-    let worldDirection = new Cesium.Cartesian3();
-    Cesium.Matrix3.multiplyByVector(enuRotation, direction, worldDirection);
-    Cesium.Cartesian3.negate(worldDirection, worldDirection);
-
-    let up = new Cesium.Cartesian3(0, 0, 1);
-    let right = new Cesium.Cartesian3();
-    Cesium.Cartesian3.cross(worldDirection, up, right);
-    
-    // 处理万向节锁
-    if (Cesium.Cartesian3.magnitudeSquared(right) < 0.000001) {
-      const arbitrary = Math.abs(worldDirection.z) > 0.9 
-        ? new Cesium.Cartesian3(1, 0, 0) 
-        : new Cesium.Cartesian3(0, 0, 1);
-      Cesium.Cartesian3.cross(worldDirection, arbitrary, right);
-    }
-    
-    Cesium.Cartesian3.normalize(right, right);
-    const newUp = new Cesium.Cartesian3();
-    Cesium.Cartesian3.cross(right, worldDirection, newUp);
-
-    return new Cesium.Matrix3(
-      right.x, worldDirection.x, newUp.x,
-      right.y, worldDirection.y, newUp.y,
-      right.z, worldDirection.z, newUp.z
+    // 计算固定框架矩阵
+    const fixedFrameMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(
+      origin,
+      hpr
     );
+
+    // 从固定框架矩阵中提取旋转矩阵
+    const rotationMatrix = new Cesium.Matrix3();
+    Cesium.Matrix4.getRotation(fixedFrameMatrix, rotationMatrix);
+
+    return rotationMatrix;
   };
 
   return {

@@ -724,7 +724,7 @@ const toCreateRectangularPyramidEffect1 = () => {
 
   // 重置当前角度和长度
   currentPyramidHeading1 = 0;
-  currentPyramidPitch1 = 120;
+  currentPyramidPitch1 = 45;
   currentPyramidLength1 = 5000;
 
   // 创建四棱锥
@@ -761,7 +761,7 @@ const toCreateRectangularPyramidEffect1 = () => {
     //   id: 'rectangular_pyramid_wave_002',
     //   heading: currentPyramidHeading1, // 新的水平方位角（度）
     //   pitch: currentPyramidPitch1, // 新的垂直方位角（度）
-    //   length: currentPyramidLength1, // 新的长度
+    //   // length: currentPyramidLength1, // 新的长度
     // });
 
     // 高性能更新四棱锥姿态
