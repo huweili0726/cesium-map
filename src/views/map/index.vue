@@ -46,7 +46,7 @@ const options = {
 const mapOnLoad = (map: any) => {
   mapStore.setMapLoadSta(MapLoadStatus.LOADED) // 地图加载完成，设置状态为已加载
   mapStore.setMap(map); // 地图加载完成, 全局设置地图对象到store中
-  // setMapCenter({lng: 117.129619, lat: 31.726288})// 设置地图中心点
+  setMapCenter({lng: 117.229619, lat: 31.726288})// 设置地图中心点
   setBeiJingTime(); // 地图加载完成后设置为当前北京时间
 }
 

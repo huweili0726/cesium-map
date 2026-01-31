@@ -846,7 +846,7 @@ const {
   updateRectangularPyramidWavePose,
   updateRectangularPyramidLengthOrPosition,
   rectangularPyramidWave1,
-  updateRectangularPyramidWavePose1,
+  // updateRectangularPyramidWavePose1,
   updateRectangularPyramidPoseFast
 } = geometryConfig()
 </script>
