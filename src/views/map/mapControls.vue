@@ -752,8 +752,11 @@ const toCreateRectangularPyramidEffect1 = () => {
     if (currentPyramidHeading1 > 360) {
       currentPyramidHeading1 -= 360;
     }
-    if (currentPyramidPitch1 > 360) {
-      currentPyramidPitch1 -= 360;
+    // 限制pitch值在-90到90度范围内
+    if (currentPyramidPitch1 > 90) {
+      currentPyramidPitch1 = -90;
+    } else if (currentPyramidPitch1 < -90) {
+      currentPyramidPitch1 = 90;
     }
 
     // 更新四棱锥朝向和长度
