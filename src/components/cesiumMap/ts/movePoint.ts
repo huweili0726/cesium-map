@@ -69,7 +69,7 @@ export function movePointConfig(baseUrl: string) {
     // 重新计算 position（确保无 NaN）
     const position = Cesium.Cartesian3.fromDegrees(lng, lat, height)
     // 校验 position 是否有效（兜底）
-    if (!position || isNaN(position.x) || isNaN(position.y) || isNaN(position.z)) {
+    if (!position || Number.isNaN(position.x) || Number.isNaN(position.y) || Number.isNaN(position.z)) {
       console.error('生成的坐标包含 NaN：', position)
       return false
     }
@@ -367,6 +367,11 @@ export function movePointConfig(baseUrl: string) {
       if (droneEntity.updateTrailListener) {
         map.clock.onTick.removeEventListener(droneEntity.updateTrailListener);
         droneEntity.updateTrailListener = null;
+      }
+      // 移除右键点击事件处理器
+      if (droneEntity.rightClickHandler) {
+        droneEntity.rightClickHandler.destroy();
+        droneEntity.rightClickHandler = null;
       }
       
       // 清除无人机实体
