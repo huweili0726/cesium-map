@@ -601,29 +601,55 @@ export function setPoint(baseUrl: string) {
           if (!win || isNaN(win.x) || isNaN(win.y)) { item.rect = null; continue; }
           // 绘制标签背景
           const lines = item.text.split('\n');
-          ctx.font = '14px monospace';
+          ctx.font = 'bold 18px "Consolas", "Segoe UI", "Arial", "Microsoft YaHei", monospace';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'bottom';
           const textWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
-          const lineHeight = 18;
-          const totalHeight = lineHeight * lines.length + 8;
+          const lineHeight = 24;
+          const totalHeight = lineHeight * lines.length + 18;
           const rect = {
-            x: win.x - textWidth/2 - 8,
-            y: win.y - totalHeight - 50,
-            width: textWidth + 16,
-            height: totalHeight
+            x: win.x - textWidth/2 - 22,
+            y: win.y - totalHeight - 60,
+            width: textWidth + 44,
+            height: totalHeight + 12
           };
           item.rect = rect;
+          // 简洁炫酷：蓝紫渐变圆角背景+发光文字
           ctx.save();
-          ctx.globalAlpha = 0.85;
-          ctx.fillStyle = 'rgba(25,25,25,0.7)';
-          ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+          ctx.globalAlpha = 0.92;
+          const radius = 18;
+          const grad = ctx.createLinearGradient(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height);
+          grad.addColorStop(0, '#00eaff');
+          grad.addColorStop(1, '#a259f7');
+          ctx.beginPath();
+          ctx.moveTo(rect.x + radius, rect.y);
+          ctx.lineTo(rect.x + rect.width - radius, rect.y);
+          ctx.quadraticCurveTo(rect.x + rect.width, rect.y, rect.x + rect.width, rect.y + radius);
+          ctx.lineTo(rect.x + rect.width, rect.y + rect.height - radius);
+          ctx.quadraticCurveTo(rect.x + rect.width, rect.y + rect.height, rect.x + rect.width - radius, rect.y + rect.height);
+          ctx.lineTo(rect.x + radius, rect.y + rect.height);
+          ctx.quadraticCurveTo(rect.x, rect.y + rect.height, rect.x, rect.y + rect.height - radius);
+          ctx.lineTo(rect.x, rect.y + radius);
+          ctx.quadraticCurveTo(rect.x, rect.y, rect.x + radius, rect.y);
+          ctx.closePath();
+          ctx.fillStyle = grad;
+          ctx.shadowColor = '#00eaff';
+          ctx.shadowBlur = 12;
+          ctx.fill();
           ctx.restore();
-          // 绘制文字
-          ctx.fillStyle = 'yellow';
+          // 发光文字
+          ctx.save();
+          ctx.shadowColor = '#00eaff';
+          ctx.shadowBlur = 8;
+          ctx.fillStyle = '#fff';
+          // 计算首行y，使所有文字整体垂直居中
+          const textBlockHeight = lineHeight * lines.length;
+          const startY = rect.y + (rect.height - textBlockHeight) / 2 + lineHeight - 4;
           lines.forEach((line, i) => {
-            ctx.fillText(line, win.x, win.y - 50 - totalHeight + lineHeight * (i+1));
+            ctx.font = 'bold 18px "Consolas", "Segoe UI", "Arial", "Microsoft YaHei", monospace';
+            ctx.fillText(line, win.x, startY + i * lineHeight);
           });
+          ctx.restore();
         }
         requestAnimationFrame(renderLabels);
       };
