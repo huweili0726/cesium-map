@@ -542,8 +542,6 @@ export function setPoint(baseUrl: string) {
     labelDiv.style.cssText = `
       position: absolute;
       pointer-events: auto; 
-      background: #FF662C;
-      border-color: rgba(255, 100, 150, 0.3);
       color: #fff;
       font: bold 15px 'Consolas', 'Segoe UI', 'Arial', 'Microsoft YaHei', monospace;
       padding: 3px 10px;
@@ -555,24 +553,51 @@ export function setPoint(baseUrl: string) {
       border: none;
       letter-spacing: 0.5px;
       cursor: pointer;
+      background: rgba(30,40,60,0.98);
+      box-shadow: 0 4px 24px 0 #3f51b599;
     `;
+    // 让labelDiv成为定位参考容器
+    labelDiv.style.position = 'absolute';
+    labelDiv.style.display = 'none';
     // 添加点击事件，事件对象中带上无人机id
     labelDiv.addEventListener('click', (e) => {
       e.stopPropagation();
-      alert(`无人机ID: ${labelItem.id}`);
+      // 先移除已存在的内容div，避免重复
+      const existDetailDiv = labelDiv.querySelector('.drone-detail-div');
+      if (existDetailDiv) existDetailDiv.remove();
+
+      // 创建新的内容div，作为labelDiv的子元素
+      const detailDiv = document.createElement('div');
+      detailDiv.className = 'drone-detail-div';
+      detailDiv.innerHTML = `
+        <div style="font-weight:bold;font-size:16px;margin-bottom:8px;">无人机详细信息</div>
+        <div>这里可以放很多内容，比如实时数据、历史轨迹、操作按钮等...</div>
+        <div style='margin-top:10px;'>无人机ID: ${labelItem.id}</div>
+        <button style='margin-top:12px;' onclick='this.parentNode.remove()'>关闭</button>
+      `;
+      // 设置样式，右侧浮出且不重叠，定位参照labelDiv
+      detailDiv.style.cssText = `
+        position: absolute;
+        left: calc(100% + 16px);
+        top: 0;
+        min-width: 260px;
+        max-width: 400px;
+        background: rgba(30,40,60,0.98);
+        color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px 0 #3f51b599;
+        padding: 18px 20px 16px 20px;
+        z-index: 9999;
+        font-size: 14px;
+      `;
+      labelDiv.appendChild(detailDiv);
+
       // 创建自定义事件，事件名为 'drone-label-click'，并通过 detail 传递无人机 id
-      //
-      // 其他地方可通过如下方式监听该事件：
-      // window.addEventListener('drone-label-click', (e) => {
-      //   const id = e.detail.id;
-      //   // 这里可以根据 id 做后续处理
-      // });
       const event = new CustomEvent('drone-label-click', {
         detail: {
           id: labelItem.id
         }
       });
-      // 派发该事件到 window，使全局可监听无人机标签点击
       window.dispatchEvent(event);
     });
     document.body.appendChild(labelDiv);
