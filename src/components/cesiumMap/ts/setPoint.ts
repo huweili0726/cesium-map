@@ -650,11 +650,7 @@ export function setPoint(baseUrl: string) {
       let isDragging = false;
       let startX = 0;
       let startY = 0;
-      let originLeft = 0;
-      let originTop = 0;
      
-
-
       const updateDragLine = () => {
         if (!isDragging) return;
         const labelRect = labelDiv.getBoundingClientRect();
@@ -679,32 +675,17 @@ export function setPoint(baseUrl: string) {
         if (!isDragging) return;
         const deltaX = e.clientX - startX;
         const deltaY = e.clientY - startY;
-        // detailDiv.style.left = `${originLeft + deltaX}px`;
-        // detailDiv.style.top = `${originTop + deltaY}px`;
-
-        
         detailDiv.style.left = `${new_detailDivLeft + deltaX}px`;
         detailDiv.style.top = `${new_detailDivTop + deltaY}px`;
-
-   
-
-        // detailDiv.style.left = `${detailDiv.style.left + deltaX}px`;
-        // detailDiv.style.top = `${detailDiv.style.top + deltaY}px`;
         updateDragLine();
-
         console.log(`拖动中... 当前坐标: (${detailDiv.style.left}, ${detailDiv.style.top})`);
       };
 
       const onPointerUp = () => {
         if (!isDragging) return;
         isDragging = false;
-
-        console.log(`结束拖拽... 当前坐标: (${detailDiv.style.left}, ${detailDiv.style.top})`);
-        //         new_detailDivLeft = detailDiv.style.left;
-        // new_detailDivTop = detailDiv.style.top;
-
         new_detailDivLeft = parseFloat(detailDiv.style.left) || 0;
-new_detailDivTop = parseFloat(detailDiv.style.top) || 0;
+        new_detailDivTop = parseFloat(detailDiv.style.top) || 0;
         document.removeEventListener('pointermove', onPointerMove);
         document.removeEventListener('pointerup', onPointerUp);
         removeDragLine();
@@ -716,30 +697,13 @@ new_detailDivTop = parseFloat(detailDiv.style.top) || 0;
         }
         e.preventDefault();
 
-        // console.log('开始拖拽')
-
-        // const detailRect = detailDiv.getBoundingClientRect();
-        // detailDiv.style.left = `${detailRect.left}px`;
-        // detailDiv.style.top = `${detailRect.top}px`;
-        //        startX = e.clientX;
-        // startY = e.clientY;
-        // detailDiv.style.left = new_detailDivLeft;
-        // detailDiv.style.top = new_detailDivTop;
-
-        console.log(`开始拖拽... 当前坐标: (${detailDiv.style.left}, ${detailDiv.style.top})`);
-
-
-
         if (detailDiv.parentElement !== document.body) {
-          // document.body.appendChild(detailDiv);
           labelDiv.appendChild(detailDiv);
         }
         document.body.appendChild(dragLineSvg);
         isDragging = true;
         startX = e.clientX;
         startY = e.clientY;
-        // originLeft = detailRect.left;
-        // originTop = detailRect.top;
         updateDragLine();
         document.addEventListener('pointermove', onPointerMove);
         document.addEventListener('pointerup', onPointerUp);
