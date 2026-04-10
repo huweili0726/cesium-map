@@ -127,14 +127,26 @@ export function movePointConfig(baseUrl: string) {
         heading: 0
       });
       if (modelEntity) {
-        modelEntity.speed = speed;
+        modelEntity.info = {
+          pointId: options.pointId,
+          lng: options.lng,
+          lat: options.lat,
+          height: height,
+          speed: speed
+        }
       }
       // 新创建的实体直接返回（首次创建无飞行状态）
       return modelEntity;
     }
 
     // 如果存在实体，确保实体 speed 属性实时同步
-    modelEntity.speed = speed;
+    modelEntity.info = {
+      pointId: options.pointId,
+      lng: options.lng,
+      lat: options.lat,
+      height: height,
+      speed: speed
+    }
 
     // ========== 核心修复：强制获取无人机实时位置 ==========
     let currentRealPosition: Cesium.Cartesian3;

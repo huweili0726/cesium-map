@@ -466,15 +466,22 @@ export function setPoint(baseUrl: string) {
 
     // 模型实例（用于后续销毁/修改）
     let modelEntity: any | null = {
-      targetLng: options.lng, // 默认北京经度
-      targetLat: options.lat,  // 默认北京纬度
+      targetLng: options.lng, // 默认经度
+      targetLat: options.lat,  // 默认纬度
       targetHeight: options.height || 0,   // 默认高度
       speed: 50,           // 默认速度
       entity: null,        // Cesium实体
       positionProperty: null, // 位置属性
       isFlying: false,     // 飞行状态
       currentPosition: null, // 当前位置
-      trailEntityId: `${options.id}_trail` // 轨迹实体ID，用于管理独立的轨迹
+      trailEntityId: `${options.id}_trail`, // 轨迹实体ID，用于管理独立的轨迹
+      info: {
+        lng: options.lng,
+        lat: options.lat,
+        height: options.height || 0,
+        speed: 50,
+        heading: options.heading || 0,
+      }
     }
     modelEntity.entity = map.entities.add({
       id: options.id,
@@ -499,7 +506,7 @@ export function setPoint(baseUrl: string) {
     modelEntity.destroy = createOrUpdateDroneLabelDiv({
       id: options.id,
       getPosition: () => modelEntity.entity.position.getValue(map.clock.currentTime),
-      getSpeed: () => modelEntity.speed,
+      getInfo: () => modelEntity.info,
       text: `无人机: ${options.id}<br>高度: ${options.height}米`,
       map: map
     });
@@ -534,7 +541,7 @@ export function setPoint(baseUrl: string) {
   const createOrUpdateDroneLabelDiv = (labelItem: {
     id: string,
     getPosition: () => any,
-    getSpeed?: () => number | string,
+    getInfo?: () => any,
     text: string,
     map: any
   }) => {
@@ -611,11 +618,11 @@ export function setPoint(baseUrl: string) {
           return;
         }
         if (position && position.x !== undefined && position.y !== undefined && position.z !== undefined) {
-          const carto = Cesium.Cartographic.fromCartesian(position);
-          const lng = Cesium.Math.toDegrees(carto.longitude).toFixed(6);
-          const lat = Cesium.Math.toDegrees(carto.latitude).toFixed(6);
-          const alt = carto.height.toFixed(2);
-          const speed = labelItem.getSpeed ? labelItem.getSpeed() : '--';
+          const lng = labelItem.getInfo?.().lng ?? '--';
+          const lat = labelItem.getInfo?.().lat ?? '--';
+          const alt = labelItem.getInfo?.().height ?? '--';
+          const info = labelItem.getInfo ? labelItem.getInfo() : null;
+          const speed = info?.speed ?? '--';
           const lngEl = infoDiv.querySelector('.lng');
           const latEl = infoDiv.querySelector('.lat');
           const altEl = infoDiv.querySelector('.alt');
