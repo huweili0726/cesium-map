@@ -499,6 +499,7 @@ export function setPoint(baseUrl: string) {
     modelEntity.destroy = createOrUpdateDroneLabelDiv({
       id: options.id,
       getPosition: () => modelEntity.entity.position.getValue(map.clock.currentTime),
+      getSpeed: () => modelEntity.speed,
       text: `无人机: ${options.id}<br>高度: ${options.height}米`,
       map: map
     });
@@ -533,6 +534,7 @@ export function setPoint(baseUrl: string) {
   const createOrUpdateDroneLabelDiv = (labelItem: {
     id: string,
     getPosition: () => any,
+    getSpeed?: () => number | string,
     text: string,
     map: any
   }) => {
@@ -599,9 +601,6 @@ export function setPoint(baseUrl: string) {
 
       // 实时刷新无人机经纬度、高度、速度
       const infoDiv = detailDiv.querySelector(`#drone-info-${labelItem.id}`);
-      let lastPosition = null;
-      let lastTime = null;
-      let speed = 0;
       let rafId = 0;
       function updateDroneInfo() {
         if (!infoDiv) return;
@@ -616,19 +615,15 @@ export function setPoint(baseUrl: string) {
           const lng = Cesium.Math.toDegrees(carto.longitude).toFixed(6);
           const lat = Cesium.Math.toDegrees(carto.latitude).toFixed(6);
           const alt = carto.height.toFixed(2);
-          // 速度计算
-          const now = Date.now();
-          if (lastPosition && lastTime) {
-            const dist = Cesium.Cartesian3.distance(position, lastPosition);
-            const dt = (now - lastTime) / 1000;
-            speed = dt > 0 ? (dist / dt).toFixed(2) : speed;
-          }
-          lastPosition = Cesium.Cartesian3.clone(position);
-          lastTime = now;
-          infoDiv.querySelector('.lng').textContent = lng;
-          infoDiv.querySelector('.lat').textContent = lat;
-          infoDiv.querySelector('.alt').textContent = alt;
-          infoDiv.querySelector('.speed').textContent = speed;
+          const speed = labelItem.getSpeed ? labelItem.getSpeed() : '--';
+          const lngEl = infoDiv.querySelector('.lng');
+          const latEl = infoDiv.querySelector('.lat');
+          const altEl = infoDiv.querySelector('.alt');
+          const speedEl = infoDiv.querySelector('.speed');
+          if (lngEl) lngEl.textContent = lng;
+          if (latEl) latEl.textContent = lat;
+          if (altEl) altEl.textContent = alt;
+          if (speedEl) speedEl.textContent = String(speed);
         }
         rafId = requestAnimationFrame(updateDroneInfo);
       }
