@@ -496,21 +496,82 @@ export function setPoint(baseUrl: string) {
     })
 
 
-    // 调用批量canvas标签渲染函数
-    createOrUpdateDroneLabelCanvas({
+    // 创建无人机div标签，返回销毁函数
+    modelEntity.destroy = createOrUpdateDroneLabelDiv({
       id: options.id,
       getPosition: () => modelEntity.entity.position.getValue(map.clock.currentTime),
-      text: `无人机: ${options.id}\n高度: ${options.height}米`,
-      onClick: () => {
-        alert(`点击了无人机: ${options.id}`);
-      }
-    }, map);
+      text: `无人机: ${options.id}<br>高度: ${options.height}米`,
+      map: map
+    });
 
+    /**
+     * 创建或更新无人机div标签
+     * @param labelItem { id, getPosition, text, map }
+     * @returns 销毁函数
+     */
+    function createOrUpdateDroneLabelDiv(labelItem: {
+      id: string,
+      getPosition: () => any,
+      text: string,
+      map: any
+    }) {
+      const labelDiv = document.createElement('div');
+      labelDiv.className = 'drone-label';
+      labelDiv.innerHTML = labelItem.text;
+      labelDiv.style.cssText = `
+        position: absolute;
+        pointer-events: none;
+        background: rgba(25,25,25,0.7);
+        color: yellow;
+        font: 14px monospace;
+        padding: 4px 8px;
+        border-radius: 4px;
+        white-space: pre;
+        z-index: 10;
+        display: none;
+      `;
+      document.body.appendChild(labelDiv);
 
-    // 销毁时清理canvas和事件
-    modelEntity.destroy = () => {
-      removeDroneLabelById(options.id);
-    };
+      // 每帧同步div位置
+      const updateDivPosition = () => {
+        if (!labelItem.map || !labelItem.map.scene) {
+          labelDiv.style.display = 'none';
+          return;
+        }
+        let position;
+        try {
+          position = labelItem.getPosition();
+        } catch (e) {
+          labelDiv.style.display = 'none';
+          return;
+        }
+        if (!position || !(position instanceof Cesium.Cartesian3)) {
+          labelDiv.style.display = 'none';
+          return;
+        }
+        let windowPos;
+        try {
+          windowPos = Cesium.SceneTransforms.worldToWindowCoordinates(labelItem.map.scene, position);
+        } catch (e) {
+          labelDiv.style.display = 'none';
+          return;
+        }
+        if (windowPos && !isNaN(windowPos.x) && !isNaN(windowPos.y)) {
+          labelDiv.style.left = `${windowPos.x - labelDiv.offsetWidth / 2}px`;
+          labelDiv.style.top = `${windowPos.y - 60}px`;
+          labelDiv.style.display = 'block';
+        } else {
+          labelDiv.style.display = 'none';
+        }
+      };
+      const postRenderListener = labelItem.map.scene.postRender.addEventListener(updateDivPosition);
+
+      // 返回销毁函数
+      return () => {
+        labelItem.map.scene.postRender.removeEventListener(postRenderListener);
+        labelDiv.remove();
+      };
+    }
 
     // 记录初始位置
     modelEntity.currentPosition = Cesium.Cartesian3.fromDegrees(
@@ -532,162 +593,6 @@ export function setPoint(baseUrl: string) {
 
     mapStore.setGraphicMap(options.id, modelEntity)
     return modelEntity
-  }
-
-  /**
-   * 创建或更新无人机批量标签canvas渲染
-   * @param labelItem 标签项 { id, getPosition, text, onClick }
-   * @param map Cesium地图实例
-   */
-  /**
-   * 创建或更新无人机批量标签canvas渲染
-   * @param labelItem 标签项 { id, getPosition, text, onClick }
-   * @param map Cesium地图实例
-   */
-  const createOrUpdateDroneLabelCanvas = (
-    labelItem: {
-      id: string,
-      getPosition: () => any,
-      text: string,
-      onClick: () => void
-    },
-    map: any
-  ) => {
-    // 1. 全局唯一canvas（如已存在则复用）
-    let labelCanvas = document.getElementById('drone-label-canvas') as HTMLCanvasElement | null;
-    if (!labelCanvas) {
-      labelCanvas = document.createElement('canvas');
-      labelCanvas.id = 'drone-label-canvas';
-      labelCanvas.style.position = 'absolute';
-      labelCanvas.style.pointerEvents = 'auto'; // 允许事件穿透canvas
-      labelCanvas.style.left = '0';
-      labelCanvas.style.top = '0';
-      labelCanvas.style.zIndex = '11';
-      labelCanvas.width = window.innerWidth;
-      labelCanvas.height = window.innerHeight;
-      document.body.appendChild(labelCanvas);
-      // 自适应窗口
-      window.addEventListener('resize', () => {
-        labelCanvas!.width = window.innerWidth;
-        labelCanvas!.height = window.innerHeight;
-      });
-    }
-
-    // 2. 全局标签数据池
-    (window as any).__droneLabelData = (window as any).__droneLabelData || {};
-    const droneLabelData = (window as any).__droneLabelData;
-    droneLabelData[labelItem.id] = {
-      getPosition: labelItem.getPosition,
-      text: labelItem.text,
-      rect: null,
-      onClick: labelItem.onClick
-    };
-
-    // 3. 每帧批量绘制所有无人机标签
-    if (!(window as any).__droneLabelRenderLoop) {
-      (window as any).__droneLabelRenderLoop = true;
-      const renderLabels = () => {
-        const ctx = labelCanvas!.getContext('2d');
-        if (!ctx) return;
-        ctx.clearRect(0, 0, labelCanvas!.width, labelCanvas!.height);
-        for (const key in droneLabelData) {
-          const item = droneLabelData[key];
-          const pos = item.getPosition();
-          if (!pos) { item.rect = null; continue; }
-          let win;
-          try {
-            win = Cesium.SceneTransforms.worldToWindowCoordinates(map.scene, pos);
-          } catch { item.rect = null; continue; }
-          if (!win || isNaN(win.x) || isNaN(win.y)) { item.rect = null; continue; }
-          // 绘制标签背景
-          const lines = item.text.split('\n');
-          ctx.font = 'bold 18px "Consolas", "Segoe UI", "Arial", "Microsoft YaHei", monospace';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'bottom';
-          const textWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
-          const lineHeight = 24;
-          const totalHeight = lineHeight * lines.length + 18;
-          const rect = {
-            x: win.x - textWidth/2 - 22,
-            y: win.y - totalHeight - 60,
-            width: textWidth + 44,
-            height: totalHeight + 12
-          };
-          item.rect = rect;
-          // 简洁炫酷：蓝紫渐变圆角背景+发光文字
-          ctx.save();
-          ctx.globalAlpha = 0.92;
-          const radius = 18;
-          const grad = ctx.createLinearGradient(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height);
-          grad.addColorStop(0, '#00eaff');
-          grad.addColorStop(1, '#a259f7');
-          ctx.beginPath();
-          ctx.moveTo(rect.x + radius, rect.y);
-          ctx.lineTo(rect.x + rect.width - radius, rect.y);
-          ctx.quadraticCurveTo(rect.x + rect.width, rect.y, rect.x + rect.width, rect.y + radius);
-          ctx.lineTo(rect.x + rect.width, rect.y + rect.height - radius);
-          ctx.quadraticCurveTo(rect.x + rect.width, rect.y + rect.height, rect.x + rect.width - radius, rect.y + rect.height);
-          ctx.lineTo(rect.x + radius, rect.y + rect.height);
-          ctx.quadraticCurveTo(rect.x, rect.y + rect.height, rect.x, rect.y + rect.height - radius);
-          ctx.lineTo(rect.x, rect.y + radius);
-          ctx.quadraticCurveTo(rect.x, rect.y, rect.x + radius, rect.y);
-          ctx.closePath();
-          ctx.fillStyle = grad;
-          ctx.shadowColor = '#00eaff';
-          ctx.shadowBlur = 12;
-          ctx.fill();
-          ctx.restore();
-          // 发光文字
-          ctx.save();
-          ctx.shadowColor = '#00eaff';
-          ctx.shadowBlur = 8;
-          ctx.fillStyle = '#fff';
-          // 计算首行y，使所有文字整体垂直居中
-          const textBlockHeight = lineHeight * lines.length;
-          const startY = rect.y + (rect.height - textBlockHeight) / 2 + lineHeight - 4;
-          lines.forEach((line, i) => {
-            ctx.font = 'bold 18px "Consolas", "Segoe UI", "Arial", "Microsoft YaHei", monospace';
-            ctx.fillText(line, win.x, startY + i * lineHeight);
-          });
-          ctx.restore();
-        }
-        requestAnimationFrame(renderLabels);
-      };
-      renderLabels();
-      // 只绑定一次点击事件
-      if (!(window as any).__droneLabelCanvasClickBinded) {
-        setTimeout(() => {
-          labelCanvas!.addEventListener('click', (e: MouseEvent) => {
-            const rect = labelCanvas!.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            for (const key in droneLabelData) {
-              const item = droneLabelData[key];
-              if (item.rect && x >= item.rect.x && x <= item.rect.x + item.rect.width && y >= item.rect.y && y <= item.rect.y + item.rect.height) {
-                if (typeof item.onClick === 'function') item.onClick();
-                break;
-              }
-            }
-          });
-          (window as any).__droneLabelCanvasClickBinded = true;
-        }, 100);
-      }
-    }
-  }
-
-  /**
-   * 移除指定id的无人机标签，并在无标签时移除canvas
-   */
-  const removeDroneLabelById = (id: string) => {
-    const droneLabelData = (window as any).__droneLabelData;
-    if (droneLabelData) {
-      delete droneLabelData[id];
-      const labelCanvas = document.getElementById('drone-label-canvas') as HTMLCanvasElement | null;
-      if (Object.keys(droneLabelData).length === 0 && labelCanvas) {
-        labelCanvas.remove();
-        (window as any).__droneLabelRenderLoop = false;
-      }
-    }
   }
 
   return {
