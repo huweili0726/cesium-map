@@ -541,16 +541,31 @@ export function setPoint(baseUrl: string) {
     labelDiv.innerHTML = labelItem.text;
     labelDiv.style.cssText = `
       position: absolute;
-      pointer-events: none;
-      background: rgba(25,25,25,0.7);
-      color: yellow;
-      font: 14px monospace;
-      padding: 4px 8px;
-      border-radius: 4px;
+      pointer-events: auto; 
+      background: linear-gradient(135deg, #00eaff 0%, #3f51b5 80%, #a259f7 100%);
+      color: #fff;
+      font: bold 15px 'Consolas', 'Segoe UI', 'Arial', 'Microsoft YaHei', monospace;
+      padding: 5px 14px;
+      border-radius: 12px;
       white-space: pre;
       z-index: 10;
       display: none;
+      box-shadow: 0 2px 12px 0 #3f51b555;
+      border: none;
+      letter-spacing: 0.5px;
+      cursor: pointer;
     `;
+    // 添加点击事件，事件对象中带上无人机id
+    labelDiv.addEventListener('click', (e) => {
+      e.stopPropagation();
+      alert(`无人机ID: ${labelItem.id}`);
+      const event = new CustomEvent('drone-label-click', {
+        detail: {
+          id: labelItem.id
+        }
+      });
+      window.dispatchEvent(event);
+    });
     document.body.appendChild(labelDiv);
 
     // 每帧同步div位置
