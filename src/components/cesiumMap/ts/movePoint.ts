@@ -139,7 +139,7 @@ export function movePointConfig(baseUrl: string) {
       return modelEntity;
     }
 
-    // 如果存在实体，确保实体 speed 属性实时同步
+    // 如果存在实体，确保实体属性实时同步
     modelEntity.info = {
       pointId: options.pointId,
       lng: options.lng,
