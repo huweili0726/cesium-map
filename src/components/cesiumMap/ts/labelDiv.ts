@@ -69,6 +69,7 @@ export function labelDiv() {
       dragLine.setAttribute('stroke', 'rgba(255,255,255,0.8)');
       dragLine.setAttribute('stroke-width', '2');
       dragLine.setAttribute('stroke-linecap', 'round');
+      dragLine.setAttribute('stroke-dasharray', '5,5');
       dragLineSvg.appendChild(dragLine);
 
       let isDragging = false;
