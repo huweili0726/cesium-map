@@ -494,8 +494,8 @@ export function setPoint(baseUrl: string) {
       model: {
         uri: baseUrl + '/glb/drone.glb',
         scale: 1.0,
-        minimumPixelSize: 80,
-        maximumScale: 20000,
+        minimumPixelSize: 80, // 最小显示尺寸（防止缩小时看不见）
+        maximumPixelSize: 80, // 最大显示尺寸（限制不撑满屏幕）
         show: true,
         color: Cesium.Color.WHITE,
       }
