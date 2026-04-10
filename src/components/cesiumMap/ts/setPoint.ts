@@ -565,9 +565,9 @@ export function setPoint(baseUrl: string) {
       box-shadow: 0 4px 24px 0 #3f51b599;
     `;
 
-     let new_detailDivLeft = null;
-      let new_detailDivTop = null;
-
+    // 存储无人机详情面板的位置坐标，用于拖拽功能
+    let new_detailDivLeft = null;
+    let new_detailDivTop = null;
 
     // 让labelDiv成为定位参考容器
     labelDiv.style.position = 'absolute';
@@ -671,6 +671,7 @@ export function setPoint(baseUrl: string) {
         }
       };
 
+      // 拖拽过程中，更新无人机详情面板的位置坐标
       const onPointerMove = (e: PointerEvent) => {
         if (!isDragging) return;
         const deltaX = e.clientX - startX;
@@ -678,19 +679,20 @@ export function setPoint(baseUrl: string) {
         detailDiv.style.left = `${new_detailDivLeft + deltaX}px`;
         detailDiv.style.top = `${new_detailDivTop + deltaY}px`;
         updateDragLine();
-        console.log(`拖动中... 当前坐标: (${detailDiv.style.left}, ${detailDiv.style.top})`);
       };
 
-      const onPointerUp = () => {
+      // 拖拽结束时，更新无人机详情面板的位置坐标
+      const onPointerEnd = () => {
         if (!isDragging) return;
         isDragging = false;
         new_detailDivLeft = parseFloat(detailDiv.style.left) || 0;
         new_detailDivTop = parseFloat(detailDiv.style.top) || 0;
         document.removeEventListener('pointermove', onPointerMove);
-        document.removeEventListener('pointerup', onPointerUp);
+        document.removeEventListener('pointerup', onPointerEnd);
         removeDragLine();
       };
 
+      // 点击无人机详情面板时，开始拖拽
       detailDiv.addEventListener('pointerdown', (e) => {
         if (e.target instanceof HTMLElement && e.target.closest('.drone-detail-close')) {
           return;
@@ -706,7 +708,7 @@ export function setPoint(baseUrl: string) {
         startY = e.clientY;
         updateDragLine();
         document.addEventListener('pointermove', onPointerMove);
-        document.addEventListener('pointerup', onPointerUp);
+        document.addEventListener('pointerup', onPointerEnd);
       });
 
       // 实时刷新无人机经纬度、高度、速度
