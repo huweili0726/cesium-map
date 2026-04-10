@@ -564,6 +564,11 @@ export function setPoint(baseUrl: string) {
       background: rgba(30,40,60,0.98);
       box-shadow: 0 4px 24px 0 #3f51b599;
     `;
+
+     let new_detailDivLeft = null;
+      let new_detailDivTop = null;
+
+
     // 让labelDiv成为定位参考容器
     labelDiv.style.position = 'absolute';
     labelDiv.style.display = 'none';
@@ -602,6 +607,7 @@ export function setPoint(baseUrl: string) {
         padding: 18px 20px 16px 20px;
         z-index: 9999;
         font-size: 14px;
+        cursor: move;
       `;
       labelDiv.appendChild(detailDiv);
 
@@ -624,6 +630,120 @@ export function setPoint(baseUrl: string) {
           cursor: pointer;
         `;
       }
+
+      const dragLineSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      dragLineSvg.style.cssText = `
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 9998;
+      `;
+      const dragLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      dragLine.setAttribute('stroke', 'rgba(255,255,255,0.8)');
+      dragLine.setAttribute('stroke-width', '2');
+      dragLine.setAttribute('stroke-linecap', 'round');
+      dragLineSvg.appendChild(dragLine);
+
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+      let originLeft = 0;
+      let originTop = 0;
+     
+
+
+      const updateDragLine = () => {
+        if (!isDragging) return;
+        const labelRect = labelDiv.getBoundingClientRect();
+        const detailRect = detailDiv.getBoundingClientRect();
+        const startX = labelRect.left + labelRect.width / 2;
+        const startY = labelRect.top + labelRect.height / 2;
+        const endX = detailRect.left + detailRect.width / 2;
+        const endY = detailRect.top + detailRect.height / 2;
+        dragLine.setAttribute('x1', String(startX));
+        dragLine.setAttribute('y1', String(startY));
+        dragLine.setAttribute('x2', String(endX));
+        dragLine.setAttribute('y2', String(endY));
+      };
+
+      const removeDragLine = () => {
+        if (dragLineSvg.parentNode) {
+          dragLineSvg.remove();
+        }
+      };
+
+      const onPointerMove = (e: PointerEvent) => {
+        if (!isDragging) return;
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        // detailDiv.style.left = `${originLeft + deltaX}px`;
+        // detailDiv.style.top = `${originTop + deltaY}px`;
+
+        
+        detailDiv.style.left = `${new_detailDivLeft + deltaX}px`;
+        detailDiv.style.top = `${new_detailDivTop + deltaY}px`;
+
+   
+
+        // detailDiv.style.left = `${detailDiv.style.left + deltaX}px`;
+        // detailDiv.style.top = `${detailDiv.style.top + deltaY}px`;
+        updateDragLine();
+
+        console.log(`拖动中... 当前坐标: (${detailDiv.style.left}, ${detailDiv.style.top})`);
+      };
+
+      const onPointerUp = () => {
+        if (!isDragging) return;
+        isDragging = false;
+
+        console.log(`结束拖拽... 当前坐标: (${detailDiv.style.left}, ${detailDiv.style.top})`);
+        //         new_detailDivLeft = detailDiv.style.left;
+        // new_detailDivTop = detailDiv.style.top;
+
+        new_detailDivLeft = parseFloat(detailDiv.style.left) || 0;
+new_detailDivTop = parseFloat(detailDiv.style.top) || 0;
+        document.removeEventListener('pointermove', onPointerMove);
+        document.removeEventListener('pointerup', onPointerUp);
+        removeDragLine();
+      };
+
+      detailDiv.addEventListener('pointerdown', (e) => {
+        if (e.target instanceof HTMLElement && e.target.closest('.drone-detail-close')) {
+          return;
+        }
+        e.preventDefault();
+
+        // console.log('开始拖拽')
+
+        // const detailRect = detailDiv.getBoundingClientRect();
+        // detailDiv.style.left = `${detailRect.left}px`;
+        // detailDiv.style.top = `${detailRect.top}px`;
+        //        startX = e.clientX;
+        // startY = e.clientY;
+        // detailDiv.style.left = new_detailDivLeft;
+        // detailDiv.style.top = new_detailDivTop;
+
+        console.log(`开始拖拽... 当前坐标: (${detailDiv.style.left}, ${detailDiv.style.top})`);
+
+
+
+        if (detailDiv.parentElement !== document.body) {
+          // document.body.appendChild(detailDiv);
+          labelDiv.appendChild(detailDiv);
+        }
+        document.body.appendChild(dragLineSvg);
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        // originLeft = detailRect.left;
+        // originTop = detailRect.top;
+        updateDragLine();
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp);
+      });
 
       // 实时刷新无人机经纬度、高度、速度
       const infoDiv = detailDiv.querySelector(`#drone-info-${labelItem.id}`);
@@ -653,6 +773,7 @@ export function setPoint(baseUrl: string) {
         closeButton.addEventListener('click', (e) => {
           e.stopPropagation();
           cancelAnimationFrame(rafId);
+          removeDragLine();
           detailDiv.remove();
         });
       }
