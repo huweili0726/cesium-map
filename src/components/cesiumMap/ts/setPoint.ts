@@ -542,10 +542,11 @@ export function setPoint(baseUrl: string) {
     labelDiv.style.cssText = `
       position: absolute;
       pointer-events: auto; 
-      background: linear-gradient(135deg, #00eaff 0%, #3f51b5 80%, #a259f7 100%);
+      background: #FF662C;
+      border-color: rgba(255, 100, 150, 0.3);
       color: #fff;
       font: bold 15px 'Consolas', 'Segoe UI', 'Arial', 'Microsoft YaHei', monospace;
-      padding: 5px 14px;
+      padding: 3px 10px;
       border-radius: 12px;
       white-space: pre;
       z-index: 10;
