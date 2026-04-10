@@ -168,3 +168,23 @@
   text-align: center;
   cursor: pointer;
 }
+
+/**
+ * 无人机拖拽线样式
+ */
+.drone-drag-line-svg{
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9998;
+}
+
+.drone-drag-line-line{
+  stroke: rgba(255,255,255,0.8);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 5,5;
+}

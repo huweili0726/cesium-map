@@ -1,5 +1,7 @@
 import * as Cesium from 'cesium';
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
 /**
  * 无人机标签项接口
  */
@@ -55,21 +57,11 @@ export function labelDiv() {
       `;
       labelDiv.appendChild(detailDiv);
 
-      const dragLineSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      dragLineSvg.style.cssText = `
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 100vw;
-        height: 100vh;
-        pointer-events: none;
-        z-index: 9998;
-      `;
-      const dragLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      dragLine.setAttribute('stroke', 'rgba(255,255,255,0.8)');
-      dragLine.setAttribute('stroke-width', '2');
-      dragLine.setAttribute('stroke-linecap', 'round');
-      dragLine.setAttribute('stroke-dasharray', '5,5');
+      // 创建拖拽线svg元素
+      const dragLineSvg = document.createElementNS(SVG_NS, 'svg');
+      dragLineSvg.classList.add('drone-drag-line-svg');
+      const dragLine = document.createElementNS(SVG_NS, 'line');
+      dragLine.classList.add('drone-drag-line-line');
       dragLineSvg.appendChild(dragLine);
 
       let isDragging = false;
