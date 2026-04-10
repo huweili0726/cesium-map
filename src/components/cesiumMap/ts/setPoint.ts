@@ -507,7 +507,7 @@ export function setPoint(baseUrl: string) {
       id: options.id,
       getPosition: () => modelEntity.entity.position.getValue(map.clock.currentTime),
       getInfo: () => modelEntity.info,
-      text: `无人机ID: ${options.id}`,
+      text: `ID: ${options.id}`,
       map: map
     });
 
@@ -580,13 +580,13 @@ export function setPoint(baseUrl: string) {
       detailDiv.innerHTML = `
         <div style="font-weight:bold;font-size:16px;margin-bottom:2px;">无人机详细信息</div>
         <button class="drone-detail-close">×</button>
+        <div style='margin-top:2px;margin-bottom:2px;'>ID: ${labelItem.id}</div>
         <div id="drone-info-${labelItem.id}">
           <div>经度：<span class="lng">-</span></div>
           <div>纬度：<span class="lat">-</span></div>
           <div>高度：<span class="alt">-</span> m</div>
           <div>速度：<span class="speed">-</span> m/s</div>
         </div>
-        <div style='margin-top:2px;'>ID: ${labelItem.id}</div>
       `;
       // 设置样式，右侧浮出且不重叠，定位参照labelDiv
       detailDiv.style.cssText = `
