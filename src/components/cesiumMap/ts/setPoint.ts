@@ -555,7 +555,6 @@ export function setPoint(baseUrl: string) {
       font: bold 15px 'Consolas', 'Segoe UI', 'Arial', 'Microsoft YaHei', monospace;
       padding: 3px 10px;
       border-radius: 12px;
-      white-space: pre;
       z-index: 10;
       display: none;
       box-shadow: 0 2px 12px 0 #3f51b555;
@@ -579,14 +578,14 @@ export function setPoint(baseUrl: string) {
       const detailDiv = document.createElement('div');
       detailDiv.className = 'drone-detail-div';
       detailDiv.innerHTML = `
-        <div style="font-weight:bold;font-size:16px;margin-bottom:8px;">无人机详细信息</div>
+        <div style="font-weight:bold;font-size:16px;margin-bottom:2px;">无人机详细信息</div>
         <div id="drone-info-${labelItem.id}">
           <div>经度：<span class="lng">-</span></div>
           <div>纬度：<span class="lat">-</span></div>
           <div>高度：<span class="alt">-</span> m</div>
           <div>速度：<span class="speed">-</span> m/s</div>
         </div>
-        <div style='margin-top:10px;'>无人机ID: ${labelItem.id}</div>
+        <div style='margin-top:2px;'>无人机ID: ${labelItem.id}</div>
         <button style='margin-top:12px;' onclick='this.parentNode.remove()'>关闭</button>
       `;
       // 设置样式，右侧浮出且不重叠，定位参照labelDiv
