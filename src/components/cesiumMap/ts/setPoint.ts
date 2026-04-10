@@ -579,14 +579,14 @@ export function setPoint(baseUrl: string) {
       detailDiv.className = 'drone-detail-div';
       detailDiv.innerHTML = `
         <div style="font-weight:bold;font-size:16px;margin-bottom:2px;">无人机详细信息</div>
+        <button class="drone-detail-close">×</button>
         <div id="drone-info-${labelItem.id}">
           <div>经度：<span class="lng">-</span></div>
           <div>纬度：<span class="lat">-</span></div>
           <div>高度：<span class="alt">-</span> m</div>
           <div>速度：<span class="speed">-</span> m/s</div>
         </div>
-        <div style='margin-top:2px;'>无人机ID: ${labelItem.id}</div>
-        <button style='margin-top:12px;' onclick='this.parentNode.remove()'>关闭</button>
+        <div style='margin-top:2px;'>ID: ${labelItem.id}</div>
       `;
       // 设置样式，右侧浮出且不重叠，定位参照labelDiv
       detailDiv.style.cssText = `
@@ -604,6 +604,26 @@ export function setPoint(baseUrl: string) {
         font-size: 14px;
       `;
       labelDiv.appendChild(detailDiv);
+
+      const closeButton = detailDiv.querySelector('.drone-detail-close');
+      if (closeButton instanceof HTMLElement) {
+        closeButton.style.cssText = `
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          width: 26px;
+          height: 26px;
+          padding: 0;
+          border: none;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.08);
+          color: #fff;
+          font-size: 16px;
+          line-height: 26px;
+          text-align: center;
+          cursor: pointer;
+        `;
+      }
 
       // 实时刷新无人机经纬度、高度、速度
       const infoDiv = detailDiv.querySelector(`#drone-info-${labelItem.id}`);
@@ -629,9 +649,13 @@ export function setPoint(baseUrl: string) {
       }
       updateDroneInfo();
       // 关闭时移除动画帧
-      detailDiv.querySelector('button').addEventListener('click', () => {
-        cancelAnimationFrame(rafId);
-      });
+      if (closeButton instanceof HTMLElement) {
+        closeButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+          cancelAnimationFrame(rafId);
+          detailDiv.remove();
+        });
+      }
 
       // 创建自定义事件，事件名为 'drone-label-click'，并通过 detail 传递无人机 id
       const event = new CustomEvent('drone-label-click', {
