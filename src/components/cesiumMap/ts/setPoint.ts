@@ -485,25 +485,73 @@ export function setPoint(baseUrl: string) {
         modelEntity.targetHeight
       ),
       model: {
-        uri: baseUrl + '/glb/drone.glb', // Cesium Ion上的无人机模型ID
-        scale: 1.0, // 模型放大3倍
-        minimumPixelSize: 80, // 模型最小像素尺寸，确保缩放时可见
-        maximumScale: 20000, // 最大缩放比例
-        show: true, // 是否显示
-        color: Cesium.Color.WHITE,// 模型颜色（可选，叠加到模型上）
-      },
-      label: {
-        text: `无人机: ${options.id}\n高度: ${options.height}米`,
-        font: '14px monospace',
-        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-        outlineWidth: 2,
-        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-        pixelOffset: new Cesium.Cartesian2(0, -50),
-        fillColor: Cesium.Color.YELLOW,
-        showBackground: true,
-        backgroundColor: new Cesium.Color(0.1, 0.1, 0.1, 0.7)
+        uri: baseUrl + '/glb/drone.glb',
+        scale: 1.0,
+        minimumPixelSize: 80,
+        maximumScale: 20000,
+        show: true,
+        color: Cesium.Color.WHITE,
       }
+      // label 字段移除，改为自定义div
     })
+
+    // === 自定义div标签 ===
+    const labelDiv = document.createElement('div');
+    labelDiv.className = 'drone-label';
+    labelDiv.innerHTML = `无人机: ${options.id}<br>高度: ${options.height}米`;
+    labelDiv.style.cssText = `
+      position: absolute;
+      pointer-events: none;
+      background: rgba(25,25,25,0.7);
+      color: yellow;
+      font: 14px monospace;
+      padding: 4px 8px;
+      border-radius: 4px;
+      white-space: pre;
+      z-index: 10;
+      display: none;
+    `;
+    document.body.appendChild(labelDiv);
+
+    // 每帧同步div位置
+    const updateDivPosition = () => {
+      if (!map || !map.scene || !modelEntity.entity || !modelEntity.entity.position) {
+        labelDiv.style.display = 'none';
+        return;
+      }
+      let position;
+      try {
+        position = modelEntity.entity.position.getValue(map.clock.currentTime);
+      } catch (e) {
+        labelDiv.style.display = 'none';
+        return;
+      }
+      if (!position || !(position instanceof Cesium.Cartesian3)) {
+        labelDiv.style.display = 'none';
+        return;
+      }
+      let windowPos;
+      try {
+        windowPos = Cesium.SceneTransforms.worldToWindowCoordinates(map.scene, position);
+      } catch (e) {
+        labelDiv.style.display = 'none';
+        return;
+      }
+      if (windowPos && !isNaN(windowPos.x) && !isNaN(windowPos.y)) {
+        labelDiv.style.left = `${windowPos.x - labelDiv.offsetWidth / 2}px`;
+        labelDiv.style.top = `${windowPos.y - 60}px`;
+        labelDiv.style.display = 'block';
+      } else {
+        labelDiv.style.display = 'none';
+      }
+    };
+    const postRenderListener = map.scene.postRender.addEventListener(updateDivPosition);
+
+    // 销毁时移除div和事件
+    modelEntity.destroy = () => {
+      map.scene.postRender.removeEventListener(postRenderListener);
+      labelDiv.remove();
+    };
 
     // 记录初始位置
     modelEntity.currentPosition = Cesium.Cartesian3.fromDegrees(
