@@ -161,6 +161,7 @@ export function labelDiv() {
       }
       updateDroneInfo();
       // 关闭时移除动画帧
+      const closeButton = detailDiv.querySelector('.drone-detail-close');
       if (closeButton instanceof HTMLElement) {
         closeButton.addEventListener('click', (e) => {
           e.stopPropagation();
