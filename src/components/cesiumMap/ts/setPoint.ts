@@ -559,11 +559,19 @@ export function setPoint(baseUrl: string) {
     labelDiv.addEventListener('click', (e) => {
       e.stopPropagation();
       alert(`无人机ID: ${labelItem.id}`);
+      // 创建自定义事件，事件名为 'drone-label-click'，并通过 detail 传递无人机 id
+      //
+      // 其他地方可通过如下方式监听该事件：
+      // window.addEventListener('drone-label-click', (e) => {
+      //   const id = e.detail.id;
+      //   // 这里可以根据 id 做后续处理
+      // });
       const event = new CustomEvent('drone-label-click', {
         detail: {
           id: labelItem.id
         }
       });
+      // 派发该事件到 window，使全局可监听无人机标签点击
       window.dispatchEvent(event);
     });
     document.body.appendChild(labelDiv);
