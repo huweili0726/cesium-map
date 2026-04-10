@@ -507,7 +507,7 @@ export function setPoint(baseUrl: string) {
       id: options.id,
       getPosition: () => modelEntity.entity.position.getValue(map.clock.currentTime),
       getInfo: () => modelEntity.info,
-      text: `无人机: ${options.id}<br>高度: ${options.height}米`,
+      text: `无人机ID: ${options.id}`,
       map: map
     });
 
@@ -596,7 +596,7 @@ export function setPoint(baseUrl: string) {
         top: 0;
         min-width: 260px;
         max-width: 400px;
-        background: rgba(30,40,60,0.98);
+        background: rgba(30,40,60,0.7);
         color: #fff;
         border-radius: 12px;
         box-shadow: 0 4px 24px 0 #3f51b599;
