@@ -24,22 +24,6 @@ export function labelDiv() {
     const labelDiv = document.createElement('div');
     labelDiv.className = 'drone-label';
     labelDiv.innerHTML = labelItem.text;
-    labelDiv.style.cssText = `
-      position: absolute;
-      pointer-events: auto; 
-      color: #fff;
-      font: bold 15px 'Consolas', 'Segoe UI', 'Arial', 'Microsoft YaHei', monospace;
-      padding: 3px 10px;
-      border-radius: 12px;
-      z-index: 10;
-      display: none;
-      box-shadow: 0 2px 12px 0 #3f51b555;
-      border: none;
-      letter-spacing: 0.5px;
-      cursor: pointer;
-      background: rgba(30,40,60,0.98);
-      box-shadow: 0 4px 24px 0 #3f51b599;
-    `;
 
     // 存储无人机详情面板的位置坐标，用于拖拽功能
     let new_detailDivLeft = null;
@@ -69,43 +53,7 @@ export function labelDiv() {
           <div>速度：<span class="speed">-</span> m/s</div>
         </div>
       `;
-      // 设置样式，右侧浮出且不重叠，定位参照labelDiv
-      detailDiv.style.cssText = `
-        position: absolute;
-        left: calc(100% + 16px);
-        top: 0;
-        min-width: 260px;
-        max-width: 400px;
-        background: rgba(30,40,60,0.7);
-        color: #fff;
-        border-radius: 12px;
-        box-shadow: 0 4px 24px 0 #3f51b599;
-        padding: 18px 20px 16px 20px;
-        z-index: 9999;
-        font-size: 14px;
-        cursor: move;
-      `;
       labelDiv.appendChild(detailDiv);
-
-      const closeButton = detailDiv.querySelector('.drone-detail-close');
-      if (closeButton instanceof HTMLElement) {
-        closeButton.style.cssText = `
-          position: absolute;
-          top: 12px;
-          right: 12px;
-          width: 26px;
-          height: 26px;
-          padding: 0;
-          border: none;
-          border-radius: 50%;
-          background: rgba(255,255,255,0.08);
-          color: #fff;
-          font-size: 16px;
-          line-height: 26px;
-          text-align: center;
-          cursor: pointer;
-        `;
-      }
 
       const dragLineSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       dragLineSvg.style.cssText = `
@@ -249,7 +197,7 @@ export function labelDiv() {
         labelDiv.style.display = 'none';
         return;
       }
-      let windowPos;
+      let windowPos : Cesium.Cartesian2;
       try {
         windowPos = Cesium.SceneTransforms.worldToWindowCoordinates(labelItem.map.scene, position);
       } catch (e) {
