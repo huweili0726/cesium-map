@@ -64,29 +64,29 @@ export function labelDiv() {
       dragLine.classList.add('drone-drag-line-line');
       dragLineSvg.appendChild(dragLine);
 
-      let isDragging = false;
-      let startX = 0;
-      let startY = 0;
+      let isDragging = false; // 是否正在拖拽
+      let startX = 0; // 拖拽线的起始点x坐标
+      let startY = 0; // 拖拽线的起始点y坐标
     
       // 更新拖拽线的位置
       const updateDragLine = () => {
         if (!isDragging) return;
-        const labelRect = labelDiv.getBoundingClientRect();
-        const detailRect = detailDiv.getBoundingClientRect();
-        const startX = labelRect.left + labelRect.width / 2;
-        const startY = labelRect.top + labelRect.height / 2;
-        const endX = detailRect.left + detailRect.width / 2;
-        const endY = detailRect.top + detailRect.height / 2;
-        dragLine.setAttribute('x1', String(startX));
-        dragLine.setAttribute('y1', String(startY));
-        dragLine.setAttribute('x2', String(endX));
-        dragLine.setAttribute('y2', String(endY));
+        const labelRect = labelDiv.getBoundingClientRect(); // 无人机标签div的矩形框
+        const detailRect = detailDiv.getBoundingClientRect(); // 无人机详情面板的矩形框
+        const startX = labelRect.left + labelRect.width / 2; // 拖拽线的起始点x坐标
+        const startY = labelRect.top + labelRect.height / 2; // 拖拽线的起始点y坐标
+        const endX = detailRect.left + detailRect.width / 2; // 拖拽线的结束点x坐标
+        const endY = detailRect.top + detailRect.height / 2; // 拖拽线的结束点y坐标
+        dragLine.setAttribute('x1', String(startX)); 
+        dragLine.setAttribute('y1', String(startY)); 
+        dragLine.setAttribute('x2', String(endX)); 
+        dragLine.setAttribute('y2', String(endY)); 
       };
 
       // 移除拖拽线
       const removeDragLine = () => {
         if (dragLineSvg.parentNode) {
-          dragLineSvg.remove();
+          dragLineSvg.remove(); // 移除拖拽线svg元素
         }
       };
 
