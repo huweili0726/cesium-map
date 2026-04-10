@@ -495,62 +495,113 @@ export function setPoint(baseUrl: string) {
       // label 字段移除，改为自定义div
     })
 
-    // === 自定义div标签 ===
-    const labelDiv = document.createElement('div');
-    labelDiv.className = 'drone-label';
-    labelDiv.innerHTML = `无人机: ${options.id}<br>高度: ${options.height}米`;
-    labelDiv.style.cssText = `
-      position: absolute;
-      pointer-events: none;
-      background: rgba(25,25,25,0.7);
-      color: yellow;
-      font: 14px monospace;
-      padding: 4px 8px;
-      border-radius: 4px;
-      white-space: pre;
-      z-index: 10;
-      display: none;
-    `;
-    document.body.appendChild(labelDiv);
+    // === 批量canvas标签渲染 ===
+    // 1. 全局唯一canvas（如已存在则复用）
+    let labelCanvas = document.getElementById('drone-label-canvas') as HTMLCanvasElement | null;
+    if (!labelCanvas) {
+      labelCanvas = document.createElement('canvas');
+      labelCanvas.id = 'drone-label-canvas';
+      labelCanvas.style.position = 'absolute';
+      labelCanvas.style.pointerEvents = 'auto'; // 允许事件穿透canvas
+      labelCanvas.style.left = '0';
+      labelCanvas.style.top = '0';
+      labelCanvas.style.zIndex = '11';
+      labelCanvas.width = window.innerWidth;
+      labelCanvas.height = window.innerHeight;
+      document.body.appendChild(labelCanvas);
+      // 自适应窗口
+      window.addEventListener('resize', () => {
+        labelCanvas!.width = window.innerWidth;
+        labelCanvas!.height = window.innerHeight;
+      });
+    }
 
-    // 每帧同步div位置
-    const updateDivPosition = () => {
-      if (!map || !map.scene || !modelEntity.entity || !modelEntity.entity.position) {
-        labelDiv.style.display = 'none';
-        return;
-      }
-      let position;
-      try {
-        position = modelEntity.entity.position.getValue(map.clock.currentTime);
-      } catch (e) {
-        labelDiv.style.display = 'none';
-        return;
-      }
-      if (!position || !(position instanceof Cesium.Cartesian3)) {
-        labelDiv.style.display = 'none';
-        return;
-      }
-      let windowPos;
-      try {
-        windowPos = Cesium.SceneTransforms.worldToWindowCoordinates(map.scene, position);
-      } catch (e) {
-        labelDiv.style.display = 'none';
-        return;
-      }
-      if (windowPos && !isNaN(windowPos.x) && !isNaN(windowPos.y)) {
-        labelDiv.style.left = `${windowPos.x - labelDiv.offsetWidth / 2}px`;
-        labelDiv.style.top = `${windowPos.y - 60}px`;
-        labelDiv.style.display = 'block';
-      } else {
-        labelDiv.style.display = 'none';
+    // 2. 全局标签数据池
+    (window as any).__droneLabelData = (window as any).__droneLabelData || {};
+    const droneLabelData = (window as any).__droneLabelData;
+    droneLabelData[options.id] = {
+      getPosition: () => modelEntity.entity.position.getValue(map.clock.currentTime),
+      text: `无人机: ${options.id}\n高度: ${options.height}米`,
+      rect: null, // 每帧记录标签区域
+      onClick: () => {
+        // 你可以自定义点击后的行为，比如弹窗、聚焦、弹出菜单等
+        alert(`点击了无人机: ${options.id}`);
       }
     };
-    const postRenderListener = map.scene.postRender.addEventListener(updateDivPosition);
 
-    // 销毁时移除div和事件
+    // 3. 每帧批量绘制所有无人机标签
+    if (!(window as any).__droneLabelRenderLoop) {
+      (window as any).__droneLabelRenderLoop = true;
+      const renderLabels = () => {
+        const ctx = labelCanvas!.getContext('2d');
+        if (!ctx) return;
+        ctx.clearRect(0, 0, labelCanvas!.width, labelCanvas!.height);
+        for (const key in droneLabelData) {
+          const item = droneLabelData[key];
+          const pos = item.getPosition();
+          if (!pos) { item.rect = null; continue; }
+          let win;
+          try {
+            win = Cesium.SceneTransforms.worldToWindowCoordinates(map.scene, pos);
+          } catch { item.rect = null; continue; }
+          if (!win || isNaN(win.x) || isNaN(win.y)) { item.rect = null; continue; }
+          // 绘制标签背景
+          const lines = item.text.split('\n');
+          ctx.font = '14px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          const textWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
+          const lineHeight = 18;
+          const totalHeight = lineHeight * lines.length + 8;
+          const rect = {
+            x: win.x - textWidth/2 - 8,
+            y: win.y - totalHeight - 50,
+            width: textWidth + 16,
+            height: totalHeight
+          };
+          item.rect = rect;
+          ctx.save();
+          ctx.globalAlpha = 0.85;
+          ctx.fillStyle = 'rgba(25,25,25,0.7)';
+          ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+          ctx.restore();
+          // 绘制文字
+          ctx.fillStyle = 'yellow';
+          lines.forEach((line, i) => {
+            ctx.fillText(line, win.x, win.y - 50 - totalHeight + lineHeight * (i+1));
+          });
+        }
+        requestAnimationFrame(renderLabels);
+      };
+      renderLabels();
+      // 只绑定一次点击事件
+      if (!(window as any).__droneLabelCanvasClickBinded) {
+        setTimeout(() => {
+          labelCanvas!.addEventListener('click', (e: MouseEvent) => {
+            const rect = labelCanvas!.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            for (const key in droneLabelData) {
+              const item = droneLabelData[key];
+              if (item.rect && x >= item.rect.x && x <= item.rect.x + item.rect.width && y >= item.rect.y && y <= item.rect.y + item.rect.height) {
+                if (typeof item.onClick === 'function') item.onClick();
+                break;
+              }
+            }
+          });
+          (window as any).__droneLabelCanvasClickBinded = true;
+        }, 100);
+      }
+    }
+
+    // 销毁时清理canvas和事件
     modelEntity.destroy = () => {
-      map.scene.postRender.removeEventListener(postRenderListener);
-      labelDiv.remove();
+      delete droneLabelData[options.id];
+      // 若无标签则移除canvas
+      if (Object.keys(droneLabelData).length === 0 && labelCanvas) {
+        labelCanvas.remove();
+        (window as any).__droneLabelRenderLoop = false;
+      }
     };
 
     // 记录初始位置
