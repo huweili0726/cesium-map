@@ -495,7 +495,6 @@ export function setPoint(baseUrl: string) {
       // label 字段移除，改为自定义div
     })
 
-
     // 创建无人机div标签，返回销毁函数
     modelEntity.destroy = createOrUpdateDroneLabelDiv({
       id: options.id,
@@ -503,75 +502,6 @@ export function setPoint(baseUrl: string) {
       text: `无人机: ${options.id}<br>高度: ${options.height}米`,
       map: map
     });
-
-    /**
-     * 创建或更新无人机div标签
-     * @param labelItem { id, getPosition, text, map }
-     * @returns 销毁函数
-     */
-    function createOrUpdateDroneLabelDiv(labelItem: {
-      id: string,
-      getPosition: () => any,
-      text: string,
-      map: any
-    }) {
-      const labelDiv = document.createElement('div');
-      labelDiv.className = 'drone-label';
-      labelDiv.innerHTML = labelItem.text;
-      labelDiv.style.cssText = `
-        position: absolute;
-        pointer-events: none;
-        background: rgba(25,25,25,0.7);
-        color: yellow;
-        font: 14px monospace;
-        padding: 4px 8px;
-        border-radius: 4px;
-        white-space: pre;
-        z-index: 10;
-        display: none;
-      `;
-      document.body.appendChild(labelDiv);
-
-      // 每帧同步div位置
-      const updateDivPosition = () => {
-        if (!labelItem.map || !labelItem.map.scene) {
-          labelDiv.style.display = 'none';
-          return;
-        }
-        let position;
-        try {
-          position = labelItem.getPosition();
-        } catch (e) {
-          labelDiv.style.display = 'none';
-          return;
-        }
-        if (!position || !(position instanceof Cesium.Cartesian3)) {
-          labelDiv.style.display = 'none';
-          return;
-        }
-        let windowPos;
-        try {
-          windowPos = Cesium.SceneTransforms.worldToWindowCoordinates(labelItem.map.scene, position);
-        } catch (e) {
-          labelDiv.style.display = 'none';
-          return;
-        }
-        if (windowPos && !isNaN(windowPos.x) && !isNaN(windowPos.y)) {
-          labelDiv.style.left = `${windowPos.x - labelDiv.offsetWidth / 2}px`;
-          labelDiv.style.top = `${windowPos.y - 60}px`;
-          labelDiv.style.display = 'block';
-        } else {
-          labelDiv.style.display = 'none';
-        }
-      };
-      const postRenderListener = labelItem.map.scene.postRender.addEventListener(updateDivPosition);
-
-      // 返回销毁函数
-      return () => {
-        labelItem.map.scene.postRender.removeEventListener(postRenderListener);
-        labelDiv.remove();
-      };
-    }
 
     // 记录初始位置
     modelEntity.currentPosition = Cesium.Cartesian3.fromDegrees(
@@ -593,6 +523,75 @@ export function setPoint(baseUrl: string) {
 
     mapStore.setGraphicMap(options.id, modelEntity)
     return modelEntity
+  }
+
+  /**
+   * 创建或更新无人机div标签
+   * @param labelItem { id, getPosition, text, map }
+   * @returns 销毁函数
+   */
+  const createOrUpdateDroneLabelDiv = (labelItem: {
+    id: string,
+    getPosition: () => any,
+    text: string,
+    map: any
+  }) => {
+    const labelDiv = document.createElement('div');
+    labelDiv.className = 'drone-label';
+    labelDiv.innerHTML = labelItem.text;
+    labelDiv.style.cssText = `
+      position: absolute;
+      pointer-events: none;
+      background: rgba(25,25,25,0.7);
+      color: yellow;
+      font: 14px monospace;
+      padding: 4px 8px;
+      border-radius: 4px;
+      white-space: pre;
+      z-index: 10;
+      display: none;
+    `;
+    document.body.appendChild(labelDiv);
+
+    // 每帧同步div位置
+    const updateDivPosition = () => {
+      if (!labelItem.map || !labelItem.map.scene) {
+        labelDiv.style.display = 'none';
+        return;
+      }
+      let position;
+      try {
+        position = labelItem.getPosition();
+      } catch (e) {
+        labelDiv.style.display = 'none';
+        return;
+      }
+      if (!position || !(position instanceof Cesium.Cartesian3)) {
+        labelDiv.style.display = 'none';
+        return;
+      }
+      let windowPos;
+      try {
+        windowPos = Cesium.SceneTransforms.worldToWindowCoordinates(labelItem.map.scene, position);
+      } catch (e) {
+        labelDiv.style.display = 'none';
+        return;
+      }
+      if (windowPos && !isNaN(windowPos.x) && !isNaN(windowPos.y)) {
+        labelDiv.style.left = `${windowPos.x - labelDiv.offsetWidth / 2}px`;
+        labelDiv.style.top = `${windowPos.y - 60}px`;
+        labelDiv.style.display = 'block';
+      } else {
+        labelDiv.style.display = 'none';
+      }
+    };
+    const postRenderListener = labelItem.map.scene.postRender.addEventListener(updateDivPosition);
+
+    // 返回销毁函数
+    return () => {
+      labelItem.map.scene.postRender.removeEventListener(postRenderListener);
+      labelDiv.remove();
+    };
   }
 
   return {
