@@ -611,27 +611,21 @@ export function setPoint(baseUrl: string) {
       let rafId = 0;
       function updateDroneInfo() {
         if (!infoDiv) return;
-        let position;
-        try {
-          position = labelItem.getPosition();
-        } catch (e) {
-          return;
-        }
-        if (position && position.x !== undefined && position.y !== undefined && position.z !== undefined) {
-          const lng = labelItem.getInfo?.().lng ?? '--';
-          const lat = labelItem.getInfo?.().lat ?? '--';
-          const alt = labelItem.getInfo?.().height ?? '--';
-          const info = labelItem.getInfo ? labelItem.getInfo() : null;
-          const speed = info?.speed ?? '--';
-          const lngEl = infoDiv.querySelector('.lng');
-          const latEl = infoDiv.querySelector('.lat');
-          const altEl = infoDiv.querySelector('.alt');
-          const speedEl = infoDiv.querySelector('.speed');
-          if (lngEl) lngEl.textContent = lng;
-          if (latEl) latEl.textContent = lat;
-          if (altEl) altEl.textContent = alt;
-          if (speedEl) speedEl.textContent = String(speed);
-        }
+   
+        const lng = labelItem.getInfo?.().lng ?? '--';
+        const lat = labelItem.getInfo?.().lat ?? '--';
+        const alt = labelItem.getInfo?.().height ?? '--';
+        const info = labelItem.getInfo ? labelItem.getInfo() : null;
+        const speed = info?.speed ?? '--';
+        const lngEl = infoDiv.querySelector('.lng');
+        const latEl = infoDiv.querySelector('.lat');
+        const altEl = infoDiv.querySelector('.alt');
+        const speedEl = infoDiv.querySelector('.speed');
+        if (lngEl) lngEl.textContent = lng;
+        if (latEl) latEl.textContent = lat;
+        if (altEl) altEl.textContent = alt;
+        if (speedEl) speedEl.textContent = String(speed);
+      
         rafId = requestAnimationFrame(updateDroneInfo);
       }
       updateDroneInfo();
