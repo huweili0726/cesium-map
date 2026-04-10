@@ -571,7 +571,12 @@ export function setPoint(baseUrl: string) {
       detailDiv.className = 'drone-detail-div';
       detailDiv.innerHTML = `
         <div style="font-weight:bold;font-size:16px;margin-bottom:8px;">无人机详细信息</div>
-        <div>这里可以放很多内容，比如实时数据、历史轨迹、操作按钮等...</div>
+        <div id="drone-info-${labelItem.id}">
+          <div>经度：<span class="lng">-</span></div>
+          <div>纬度：<span class="lat">-</span></div>
+          <div>高度：<span class="alt">-</span> m</div>
+          <div>速度：<span class="speed">-</span> m/s</div>
+        </div>
         <div style='margin-top:10px;'>无人机ID: ${labelItem.id}</div>
         <button style='margin-top:12px;' onclick='this.parentNode.remove()'>关闭</button>
       `;
@@ -591,6 +596,47 @@ export function setPoint(baseUrl: string) {
         font-size: 14px;
       `;
       labelDiv.appendChild(detailDiv);
+
+      // 实时刷新无人机经纬度、高度、速度
+      const infoDiv = detailDiv.querySelector(`#drone-info-${labelItem.id}`);
+      let lastPosition = null;
+      let lastTime = null;
+      let speed = 0;
+      let rafId = 0;
+      function updateDroneInfo() {
+        if (!infoDiv) return;
+        let position;
+        try {
+          position = labelItem.getPosition();
+        } catch (e) {
+          return;
+        }
+        if (position && position.x !== undefined && position.y !== undefined && position.z !== undefined) {
+          const carto = Cesium.Cartographic.fromCartesian(position);
+          const lng = Cesium.Math.toDegrees(carto.longitude).toFixed(6);
+          const lat = Cesium.Math.toDegrees(carto.latitude).toFixed(6);
+          const alt = carto.height.toFixed(2);
+          // 速度计算
+          const now = Date.now();
+          if (lastPosition && lastTime) {
+            const dist = Cesium.Cartesian3.distance(position, lastPosition);
+            const dt = (now - lastTime) / 1000;
+            speed = dt > 0 ? (dist / dt).toFixed(2) : speed;
+          }
+          lastPosition = Cesium.Cartesian3.clone(position);
+          lastTime = now;
+          infoDiv.querySelector('.lng').textContent = lng;
+          infoDiv.querySelector('.lat').textContent = lat;
+          infoDiv.querySelector('.alt').textContent = alt;
+          infoDiv.querySelector('.speed').textContent = speed;
+        }
+        rafId = requestAnimationFrame(updateDroneInfo);
+      }
+      updateDroneInfo();
+      // 关闭时移除动画帧
+      detailDiv.querySelector('button').addEventListener('click', () => {
+        cancelAnimationFrame(rafId);
+      });
 
       // 创建自定义事件，事件名为 'drone-label-click'，并通过 detail 传递无人机 id
       const event = new CustomEvent('drone-label-click', {
