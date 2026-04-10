@@ -495,7 +495,64 @@ export function setPoint(baseUrl: string) {
       // label 字段移除，改为自定义div
     })
 
-    // === 批量canvas标签渲染 ===
+
+    // 调用批量canvas标签渲染函数
+    createOrUpdateDroneLabelCanvas({
+      id: options.id,
+      getPosition: () => modelEntity.entity.position.getValue(map.clock.currentTime),
+      text: `无人机: ${options.id}\n高度: ${options.height}米`,
+      onClick: () => {
+        alert(`点击了无人机: ${options.id}`);
+      }
+    }, map);
+
+
+    // 销毁时清理canvas和事件
+    modelEntity.destroy = () => {
+      removeDroneLabelById(options.id);
+    };
+
+    // 记录初始位置
+    modelEntity.currentPosition = Cesium.Cartesian3.fromDegrees(
+      modelEntity.targetLng,
+      modelEntity.targetLat,
+      modelEntity.targetHeight || 0
+    )
+
+    // 初始化位置属性（用于插值）
+    modelEntity.positionProperty = new Cesium.SampledPositionProperty()
+    modelEntity.positionProperty.addSample(map.clock.currentTime, modelEntity.currentPosition)
+    modelEntity.entity.position = modelEntity.positionProperty
+
+    // 创建独立的轨迹实体
+    setDroneTrail({
+      pointId: options.id,
+      startPosition: modelEntity.currentPosition
+    })
+
+    mapStore.setGraphicMap(options.id, modelEntity)
+    return modelEntity
+  }
+
+  /**
+   * 创建或更新无人机批量标签canvas渲染
+   * @param labelItem 标签项 { id, getPosition, text, onClick }
+   * @param map Cesium地图实例
+   */
+  /**
+   * 创建或更新无人机批量标签canvas渲染
+   * @param labelItem 标签项 { id, getPosition, text, onClick }
+   * @param map Cesium地图实例
+   */
+  const createOrUpdateDroneLabelCanvas = (
+    labelItem: {
+      id: string,
+      getPosition: () => any,
+      text: string,
+      onClick: () => void
+    },
+    map: any
+  ) => {
     // 1. 全局唯一canvas（如已存在则复用）
     let labelCanvas = document.getElementById('drone-label-canvas') as HTMLCanvasElement | null;
     if (!labelCanvas) {
@@ -519,14 +576,11 @@ export function setPoint(baseUrl: string) {
     // 2. 全局标签数据池
     (window as any).__droneLabelData = (window as any).__droneLabelData || {};
     const droneLabelData = (window as any).__droneLabelData;
-    droneLabelData[options.id] = {
-      getPosition: () => modelEntity.entity.position.getValue(map.clock.currentTime),
-      text: `无人机: ${options.id}\n高度: ${options.height}米`,
-      rect: null, // 每帧记录标签区域
-      onClick: () => {
-        // 你可以自定义点击后的行为，比如弹窗、聚焦、弹出菜单等
-        alert(`点击了无人机: ${options.id}`);
-      }
+    droneLabelData[labelItem.id] = {
+      getPosition: labelItem.getPosition,
+      text: labelItem.text,
+      rect: null,
+      onClick: labelItem.onClick
     };
 
     // 3. 每帧批量绘制所有无人机标签
@@ -593,37 +647,21 @@ export function setPoint(baseUrl: string) {
         }, 100);
       }
     }
+  }
 
-    // 销毁时清理canvas和事件
-    modelEntity.destroy = () => {
-      delete droneLabelData[options.id];
-      // 若无标签则移除canvas
+  /**
+   * 移除指定id的无人机标签，并在无标签时移除canvas
+   */
+  const removeDroneLabelById = (id: string) => {
+    const droneLabelData = (window as any).__droneLabelData;
+    if (droneLabelData) {
+      delete droneLabelData[id];
+      const labelCanvas = document.getElementById('drone-label-canvas') as HTMLCanvasElement | null;
       if (Object.keys(droneLabelData).length === 0 && labelCanvas) {
         labelCanvas.remove();
         (window as any).__droneLabelRenderLoop = false;
       }
-    };
-
-    // 记录初始位置
-    modelEntity.currentPosition = Cesium.Cartesian3.fromDegrees(
-      modelEntity.targetLng,
-      modelEntity.targetLat,
-      modelEntity.targetHeight || 0
-    )
-
-    // 初始化位置属性（用于插值）
-    modelEntity.positionProperty = new Cesium.SampledPositionProperty()
-    modelEntity.positionProperty.addSample(map.clock.currentTime, modelEntity.currentPosition)
-    modelEntity.entity.position = modelEntity.positionProperty
-
-    // 创建独立的轨迹实体
-    setDroneTrail({
-      pointId: options.id,
-      startPosition: modelEntity.currentPosition
-    })
-
-    mapStore.setGraphicMap(options.id, modelEntity)
-    return modelEntity
+    }
   }
 
   return {
