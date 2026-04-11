@@ -565,7 +565,7 @@ export function setPoint(baseUrl: string) {
       if (pickedObjects && pickedObjects.length > 0) {
         for (const obj of pickedObjects) {
           if (obj.id === modelEntity.entity) {
-            console.log(`左键点击了无人机: ${options.id}`);
+            alert(`左键点击了无人机: ${options.id}`);
             window.dispatchEvent(new CustomEvent('droneClick', {
               detail: { id: options.id, type: 'left', entity: modelEntity }
             }));
@@ -581,7 +581,7 @@ export function setPoint(baseUrl: string) {
       if (pickedObjects && pickedObjects.length > 0) {
         for (const obj of pickedObjects) {
           if (obj.id === modelEntity.entity) {
-            console.log(`右键点击了无人机: ${options.id}`);
+            alert(`右键点击了无人机: ${options.id}`);
             window.dispatchEvent(new CustomEvent('droneClick', {
               detail: { id: options.id, type: 'right', entity: modelEntity }
             }));
