@@ -500,7 +500,6 @@ export function setPoint(baseUrl: string) {
         modelEntity.targetHeight
       )
     };
-    
     if (options.type === 'glb') {
       // 使用glb模型
       entityOptions.model = {
@@ -510,6 +509,7 @@ export function setPoint(baseUrl: string) {
         maximumPixelSize: 80, // 最大显示尺寸（限制不撑满屏幕）
         show: true,
         color: Cesium.Color.WHITE,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY, // 始终在最上层
       };
     } else if (options.type === 'png') {
       // 使用图片
@@ -521,10 +521,10 @@ export function setPoint(baseUrl: string) {
         maximumPixelSize: 30, // 最大像素尺寸
         verticalOrigin: Cesium.VerticalOrigin.CENTER,
         horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-        show: true
+        show: true,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY, // 始终在最上层
       };
     }
-    
     modelEntity.entity = map.entities.add(entityOptions);
 
     // 创建无人机div标签，返回销毁函数
@@ -557,28 +557,37 @@ export function setPoint(baseUrl: string) {
 
     // 添加鼠标点击事件监听（支持左键和右键）
     const clickHandler = new Cesium.ScreenSpaceEventHandler(map.canvas);
-    
+
     // 左键点击事件
     clickHandler.setInputAction(function(click: any) {
-      const pickedObject = map.scene.pick(click.position);
-      if (Cesium.defined(pickedObject) && pickedObject.id === modelEntity.entity) {
-        console.log(`左键点击了无人机: ${options.id}`);
-        // 触发自定义事件
-        window.dispatchEvent(new CustomEvent('droneClick', { 
-          detail: { id: options.id, type: 'left', entity: modelEntity } 
-        }));
+      // drillPick 可获取所有对象，优先响应无人机 entity
+      const pickedObjects = map.scene.drillPick(click.position);
+      if (pickedObjects && pickedObjects.length > 0) {
+        for (const obj of pickedObjects) {
+          if (obj.id === modelEntity.entity) {
+            console.log(`左键点击了无人机: ${options.id}`);
+            window.dispatchEvent(new CustomEvent('droneClick', {
+              detail: { id: options.id, type: 'left', entity: modelEntity }
+            }));
+            break;
+          }
+        }
       }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-    
+
     // 右键点击事件
     clickHandler.setInputAction(function(click: any) {
-      const pickedObject = map.scene.pick(click.position);
-      if (Cesium.defined(pickedObject) && pickedObject.id === modelEntity.entity) {
-        console.log(`右键点击了无人机: ${options.id}`);
-        // 触发自定义事件
-        window.dispatchEvent(new CustomEvent('droneClick', { 
-          detail: { id: options.id, type: 'right', entity: modelEntity } 
-        }));
+      const pickedObjects = map.scene.drillPick(click.position);
+      if (pickedObjects && pickedObjects.length > 0) {
+        for (const obj of pickedObjects) {
+          if (obj.id === modelEntity.entity) {
+            console.log(`右键点击了无人机: ${options.id}`);
+            window.dispatchEvent(new CustomEvent('droneClick', {
+              detail: { id: options.id, type: 'right', entity: modelEntity }
+            }));
+            break;
+          }
+        }
       }
     }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
     
