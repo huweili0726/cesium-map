@@ -29,18 +29,38 @@ export function ClickHandler() {
     // 添加鼠标点击事件监听（支持左键和右键）
     const clickHandler = new Cesium.ScreenSpaceEventHandler(map.canvas);
 
+    // 统一的点击处理函数 (适用于无人机是一个图片的时候)
+    // const handleDroneClick = (click: any, type: 'left' | 'right') => {
+    //   // 使用pick而不是drillPick，提高性能（只获取最顶层对象）
+    //   const pickedObject = map.scene.pick(click.position);
+    //   // 快速检查点击对象是否为当前无人机
+    //   if (Cesium.defined(pickedObject) && pickedObject.id === modelEntity.entity) {
+    //     // 移除alert，避免阻塞UI
+    //     alert(`${type === 'left' ? '左键' : '右键'}点击了无人机: ${id}`);
+    //     // 触发自定义事件
+    //     window.dispatchEvent(new CustomEvent('droneClick', {
+    //       detail: { id: id, type, entity: modelEntity }
+    //     }));
+    //   }
+    // };
+
     // 统一的点击处理函数
     const handleDroneClick = (click: any, type: 'left' | 'right') => {
-      // 使用pick而不是drillPick，提高性能（只获取最顶层对象）
-      const pickedObject = map.scene.pick(click.position);
-      // 快速检查点击对象是否为当前无人机
-      if (Cesium.defined(pickedObject) && pickedObject.id === modelEntity.entity) {
-        // 移除alert，避免阻塞UI
-        alert(`${type === 'left' ? '左键' : '右键'}点击了无人机: ${id}`);
-        // 触发自定义事件
-        window.dispatchEvent(new CustomEvent('droneClick', {
-          detail: { id: id, type, entity: modelEntity }
-        }));
+      // 使用drillPick获取所有对象，确保能找到无人机
+      const pickedObjects = map.scene.drillPick(click.position);
+      if (pickedObjects && pickedObjects.length > 0) {
+        // 遍历所有对象，优先选择当前无人机
+        for (const obj of pickedObjects) {
+          if (Cesium.defined(obj) && obj.id === modelEntity.entity) {
+            // 移除alert，避免阻塞UI
+            alert(`${type === 'left' ? '左键' : '右键'}点击了无人机: ${id}`);
+            // 触发自定义事件
+            window.dispatchEvent(new CustomEvent('droneClick', {
+              detail: { id: id, type, entity: modelEntity }
+            }));
+            break;
+          }
+        }
       }
     };
 
