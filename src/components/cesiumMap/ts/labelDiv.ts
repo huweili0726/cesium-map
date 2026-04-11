@@ -57,6 +57,12 @@ export function labelDiv() {
       // 创建拖拽线svg元素
       const dragLineSvg = document.createElementNS(SVG_NS, 'svg');
       dragLineSvg.classList.add('drone-drag-line-svg');
+      dragLineSvg.style.position = 'absolute';
+      dragLineSvg.style.top = '0';
+      dragLineSvg.style.left = '0';
+      dragLineSvg.style.width = '100%';
+      dragLineSvg.style.height = '100%';
+      dragLineSvg.style.pointerEvents = 'none';
       const dragLine = document.createElementNS(SVG_NS, 'line');
       dragLine.classList.add('drone-drag-line-line');
       dragLineSvg.appendChild(dragLine);
@@ -74,10 +80,10 @@ export function labelDiv() {
         const startY = labelRect.top + labelRect.height / 2; // 拖拽线的起始点y坐标
         const endX = detailRect.left + detailRect.width / 2; // 拖拽线的结束点x坐标
         const endY = detailRect.top + detailRect.height / 2; // 拖拽线的结束点y坐标
-        dragLine.setAttribute('x1', String(startX)); 
-        dragLine.setAttribute('y1', String(startY)); 
-        dragLine.setAttribute('x2', String(endX)); 
-        dragLine.setAttribute('y2', String(endY)); 
+        dragLine.setAttribute('x1', String(startX - labelRect.left)); 
+        dragLine.setAttribute('y1', String(startY - labelRect.top)); 
+        dragLine.setAttribute('x2', String(endX - labelRect.left)); 
+        dragLine.setAttribute('y2', String(endY - labelRect.top)); 
       };
 
       // 移除拖拽线
@@ -105,7 +111,7 @@ export function labelDiv() {
         new_detailDivTop = parseFloat(detailDiv.style.top) || 0;
         document.removeEventListener('pointermove', onPointerMove);
         document.removeEventListener('pointerup', onPointerEnd);
-        removeDragLine();
+        // removeDragLine();
       };
 
       // 点击无人机详情面板时，开始拖拽
@@ -118,7 +124,7 @@ export function labelDiv() {
         if (detailDiv.parentElement !== document.body) {
           labelDiv.appendChild(detailDiv);
         }
-        document.body.appendChild(dragLineSvg);
+        labelDiv.appendChild(dragLineSvg);
         isDragging = true;
         startX = e.clientX;
         startY = e.clientY;
