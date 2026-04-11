@@ -111,7 +111,6 @@ export function labelDiv() {
         new_detailDivTop = parseFloat(detailDiv.style.top) || 0;
         document.removeEventListener('pointermove', onPointerMove);
         document.removeEventListener('pointerup', onPointerEnd);
-        // removeDragLine();
       };
 
       // 点击无人机详情面板时，开始拖拽
