@@ -558,37 +558,31 @@ export function setPoint(baseUrl: string) {
     // 添加鼠标点击事件监听（支持左键和右键）
     const clickHandler = new Cesium.ScreenSpaceEventHandler(map.canvas);
 
-    // 左键点击事件
-    clickHandler.setInputAction(function(click: any) {
-      // drillPick 可获取所有对象，优先响应无人机 entity
-      const pickedObjects = map.scene.drillPick(click.position);
-      if (pickedObjects && pickedObjects.length > 0) {
-        for (const obj of pickedObjects) {
-          if (obj.id === modelEntity.entity) {
-            alert(`左键点击了无人机: ${options.id}`);
-            window.dispatchEvent(new CustomEvent('droneClick', {
-              detail: { id: options.id, type: 'left', entity: modelEntity }
-            }));
-            break;
-          }
-        }
+    // 统一的点击处理函数
+    const handleDroneClick = (click: any, type: 'left' | 'right') => {
+      // 使用pick而不是drillPick，提高性能（只获取最顶层对象）
+      const pickedObject = map.scene.pick(click.position);
+      
+      // 快速检查点击对象是否为当前无人机
+      if (Cesium.defined(pickedObject) && pickedObject.id === modelEntity.entity) {
+        // 移除alert，避免阻塞UI
+        alert(`${type === 'left' ? '左键' : '右键'}点击了无人机: ${options.id}`);
+        
+        // 触发自定义事件
+        window.dispatchEvent(new CustomEvent('droneClick', {
+          detail: { id: options.id, type, entity: modelEntity }
+        }));
       }
+    };
+    
+    // 左键点击事件
+    clickHandler.setInputAction((click: any) => {
+      handleDroneClick(click, 'left');
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
     // 右键点击事件
-    clickHandler.setInputAction(function(click: any) {
-      const pickedObjects = map.scene.drillPick(click.position);
-      if (pickedObjects && pickedObjects.length > 0) {
-        for (const obj of pickedObjects) {
-          if (obj.id === modelEntity.entity) {
-            alert(`右键点击了无人机: ${options.id}`);
-            window.dispatchEvent(new CustomEvent('droneClick', {
-              detail: { id: options.id, type: 'right', entity: modelEntity }
-            }));
-            break;
-          }
-        }
-      }
+    clickHandler.setInputAction((click: any) => {
+      handleDroneClick(click, 'right');
     }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
     
     // 保存事件处理器，便于后续清理
