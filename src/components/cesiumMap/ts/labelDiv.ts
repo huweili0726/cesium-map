@@ -38,6 +38,9 @@ export function labelDiv() {
       const existDetailDiv = labelDiv.querySelector('.drone-detail-div');
       if (existDetailDiv) existDetailDiv.remove();
 
+      new_detailDivLeft = null;
+      new_detailDivTop = null;
+
       // 创建新的内容div，作为labelDiv的子元素
       const detailDiv = document.createElement('div');
       detailDiv.className = 'drone-detail-div';
