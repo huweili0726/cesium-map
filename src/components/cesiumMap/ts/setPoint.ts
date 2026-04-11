@@ -512,6 +512,7 @@ export function setPoint(baseUrl: string) {
       id: options.id,
       getPosition: () => modelEntity.entity.position.getValue(map.clock.currentTime),
       getInfo: () => modelEntity.info,
+      getVisible: () => !!modelEntity.entity?.show,
       text: `ID: ${options.id}`,
       map: map
     });

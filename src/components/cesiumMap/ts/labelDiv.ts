@@ -9,6 +9,7 @@ export interface DroneLabelItem {
   id: string;
   getPosition: () => any;
   getInfo?: () => any;
+  getVisible?: () => boolean;
   text: string;
   map: any;
 }
@@ -180,7 +181,7 @@ export function labelDiv() {
         labelDiv.style.display = 'none';
         return;
       }
-      let position;
+      let position: any;
       try {
         position = labelItem.getPosition();
       } catch (e) {
@@ -191,6 +192,12 @@ export function labelDiv() {
         labelDiv.style.display = 'none';
         return;
       }
+
+      if (labelItem.getVisible && !labelItem.getVisible()) {
+        labelDiv.style.display = 'none';
+        return;
+      }
+
       let windowPos : Cesium.Cartesian2;
       try {
         windowPos = Cesium.SceneTransforms.worldToWindowCoordinates(labelItem.map.scene, position);
