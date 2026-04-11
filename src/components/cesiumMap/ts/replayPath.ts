@@ -21,7 +21,7 @@ export function setReplay(baseUrl: string) {
     setDroneTrail,
     clearDroneTrail
   } = setPath()
-  
+
   const {
     setDronePointByGlb
   } = setPoint(baseUrl)
@@ -103,7 +103,7 @@ export function setReplay(baseUrl: string) {
         type: 'png',
       })
       if (droneEntity) {
-        bindDroneClickHandler(droneEntity, { id: options.droneId })
+        bindDroneClickHandler({ id: options.droneId, modelEntity: droneEntity })
       }
     }
 

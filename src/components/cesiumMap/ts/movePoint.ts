@@ -141,7 +141,7 @@ export function movePointConfig(baseUrl: string) {
           speed: speed
         }
         // 新建实体后立即绑定点击事件
-        bindDroneClickHandler(modelEntity, { id: options.pointId })
+        bindDroneClickHandler({ id: options.pointId, modelEntity: modelEntity })
       }
       // 新创建的实体直接返回（首次创建无飞行状态）
       return modelEntity;

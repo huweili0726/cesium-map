@@ -15,12 +15,13 @@ export function ClickHandler() {
 
   /**
    * 绑定无人机实体的点击事件（左键/右键）
-   * @param modelEntity setDronePointByGlb 返回的实体对象
-   * @param options 创建点位时的 options
+   * @param options.id 无人机ID
+   * @param options.modelEntity setDronePointByGlb 返回的实体对象
    */
-  const bindDroneClickHandler = (modelEntity: any, options: { id: string }) => {
+  const bindDroneClickHandler = (options: { id: string, modelEntity: any}) => {
     // 获取store实例，保持响应性
     const mapStore = useMapStore()
+    const { id, modelEntity } = options
 
     const map = mapStore.getMap();
     if (!map || !modelEntity?.entity) return;
@@ -35,10 +36,10 @@ export function ClickHandler() {
       // 快速检查点击对象是否为当前无人机
       if (Cesium.defined(pickedObject) && pickedObject.id === modelEntity.entity) {
         // 移除alert，避免阻塞UI
-        alert(`${type === 'left' ? '左键' : '右键'}点击了无人机: ${options.id}`);
+        alert(`${type === 'left' ? '左键' : '右键'}点击了无人机: ${id}`);
         // 触发自定义事件
         window.dispatchEvent(new CustomEvent('droneClick', {
-          detail: { id: options.id, type, entity: modelEntity }
+          detail: { id: id, type, entity: modelEntity }
         }));
       }
     };
