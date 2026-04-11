@@ -11,7 +11,7 @@
 import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { setPoint } from '@/components/cesiumMap/ts/setPoint'
-import { bindDroneClickHandler } from '@/components/cesiumMap/ts/bindDroneClickHandler'
+import { ClickHandler } from '@/components/cesiumMap/ts/bindClickHandler'
 import { movePathConfig } from '@/components/cesiumMap/ts/movePath'
 import { setPath } from '@/components/cesiumMap/ts/setPath'
 
@@ -30,6 +30,10 @@ export function movePointConfig(baseUrl: string) {
     toggleDroneTrail,
     clearDroneTrail
   } = setPath()
+
+  const {
+    bindDroneClickHandler,
+  } = ClickHandler()
 
   /**
    * 移动点位到新的坐标位置
