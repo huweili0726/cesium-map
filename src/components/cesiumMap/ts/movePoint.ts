@@ -392,6 +392,11 @@ export function movePointConfig(baseUrl: string) {
         droneEntity.rightClickHandler.destroy();
         droneEntity.rightClickHandler = null;
       }
+      // 移除鼠标点击事件处理器（左键和右键）
+      if (droneEntity.clickHandler) {
+        droneEntity.clickHandler.destroy();
+        droneEntity.clickHandler = null;
+      }
       
       // 清除标签（setPoint.ts 中 createOrUpdateDroneLabelDiv 返回的销毁函数）
       if (typeof droneEntity.destroy === 'function') {

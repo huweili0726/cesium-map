@@ -555,6 +555,36 @@ export function setPoint(baseUrl: string) {
       startPosition: modelEntity.currentPosition
     })
 
+    // 添加鼠标点击事件监听（支持左键和右键）
+    const clickHandler = new Cesium.ScreenSpaceEventHandler(map.canvas);
+    
+    // 左键点击事件
+    clickHandler.setInputAction(function(click: any) {
+      const pickedObject = map.scene.pick(click.position);
+      if (Cesium.defined(pickedObject) && pickedObject.id === modelEntity.entity) {
+        console.log(`左键点击了无人机: ${options.id}`);
+        // 触发自定义事件
+        window.dispatchEvent(new CustomEvent('droneClick', { 
+          detail: { id: options.id, type: 'left', entity: modelEntity } 
+        }));
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    
+    // 右键点击事件
+    clickHandler.setInputAction(function(click: any) {
+      const pickedObject = map.scene.pick(click.position);
+      if (Cesium.defined(pickedObject) && pickedObject.id === modelEntity.entity) {
+        console.log(`右键点击了无人机: ${options.id}`);
+        // 触发自定义事件
+        window.dispatchEvent(new CustomEvent('droneClick', { 
+          detail: { id: options.id, type: 'right', entity: modelEntity } 
+        }));
+      }
+    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+    
+    // 保存事件处理器，便于后续清理
+    modelEntity.clickHandler = clickHandler;
+
     mapStore.setGraphicMap(options.id, modelEntity)
     return modelEntity
   }
