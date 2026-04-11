@@ -358,7 +358,7 @@ export function movePointConfig(baseUrl: string) {
   }
 
   /**
-   * 销毁无人机模型+轨迹
+   * 销毁无人机模型+轨迹+标签
    * @param options 
    * @param options.pointId 点ID
    * @returns 
@@ -392,6 +392,12 @@ export function movePointConfig(baseUrl: string) {
         droneEntity.rightClickHandler = null;
       }
       
+      // 清除标签（setPoint.ts 中 createOrUpdateDroneLabelDiv 返回的销毁函数）
+      if (typeof droneEntity.destroy === 'function') {
+        droneEntity.destroy();
+        droneEntity.destroy = null;
+      }
+
       // 清除无人机实体
       if (droneEntity.entity) {
         map.entities.remove(droneEntity.entity)
