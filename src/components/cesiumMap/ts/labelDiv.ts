@@ -2,17 +2,6 @@ import * as Cesium from 'cesium';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-/**
- * 无人机标签项接口
- */
-export interface DroneLabelItem {
-  id: string;
-  getPosition: () => any;
-  getInfo?: () => any;
-  getVisible?: () => boolean;
-  text: string;
-  map: any;
-}
 
 /**
  * 各种标签div合集
@@ -23,7 +12,14 @@ export function labelDiv() {
    * @param labelItem 无人机标签项
    * @returns 销毁函数
    */
-  const createOrUpdateDroneLabelDiv = (labelItem: DroneLabelItem) => {
+  const createOrUpdateDroneLabelDiv = (labelItem: {
+    id: string;
+    getPosition: () => any;
+    getInfo?: () => any;
+    getVisible?: () => boolean;
+    text: string;
+    map: any;
+  }) => {
     const labelDiv = document.createElement('div');
     labelDiv.className = 'drone-label';
     labelDiv.innerHTML = labelItem.text;
