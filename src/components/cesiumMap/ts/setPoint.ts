@@ -448,6 +448,7 @@ export function setPoint(baseUrl: string) {
    * @param options.lat 纬度
    * @param options.height 高度（可选，默认0）
    * @param options.heading 朝向（可选，默认0）
+   * @param options.type 无人机类型（glb or png）
    * @returns 创建的点位对象
    */
   const setDronePointByGlb = (options: { 
@@ -455,7 +456,8 @@ export function setPoint(baseUrl: string) {
     lng: number, 
     lat: number, 
     height?: number, 
-    heading?: number 
+    heading?: number,
+    type?: string,
   }) => {
     const map = mapStore.getMap()
     if (!map) {
@@ -488,24 +490,42 @@ export function setPoint(baseUrl: string) {
         heading: options.heading || 0,
       }
     }
-    modelEntity.entity = map.entities.add({
+    // 根据type参数选择使用model还是billboard
+    const entityOptions: any = {
       id: options.id,
       name: `无人机${options.id}`,
       position: Cesium.Cartesian3.fromDegrees(
         modelEntity.targetLng,
         modelEntity.targetLat,
         modelEntity.targetHeight
-      ),
-      model: {
+      )
+    };
+    
+    if (options.type === 'glb') {
+      // 使用glb模型
+      entityOptions.model = {
         uri: baseUrl + '/glb/drone.glb',
         scale: 1.0,
         minimumPixelSize: 80, // 最小显示尺寸（防止缩小时看不见）
         maximumPixelSize: 80, // 最大显示尺寸（限制不撑满屏幕）
         show: true,
         color: Cesium.Color.WHITE,
-      }
-      // label 字段移除，改为自定义div
-    })
+      };
+    } else if (options.type === 'png') {
+      // 使用图片
+      entityOptions.billboard = {
+        image: baseUrl + '/images/drone.png', // 无人机图片路径
+        width: 30, // 图片宽度
+        height: 30, // 图片高度
+        minimumPixelSize: 30, // 最小像素尺寸
+        maximumPixelSize: 30, // 最大像素尺寸
+        verticalOrigin: Cesium.VerticalOrigin.CENTER,
+        horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+        show: true
+      };
+    }
+    
+    modelEntity.entity = map.entities.add(entityOptions);
 
     // 创建无人机div标签，返回销毁函数
     modelEntity.destroy = createOrUpdateDroneLabelDiv({

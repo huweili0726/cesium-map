@@ -124,7 +124,8 @@ export function movePointConfig(baseUrl: string) {
         lng: options.lng,
         lat: options.lat,
         height: height,
-        heading: 0
+        heading: 0,
+        type: 'png',
       });
       if (modelEntity) {
         modelEntity.info = {

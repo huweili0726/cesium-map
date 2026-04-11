@@ -93,7 +93,8 @@ export function setReplay(baseUrl: string) {
         lng: firstPoint.lng,
         lat: firstPoint.lat,
         height: firstPoint.height || 0,
-        heading: 0
+        heading: 0,
+        type: 'png',
       })
     }
 
