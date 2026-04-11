@@ -12,6 +12,7 @@ import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { setPath } from '@/components/cesiumMap/ts/setPath'
 import { setPoint } from '@/components/cesiumMap/ts/setPoint'
+import { bindDroneClickHandler } from '@/components/cesiumMap/ts/bindDroneClickHandler'
 
 export function setReplay(baseUrl: string) {
   // 获取地图store实例
@@ -96,6 +97,9 @@ export function setReplay(baseUrl: string) {
         heading: 0,
         type: 'png',
       })
+      if (droneEntity) {
+        bindDroneClickHandler(droneEntity, { id: options.droneId })
+      }
     }
 
     // 创建/更新轨迹

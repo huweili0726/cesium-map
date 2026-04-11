@@ -11,6 +11,7 @@
 import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { setPoint } from '@/components/cesiumMap/ts/setPoint'
+import { bindDroneClickHandler } from '@/components/cesiumMap/ts/bindDroneClickHandler'
 import { movePathConfig } from '@/components/cesiumMap/ts/movePath'
 import { setPath } from '@/components/cesiumMap/ts/setPath'
 
@@ -135,6 +136,8 @@ export function movePointConfig(baseUrl: string) {
           height: height,
           speed: speed
         }
+        // 新建实体后立即绑定点击事件
+        bindDroneClickHandler(modelEntity, { id: options.pointId })
       }
       // 新创建的实体直接返回（首次创建无飞行状态）
       return modelEntity;
