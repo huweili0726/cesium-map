@@ -12,6 +12,8 @@ import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
 
 export function ClickHandler() {
+  // 获取store实例，保持响应性
+  const mapStore = useMapStore()
 
   /**
    * 绑定无人机实体的点击事件（左键/右键）
@@ -19,8 +21,6 @@ export function ClickHandler() {
    * @param options.modelEntity setDronePointByGlb 返回的实体对象
    */
   const bindDroneClickHandler = (options: { id: string, modelEntity: any}) => {
-    // 获取store实例，保持响应性
-    const mapStore = useMapStore()
     const { id, modelEntity } = options
 
     const map = mapStore.getMap();
