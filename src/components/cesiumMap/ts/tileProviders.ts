@@ -1,12 +1,31 @@
 import * as Cesium from 'cesium'
 
 /**
+ * 蓝色风格配置选项
+ */
+export interface BlueStyleOptions {
+  enabled: boolean
+  darkBase: { r: number; g: number; b: number }
+  lightBlue: { r: number; g: number; b: number }
+}
+
+/**
  * 蓝色风格的瓦片提供者
  * 将原始地图瓦片转换为深蓝色风格，使道路和文字呈现亮蓝色
  */
 export class BlueTileProvider extends Cesium.UrlTemplateImageryProvider {
-  constructor(options: Cesium.UrlTemplateImageryProvider.ConstructorOptions) {
+  private blueStyle: BlueStyleOptions
+
+  constructor(
+    options: Cesium.UrlTemplateImageryProvider.ConstructorOptions,
+    blueStyle?: BlueStyleOptions
+  ) {
     super(options)
+    this.blueStyle = blueStyle || {
+      enabled: true,
+      darkBase: { r: 9, g: 20, b: 46 },
+      lightBlue: { r: 125, g: 165, b: 255 }
+    }
   }
 
   async requestImage(x: number, y: number, level: number): Promise<ImageBitmap> {
@@ -29,8 +48,8 @@ export class BlueTileProvider extends Cesium.UrlTemplateImageryProvider {
     // 目标风格：深蓝暗色底图 + 亮蓝道路/文字（接近你第二张图）
     // 说明：将原始亮度做反相，再映射到蓝色梯度
     // 原图中"亮背景"会变成深蓝；"暗线条/文字"会变成亮蓝
-    const darkBase = { r: 9, g: 20, b: 46 }
-    const lightBlue = { r: 125, g: 165, b: 255 }
+    const darkBase = this.blueStyle.darkBase
+    const lightBlue = this.blueStyle.lightBlue
 
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i]

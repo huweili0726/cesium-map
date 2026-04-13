@@ -114,29 +114,30 @@ const initCesium = async () => {
         map.imageryLayers.removeAll()
 
         // 加载配置的底图
-        // const imageryLayer = new Cesium.ImageryLayer(
-        //   new Cesium.UrlTemplateImageryProvider({
-        //     url: activeBasemap.url,
-        //     subdomains: ['1', '2', '3', '4'], // 通过多子域名分散请求，突破浏览器并发限制，让地图加载更快、更稳定。
-        //     maximumLevel: 18,
-        //     credit: activeBasemap.name // 用于配置版权 / 来源声明的参数 (显示底图名称)
-        //   })
-        // )
-
-
-
-const layer = new Cesium.ImageryLayer(
-  new BlueTileProvider({
-    url: activeBasemap.url,
-    subdomains: ['1', '2', '3', '4'],
-    maximumLevel: 18,
-    credit: activeBasemap.name
-  })
-)
-
-map.imageryLayers.add(layer)
-        // 添加图层
-        // map.imageryLayers.add(imageryLayer)
+        const layer = new Cesium.ImageryLayer(
+          new Cesium.UrlTemplateImageryProvider({
+            url: activeBasemap.url,
+            subdomains: ['1', '2', '3', '4'], // 通过多子域名分散请求，突破浏览器并发限制，让地图加载更快、更稳定。
+            maximumLevel: 18,
+            credit: activeBasemap.name // 用于配置版权 / 来源声明的参数 (显示底图名称)
+          })
+        )
+        
+        // 如果配置了蓝色风格，则使用BlueTileProvider
+        if (activeBasemap.blueStyle && activeBasemap.blueStyle.enabled) {
+          const blueLayer = new Cesium.ImageryLayer(
+            new BlueTileProvider({
+              url: activeBasemap.url,
+              subdomains: ['1', '2', '3', '4'],
+              maximumLevel: 18,
+              credit: activeBasemap.name
+            }, activeBasemap.blueStyle)
+          )
+          map.imageryLayers.remove(layer)
+          map.imageryLayers.add(blueLayer)
+        } else {
+          map.imageryLayers.add(layer)
+        }
         console.log(`加载底图：${activeBasemap.name}，URL：${activeBasemap.url}`)
       }
     }
