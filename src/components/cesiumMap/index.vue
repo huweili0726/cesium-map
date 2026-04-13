@@ -125,53 +125,65 @@ const initCesium = async () => {
 
 class BlueTileProvider extends Cesium.UrlTemplateImageryProvider {
   constructor(options: Cesium.UrlTemplateImageryProvider.ConstructorOptions) {
-    super(options);
+    super(options)
   }
 
-  async requestImage(x: number, y: number, level: number): Promise<HTMLImageElement | ImageBitmap> {
-    // 获取原始瓦片
-    const img = await super.requestImage(x, y, level) as HTMLImageElement;
+  async requestImage(x: number, y: number, level: number): Promise<ImageBitmap> {
+    const img = await super.requestImage(x, y, level) as CanvasImageSource
 
-    // 创建 canvas 并绘制瓦片
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext('2d')!;
-    ctx.drawImage(img, 0, 0);
+    const canvas = document.createElement('canvas')
+    canvas.width = (img as any).width
+    canvas.height = (img as any).height
 
-    // 获取像素数据
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imgData.data;
-
-    // 蓝色底图处理（参考 Mars3D）
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-
-      // 简单反色+蓝色滤镜
-      data[i] = (255 - r) * 0.5 + 78;      // R
-      data[i + 1] = (255 - g) * 0.5 + 112; // G
-      data[i + 2] = (255 - b) * 0.5 + 166; // B
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      throw new Error('无法获取 Canvas 2D 上下文')
     }
-    ctx.putImageData(imgData, 0, 0);
 
-    // 使用 createImageBitmap 避免瓦片拼接错乱
-    return createImageBitmap(canvas);
+    ctx.drawImage(img, 0, 0)
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    const data = imageData.data
+
+    // 目标风格：深蓝暗色底图 + 亮蓝道路/文字（接近你第二张图）
+    // 说明：将原始亮度做反相，再映射到蓝色梯度
+    // 原图中“亮背景”会变成深蓝；“暗线条/文字”会变成亮蓝
+    const darkBase = { r: 9, g: 20, b: 46 }
+    const lightBlue = { r: 125, g: 165, b: 255 }
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i]
+      const g = data[i + 1]
+      const b = data[i + 2]
+
+      // 感知亮度
+      const luma = 0.299 * r + 0.587 * g + 0.114 * b
+
+      // 反相强度：亮背景->低强度（更暗），暗元素->高强度（更亮）
+      const inv = 1 - luma / 255
+      const intensity = Math.pow(Math.max(0, Math.min(1, inv)), 1.15)
+
+      // 映射到蓝色范围
+      data[i] = darkBase.r + (lightBlue.r - darkBase.r) * intensity
+      data[i + 1] = darkBase.g + (lightBlue.g - darkBase.g) * intensity
+      data[i + 2] = darkBase.b + (lightBlue.b - darkBase.b) * intensity
+    }
+
+    ctx.putImageData(imageData, 0, 0)
+    return createImageBitmap(canvas)
   }
 }
 
-// 使用
 const layer = new Cesium.ImageryLayer(
   new BlueTileProvider({
     url: activeBasemap.url,
-    subdomains: ['1','2','3','4'],
+    subdomains: ['1', '2', '3', '4'],
     maximumLevel: 18,
     credit: activeBasemap.name
   })
-);
+)
 
-map.imageryLayers.add(layer);          // 0-1，混合强度
+map.imageryLayers.add(layer)
         // 添加图层
         // map.imageryLayers.add(imageryLayer)
         console.log(`加载底图：${activeBasemap.name}，URL：${activeBasemap.url}`)
