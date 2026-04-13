@@ -211,11 +211,7 @@ const initCesium = async () => {
           console.log('自定义按钮 2 点击')
           // 这里可以添加自定义逻辑
           if (viewer) {
-            // 示例：飞到上海
-            viewer.camera.flyTo({
-              destination: Cesium.Cartesian3.fromDegrees(121.4737, 31.2304, 10000),
-              duration: 2
-            })
+       
           }
         }
       }
