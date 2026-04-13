@@ -106,17 +106,20 @@ const applyCssLikeDarkFilter = (
           vec3 hsv = rgb2hsv(color);
           hsv.x = fract(hsv.x + u_hueRotate / 360.0);
 
-          // 4.1) suppress yellow/orange roads after dark transform
-          // yellow hue range approx: [30°, 75°]
-          float hDeg = hsv.x * 360.0;
-          float yellowMask = smoothstep(20.0, 35.0, hDeg) * (1.0 - smoothstep(75.0, 90.0, hDeg));
-          // only suppress when color has enough saturation/value
-          float vividMask = smoothstep(0.2, 0.6, hsv.y) * smoothstep(0.2, 0.7, hsv.z);
-          float suppress = clamp(u_yellowSuppress, 0.0, 1.0) * yellowMask * vividMask;
-          // shift yellow hue toward cool blue and lower saturation slightly
-          hsv.x = fract(hsv.x + suppress * (160.0 / 360.0));
-          hsv.y = mix(hsv.y, hsv.y * 0.75, suppress);
-          color = hsv2rgb(hsv);
+
+            // 4.1) suppress yellow/orange roads after dark transform
+            // yellow hue range approx: [30°, 75°]
+            float hDeg = hsv.x * 360.0;
+            float yellowMask = smoothstep(20.0, 35.0, hDeg) * (1.0 - smoothstep(75.0, 90.0, hDeg));
+            
+            // only suppress when color has enough saturation/value
+            float vividMask = smoothstep(0.2, 0.6, hsv.y) * smoothstep(0.2, 0.7, hsv.z);
+            float suppress = clamp(u_yellowSuppress, 0.0, 1.0) * yellowMask * vividMask;
+
+            // shift yellow hue toward cool blue and lower saturation slightly
+            hsv.x = fract(hsv.x + suppress * (160.0 / 360.0));
+            hsv.y = mix(hsv.y, hsv.y * 0.75, suppress);
+            color = hsv2rgb(hsv);
 
           // 5) contrast(u_contrast)
           color = (color - 0.5) * u_contrast + 0.5;
