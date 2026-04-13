@@ -114,16 +114,66 @@ const initCesium = async () => {
         map.imageryLayers.removeAll()
 
         // 加载配置的底图
-        const imageryLayer = new Cesium.ImageryLayer(
-          new Cesium.UrlTemplateImageryProvider({
-            url: activeBasemap.url,
-            subdomains: ['1', '2', '3', '4'], // 通过多子域名分散请求，突破浏览器并发限制，让地图加载更快、更稳定。
-            maximumLevel: 18,
-            credit: activeBasemap.name // 用于配置版权 / 来源声明的参数 (显示底图名称)
-          })
-        )
+        // const imageryLayer = new Cesium.ImageryLayer(
+        //   new Cesium.UrlTemplateImageryProvider({
+        //     url: activeBasemap.url,
+        //     subdomains: ['1', '2', '3', '4'], // 通过多子域名分散请求，突破浏览器并发限制，让地图加载更快、更稳定。
+        //     maximumLevel: 18,
+        //     credit: activeBasemap.name // 用于配置版权 / 来源声明的参数 (显示底图名称)
+        //   })
+        // )
+
+class BlueTileProvider extends Cesium.UrlTemplateImageryProvider {
+  constructor(options: Cesium.UrlTemplateImageryProvider.ConstructorOptions) {
+    super(options);
+  }
+
+  async requestImage(x: number, y: number, level: number): Promise<HTMLImageElement | ImageBitmap> {
+    // 获取原始瓦片
+    const img = await super.requestImage(x, y, level) as HTMLImageElement;
+
+    // 创建 canvas 并绘制瓦片
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0);
+
+    // 获取像素数据
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imgData.data;
+
+    // 蓝色底图处理（参考 Mars3D）
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+
+      // 简单反色+蓝色滤镜
+      data[i] = (255 - r) * 0.5 + 78;      // R
+      data[i + 1] = (255 - g) * 0.5 + 112; // G
+      data[i + 2] = (255 - b) * 0.5 + 166; // B
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    // 使用 createImageBitmap 避免瓦片拼接错乱
+    return createImageBitmap(canvas);
+  }
+}
+
+// 使用
+const layer = new Cesium.ImageryLayer(
+  new BlueTileProvider({
+    url: activeBasemap.url,
+    subdomains: ['1','2','3','4'],
+    maximumLevel: 18,
+    credit: activeBasemap.name
+  })
+);
+
+map.imageryLayers.add(layer);          // 0-1，混合强度
         // 添加图层
-        map.imageryLayers.add(imageryLayer)
+        // map.imageryLayers.add(imageryLayer)
         console.log(`加载底图：${activeBasemap.name}，URL：${activeBasemap.url}`)
       }
     }
