@@ -127,17 +127,17 @@ const applyCssLikeDarkFilter = (
             hsv.y = mix(hsv.y, hsv.y * 0.75, suppress);
             color = hsv2rgb(hsv);
 
-            // 4.2) global cool-blue tint (科技深蓝基调)
+            // 4.2) global cool-blue tint (科技深蓝基调 → 调浅)
             float blueTint = clamp(u_blueTint, 0.0, 1.0);
-            color = mix(color, vec3(color.r * 0.72, color.g * 0.90, color.b * 1.26), blueTint);
+            color = mix(color, vec3(color.r * 0.80, color.g * 0.92, color.b * 1.15), blueTint);
 
             // 4.3) cyan highlight boost for bright pixels (道路/文字更“科技感”)
             float brightMask = smoothstep(0.45, 0.95, max(max(color.r, color.g), color.b));
-            color.gb += vec2(0.06, 0.14) * clamp(u_cyanBoost, 0.0, 1.0) * brightMask;
+            color.gb += vec2(0.04, 0.10) * clamp(u_cyanBoost, 0.0, 1.0) * brightMask;
 
-            // 4.4) shadow deep blue push (暗部压向深蓝而非纯黑)
+            // 4.4) shadow deep blue push (暗部 → 更浅的蓝色，不是深黑蓝)
             float darkMask = 1.0 - smoothstep(0.06, 0.45, dot(color, vec3(0.299, 0.587, 0.114)));
-            vec3 shadowBlue = vec3(0.02, 0.06, 0.16);
+            vec3 shadowBlue = vec3(0.05, 0.12, 0.24); // 这里是关键：调浅了
             color = mix(color, max(color, shadowBlue), clamp(u_shadowBlue, 0.0, 1.0) * darkMask);
 
           // 5) contrast(u_contrast)
