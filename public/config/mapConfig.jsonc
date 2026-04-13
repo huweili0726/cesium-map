@@ -11,19 +11,6 @@
     },
     "globe": {
       "enableLighting": false  // 是否开启光照效果
-    },
-    "darkFilter": {
-      "enabled": true, // 是否启用暗色滤镜
-      "sepiaMix": 0.1, // 棕褐色混合强度 [0,1]，降低可减少发黄
-      "saturation": 0, // 饱和度系数（>=0），降低可减少道路偏色
-      "hueRotate": 180, // 色相旋转角度（度）
-      "contrast": 0.95, // 对比度系数
-      "brightness": 1, // 亮度系数
-      "yellowSuppress": 0, // 黄色道路抑制强度 [0,1]
-      "blueTint": 0.78, // 蓝色调浅强度 [0,1]
-      "cyanBoost": 0.62, // 青色增强强度 [0,1]
-      "shadowBlue": 0.72, // 阴影蓝色强度 [0,1]
-      "shadowBlueHex": "#162943" // 阴影蓝色颜色
     }
   },
   "control": {
