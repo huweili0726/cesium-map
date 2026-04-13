@@ -10,6 +10,7 @@ import { objectUtils } from '@/utils/object'
 import { basicConfig } from '@/components/cesiumMap/ts/basis'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { customColorTileProvider } from '@/components/cesiumMap/ts/tileProviders'
+import { customHomeButton } from '@/components/cesiumMap/ts/customHomeButton.ts'
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()
@@ -177,6 +178,17 @@ const initCesium = async () => {
     // 使用 flyTo 方法实现相机看向中心点的效果
     setMapCenter({lng: mapOptions.scene.center.lng, lat: mapOptions.scene.center.lat, map: map}) // 设置地图中心点
 
+    // 自定义主页按钮功能
+    setCustomHomeButton(map, {
+      lng: mapOptions.scene.center.lng,
+      lat: mapOptions.scene.center.lat,
+      alt: mapOptions.scene.center.alt,
+      heading: mapOptions.scene.center.heading,
+      pitch: mapOptions.scene.center.pitch,
+      roll: mapOptions.scene.center.roll,
+      duration: mapOptions.scene.center.duration
+    })
+
     console.log('Cesium 地图加载成功')
     emit("onload", map)
   } catch (error) {
@@ -200,6 +212,7 @@ onUnmounted(() => {
 const { getJsonFile } = jsonUtils()
 const { merge } = objectUtils()
 const { mouseController, setMapCenter } = basicConfig()
+const { setCustomHomeButton } = customHomeButton()
 </script>
 
 <style scoped lang="less">
