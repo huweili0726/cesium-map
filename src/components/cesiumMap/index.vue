@@ -2,7 +2,7 @@
   <div class="cesium-container" ref="cesiumContainer" />
 </template>
 
-<script setup lang="ts">
+<script setup>
 import * as Cesium from 'cesium'
 import { ref, onMounted, onUnmounted, toRaw } from 'vue'
 import { jsonUtils } from '@/utils/json'
@@ -17,23 +17,26 @@ const mapStore = useMapStore()
 // onload事件将在地图渲染后触发
 const emit = defineEmits(["onload"])
 
-const props = withDefaults(
-  defineProps<{
-    config?: string // 传入的地图配置参数url，可为空，只传options
-    url?: string // 传入的地图构造参数url，可为空，只传options
-    options?: any // 传入的地图构造参数options，可覆盖url内的参数
-  }>(),
-  {
-    config: undefined,
-    url: undefined, 
-    options: undefined
+// ✅ 正确：纯 JS 写法，去掉 withDefaults
+const props = defineProps({
+  config: {
+    type: String,
+    default: undefined
+  },
+  url: {
+    type: String,
+    default: undefined
+  },
+  options: {
+    type: Object,
+    default: undefined
   }
-)
+})
 
 // 容器引用
-const cesiumContainer = ref<HTMLElement | null>(null)
+const cesiumContainer = ref(null)
 // 用于存放地球组件实例
-let map: Cesium.Viewer | null = null
+let map = null
 
 const initCesium = async () => {
   if (!cesiumContainer.value) return
@@ -107,7 +110,7 @@ const initCesium = async () => {
     // 从配置中加载底图
     if (mapOptions && mapOptions.basemaps) {
       // 查找show为true的底图
-      const activeBasemap = mapOptions.basemaps.find((basemap: any) => basemap.show === true)
+      const activeBasemap = mapOptions.basemaps.find(basemap => basemap.show === true)
       
       if (activeBasemap) {
         // 除默认底图 (不执行这行代码，高德地图会被 Cesium 默认底图覆盖，导致你看不到高德地图)
