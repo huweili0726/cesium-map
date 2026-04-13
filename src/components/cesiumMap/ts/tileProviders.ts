@@ -84,3 +84,5 @@ export class customColorTileProvider extends Cesium.UrlTemplateImageryProvider {
     return createImageBitmap(canvas)
   }
 }
+
+

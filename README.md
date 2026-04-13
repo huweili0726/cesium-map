@@ -66,6 +66,7 @@ npm run build
 - 地图底图动态配置
 - 地球光照效果控制
 - 相机初始位置设置
+- **底图风格自定义**：支持深蓝色风格和黑色风格，可通过配置文件调整颜色参数
 
 ### 🚁 无人机系统
 - **无人机创建**：支持 GLB 模型和 PNG 图片两种显示方式
@@ -93,6 +94,27 @@ npm run build
 
 ### 地图配置
 在 `public/config/mapConfig.json` 文件中配置地图参数，包括场景设置和底图配置。
+
+### 底图风格配置
+在 `public/config/mapConfig.json` 文件中，每个底图配置项都可以设置自定义颜色风格：
+
+**深蓝色风格配置示例**：
+```json
+"customMapColorStyle": {
+  "enabled": true,  // 是否启用自定义颜色风格
+  "MapBaseColor": { "r": 9, "g": 20, "b": 46 },  // 深蓝色底色
+  "RoadLightColor": { "r": 125, "g": 165, "b": 255 }  // 亮蓝色道路/文字
+}
+```
+
+**黑色风格配置示例**：
+```json
+"customMapColorStyle": {
+  "enabled": true,  // 是否启用自定义颜色风格
+  "MapBaseColor": { "r": 10, "g": 10, "b": 10 },  // 深黑色底色
+  "RoadLightColor": { "r": 200, "g": 200, "b": 200 }  // 亮白色道路/文字
+}
+```
 
 ## 事件监听
 
