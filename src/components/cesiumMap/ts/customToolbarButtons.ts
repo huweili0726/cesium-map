@@ -23,7 +23,7 @@ export interface CustomToolbarButtonOptions {
 /**
  * 自定义工具栏按钮功能
  */
-export function customToolbarButtons() {
+export function createCustomToolbarButtons() {
   /**
    * 添加自定义工具栏按钮
    * @param viewer Cesium Viewer 实例

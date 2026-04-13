@@ -11,7 +11,7 @@ import { basicConfig } from '@/components/cesiumMap/ts/basis'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { customColorTileProvider } from '@/components/cesiumMap/ts/tileProviders'
 import { customHomeButton } from '@/components/cesiumMap/ts/customHomeButton.ts'
-import { customToolbarButtons as customToolbarButtonsModule } from '@/components/cesiumMap/ts/customToolbarButtons.ts'
+import { createCustomToolbarButtons } from '@/components/cesiumMap/ts/customToolbarButtons.ts'
 
 
 // 获取store实例，保持响应性
@@ -251,7 +251,7 @@ const { getJsonFile } = jsonUtils()
 const { merge } = objectUtils()
 const { mouseController, setMapCenter } = basicConfig()
 const { setCustomHomeButton } = customHomeButton()
-const { addCustomToolbarButtons } = customToolbarButtonsModule()
+const { addCustomToolbarButtons } = createCustomToolbarButtons()
 </script>
 
 <style scoped lang="less">
