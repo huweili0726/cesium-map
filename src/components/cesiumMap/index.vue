@@ -124,14 +124,14 @@ const initCesium = async () => {
         )
         
         // 如果配置了蓝色风格，则使用BlueTileProvider
-        if (activeBasemap.blueStyle && activeBasemap.blueStyle.enabled) {
+        if (activeBasemap.customMapColorStyle && activeBasemap.customMapColorStyle.enabled) {
           const blueLayer = new Cesium.ImageryLayer(
             new BlueTileProvider({
               url: activeBasemap.url,
               subdomains: ['1', '2', '3', '4'],
               maximumLevel: 18,
               credit: activeBasemap.name
-            }, activeBasemap.blueStyle)
+            }, activeBasemap.customMapColorStyle)
           )
           map.imageryLayers.remove(layer)
           map.imageryLayers.add(blueLayer)

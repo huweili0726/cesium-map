@@ -3,10 +3,10 @@ import * as Cesium from 'cesium'
 /**
  * 蓝色风格配置选项
  */
-export interface BlueStyleOptions {
+export interface custumMapColorStyleOptions {
   enabled: boolean
-  darkBase: { r: number; g: number; b: number }
-  lightBlue: { r: number; g: number; b: number }
+  MapBaseColor: { r: number; g: number; b: number }
+  RoadLightColor: { r: number; g: number; b: number }
 }
 
 /**
@@ -14,17 +14,17 @@ export interface BlueStyleOptions {
  * 将原始地图瓦片转换为深蓝色风格，使道路和文字呈现亮蓝色
  */
 export class BlueTileProvider extends Cesium.UrlTemplateImageryProvider {
-  private blueStyle: BlueStyleOptions
+  private custumMapColorStyle: custumMapColorStyleOptions
 
   constructor(
     options: Cesium.UrlTemplateImageryProvider.ConstructorOptions,
-    blueStyle?: BlueStyleOptions
+    custumMapColorStyle?: custumMapColorStyleOptions
   ) {
     super(options)
-    this.blueStyle = blueStyle || {
+    this.custumMapColorStyle = custumMapColorStyle || {
       enabled: true,
-      darkBase: { r: 9, g: 20, b: 46 },
-      lightBlue: { r: 125, g: 165, b: 255 }
+      MapBaseColor: { r: 9, g: 20, b: 46 },
+      RoadLightColor: { r: 125, g: 165, b: 255 }
     }
   }
 
@@ -48,8 +48,8 @@ export class BlueTileProvider extends Cesium.UrlTemplateImageryProvider {
     // 目标风格：深蓝暗色底图 + 亮蓝道路/文字（接近你第二张图）
     // 说明：将原始亮度做反相，再映射到蓝色梯度
     // 原图中"亮背景"会变成深蓝；"暗线条/文字"会变成亮蓝
-    const darkBase = this.blueStyle.darkBase
-    const lightBlue = this.blueStyle.lightBlue
+    const MapBaseColor = this.custumMapColorStyle.MapBaseColor
+    const RoadLightColor = this.custumMapColorStyle.RoadLightColor
 
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i]
@@ -64,9 +64,9 @@ export class BlueTileProvider extends Cesium.UrlTemplateImageryProvider {
       const intensity = Math.pow(Math.max(0, Math.min(1, inv)), 1.15)
 
       // 映射到蓝色范围
-      data[i] = darkBase.r + (lightBlue.r - darkBase.r) * intensity
-      data[i + 1] = darkBase.g + (lightBlue.g - darkBase.g) * intensity
-      data[i + 2] = darkBase.b + (lightBlue.b - darkBase.b) * intensity
+      data[i] = MapBaseColor.r + (RoadLightColor.r - MapBaseColor.r) * intensity
+      data[i + 1] = MapBaseColor.g + (RoadLightColor.g - MapBaseColor.g) * intensity
+      data[i + 2] = MapBaseColor.b + (RoadLightColor.b - MapBaseColor.b) * intensity
     }
 
     ctx.putImageData(imageData, 0, 0)
