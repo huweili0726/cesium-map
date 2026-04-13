@@ -9,7 +9,7 @@ import { jsonUtils } from '@/utils/json'
 import { objectUtils } from '@/utils/object'
 import { basicConfig } from '@/components/cesiumMap/ts/basis'
 import { useMapStore } from '@/stores/modules/mapStore'
-import { applyCssLikeDarkFilter, removeDarkFilter } from '@/components/cesiumMap/ts/filterUtils'
+import { BlueTileProvider } from '@/components/cesiumMap/ts/tileProviders'
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()
@@ -123,56 +123,7 @@ const initCesium = async () => {
         //   })
         // )
 
-class BlueTileProvider extends Cesium.UrlTemplateImageryProvider {
-  constructor(options: Cesium.UrlTemplateImageryProvider.ConstructorOptions) {
-    super(options)
-  }
 
-  async requestImage(x: number, y: number, level: number): Promise<ImageBitmap> {
-    const img = await super.requestImage(x, y, level) as CanvasImageSource
-
-    const canvas = document.createElement('canvas')
-    canvas.width = (img as any).width
-    canvas.height = (img as any).height
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) {
-      throw new Error('无法获取 Canvas 2D 上下文')
-    }
-
-    ctx.drawImage(img, 0, 0)
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-    const data = imageData.data
-
-    // 目标风格：深蓝暗色底图 + 亮蓝道路/文字（接近你第二张图）
-    // 说明：将原始亮度做反相，再映射到蓝色梯度
-    // 原图中“亮背景”会变成深蓝；“暗线条/文字”会变成亮蓝
-    const darkBase = { r: 9, g: 20, b: 46 }
-    const lightBlue = { r: 125, g: 165, b: 255 }
-
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i]
-      const g = data[i + 1]
-      const b = data[i + 2]
-
-      // 感知亮度
-      const luma = 0.299 * r + 0.587 * g + 0.114 * b
-
-      // 反相强度：亮背景->低强度（更暗），暗元素->高强度（更亮）
-      const inv = 1 - luma / 255
-      const intensity = Math.pow(Math.max(0, Math.min(1, inv)), 1.15)
-
-      // 映射到蓝色范围
-      data[i] = darkBase.r + (lightBlue.r - darkBase.r) * intensity
-      data[i + 1] = darkBase.g + (lightBlue.g - darkBase.g) * intensity
-      data[i + 2] = darkBase.b + (lightBlue.b - darkBase.b) * intensity
-    }
-
-    ctx.putImageData(imageData, 0, 0)
-    return createImageBitmap(canvas)
-  }
-}
 
 const layer = new Cesium.ImageryLayer(
   new BlueTileProvider({
@@ -210,23 +161,6 @@ map.imageryLayers.add(layer)
     // 开启地形深度测试，确保在地形上的实体正确渲染
     map.scene.globe.depthTestAgainstTerrain = true;
 
-    // // 暗色滤镜（可选）
-    // const darkFilterConfig = mapOptions?.scene?.darkFilter
-    // if (darkFilterConfig?.enabled ?? true) {
-    //   applyCssLikeDarkFilter(map, {
-    //     sepiaMix: darkFilterConfig?.sepiaMix,
-    //     saturation: darkFilterConfig?.saturation,
-    //     hueRotate: darkFilterConfig?.hueRotate,
-    //     contrast: darkFilterConfig?.contrast,
-    //     brightness: darkFilterConfig?.brightness,
-    //     yellowSuppress: darkFilterConfig?.yellowSuppress,
-    //     blueTint: darkFilterConfig?.blueTint,
-    //     cyanBoost: darkFilterConfig?.cyanBoost,
-    //     shadowBlue: darkFilterConfig?.shadowBlue,
-    //     shadowBlueHex: darkFilterConfig?.shadowBlueHex,
-    //   })
-    // }
-
     // 初始化鼠标控制器
     mouseController(map); 
 
@@ -255,10 +189,6 @@ onMounted(() => {
 
 // 组件销毁时释放资源
 onUnmounted(() => {
-  if (map) {
-    removeDarkFilter(map)
-  }
-
   if (map) {
     map.destroy()
     map = null
