@@ -35,6 +35,24 @@ const cesiumContainer = ref<HTMLElement | null>(null)
 let map: Cesium.Viewer | null = null
 let darkFilterStage: Cesium.PostProcessStage | Cesium.PostProcessStageComposite | null = null
 
+const hexToRgb01 = (hex?: string) => {
+  const fallback = { r: 0.07, g: 0.15, b: 0.28 }
+  if (!hex) return fallback
+
+  const normalized = hex.trim().replace('#', '')
+  const full = normalized.length === 3
+    ? normalized.split('').map((c) => c + c).join('')
+    : normalized
+
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) return fallback
+
+  return {
+    r: parseInt(full.slice(0, 2), 16) / 255,
+    g: parseInt(full.slice(2, 4), 16) / 255,
+    b: parseInt(full.slice(4, 6), 16) / 255
+  }
+}
+
 const applyCssLikeDarkFilter = (
   viewer: Cesium.Viewer,
   options?: {
@@ -47,6 +65,7 @@ const applyCssLikeDarkFilter = (
     blueTint?: number
     cyanBoost?: number
     shadowBlue?: number
+    shadowBlueHex?: string
   }
 ) => {
   // 若已存在则先移除，避免重复叠加导致画面异常
@@ -54,6 +73,8 @@ const applyCssLikeDarkFilter = (
     viewer.scene.postProcessStages.remove(darkFilterStage)
     darkFilterStage = null
   }
+
+  const shadowBlueRgb = hexToRgb01(options?.shadowBlueHex)
 
   darkFilterStage = viewer.scene.postProcessStages.add(
     new Cesium.PostProcessStage({
@@ -72,6 +93,7 @@ const applyCssLikeDarkFilter = (
         uniform float u_blueTint;
         uniform float u_cyanBoost;
         uniform float u_shadowBlue;
+        uniform vec3 u_shadowBlueRgb;
 
         vec3 rgb2hsv(vec3 c) {
           vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
@@ -137,7 +159,7 @@ const applyCssLikeDarkFilter = (
 
             // 4.4) shadow deep blue push (暗部 → 更浅的蓝色，不是深黑蓝)
             float darkMask = 1.0 - smoothstep(0.06, 0.45, dot(color, vec3(0.299, 0.587, 0.114)));
-            vec3 shadowBlue = vec3(0.07, 0.15, 0.28); // 这里是关键：调浅了
+            vec3 shadowBlue = clamp(u_shadowBlueRgb, 0.0, 1.0);
             color = mix(color, max(color, shadowBlue), clamp(u_shadowBlue, 0.0, 1.0) * darkMask);
 
           // 5) contrast(u_contrast)
@@ -158,7 +180,8 @@ const applyCssLikeDarkFilter = (
         u_yellowSuppress: options?.yellowSuppress ?? 1.0,
         u_blueTint: options?.blueTint ?? 0.78,
         u_cyanBoost: options?.cyanBoost ?? 0.62,
-        u_shadowBlue: options?.shadowBlue ?? 0.72
+        u_shadowBlue: options?.shadowBlue ?? 0.72,
+        u_shadowBlueRgb: new Cesium.Cartesian3(shadowBlueRgb.r, shadowBlueRgb.g, shadowBlueRgb.b)
       }
     })
   )
@@ -290,6 +313,7 @@ const initCesium = async () => {
         blueTint: darkFilterConfig?.blueTint,
         cyanBoost: darkFilterConfig?.cyanBoost,
         shadowBlue: darkFilterConfig?.shadowBlue,
+        shadowBlueHex: darkFilterConfig?.shadowBlueHex,
       })
     }
 
