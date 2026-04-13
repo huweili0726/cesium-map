@@ -148,22 +148,22 @@ const initCesium = async () => {
     // 开启地形深度测试，确保在地形上的实体正确渲染
     map.scene.globe.depthTestAgainstTerrain = true;
 
-    // 暗色滤镜（可选）
-    const darkFilterConfig = mapOptions?.scene?.darkFilter
-    if (darkFilterConfig?.enabled ?? true) {
-      applyCssLikeDarkFilter(map, {
-        sepiaMix: darkFilterConfig?.sepiaMix,
-        saturation: darkFilterConfig?.saturation,
-        hueRotate: darkFilterConfig?.hueRotate,
-        contrast: darkFilterConfig?.contrast,
-        brightness: darkFilterConfig?.brightness,
-        yellowSuppress: darkFilterConfig?.yellowSuppress,
-        blueTint: darkFilterConfig?.blueTint,
-        cyanBoost: darkFilterConfig?.cyanBoost,
-        shadowBlue: darkFilterConfig?.shadowBlue,
-        shadowBlueHex: darkFilterConfig?.shadowBlueHex,
-      })
-    }
+    // // 暗色滤镜（可选）
+    // const darkFilterConfig = mapOptions?.scene?.darkFilter
+    // if (darkFilterConfig?.enabled ?? true) {
+    //   applyCssLikeDarkFilter(map, {
+    //     sepiaMix: darkFilterConfig?.sepiaMix,
+    //     saturation: darkFilterConfig?.saturation,
+    //     hueRotate: darkFilterConfig?.hueRotate,
+    //     contrast: darkFilterConfig?.contrast,
+    //     brightness: darkFilterConfig?.brightness,
+    //     yellowSuppress: darkFilterConfig?.yellowSuppress,
+    //     blueTint: darkFilterConfig?.blueTint,
+    //     cyanBoost: darkFilterConfig?.cyanBoost,
+    //     shadowBlue: darkFilterConfig?.shadowBlue,
+    //     shadowBlueHex: darkFilterConfig?.shadowBlueHex,
+    //   })
+    // }
 
     // 初始化鼠标控制器
     mouseController(map); 
