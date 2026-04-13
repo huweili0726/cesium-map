@@ -33,7 +33,7 @@ const props = withDefaults(
 const cesiumContainer = ref<HTMLElement | null>(null)
 // 用于存放地球组件实例
 let map: Cesium.Viewer | null = null
-let darkFilterStage: Cesium.PostProcessStage | null = null
+let darkFilterStage: Cesium.PostProcessStage | Cesium.PostProcessStageComposite = null
 
 const applyCssLikeDarkFilter = (
   viewer: Cesium.Viewer,
@@ -55,64 +55,64 @@ const applyCssLikeDarkFilter = (
     new Cesium.PostProcessStage({
       name: 'css-like-dark-filter',
       fragmentShader: `
-uniform sampler2D colorTexture;
-in vec2 v_textureCoordinates;
-out vec4 fragColor;
+        uniform sampler2D colorTexture;
+        in vec2 v_textureCoordinates;
+        out vec4 fragColor;
 
-uniform float u_sepiaMix;
-uniform float u_saturation;
-uniform float u_hueRotate;
-uniform float u_contrast;
-uniform float u_brightness;
+        uniform float u_sepiaMix;
+        uniform float u_saturation;
+        uniform float u_hueRotate;
+        uniform float u_contrast;
+        uniform float u_brightness;
 
-vec3 rgb2hsv(vec3 c) {
-  vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-  float d = q.x - min(q.w, q.y);
-  float e = 1e-10;
-  return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-}
+        vec3 rgb2hsv(vec3 c) {
+          vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+          vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+          vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+          float d = q.x - min(q.w, q.y);
+          float e = 1e-10;
+          return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+        }
 
-vec3 hsv2rgb(vec3 c) {
-  vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-}
+        vec3 hsv2rgb(vec3 c) {
+          vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+          vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+          return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+        }
 
-void main() {
-  vec4 texColor = texture(colorTexture, v_textureCoordinates);
-  vec3 color = texColor.rgb;
+        void main() {
+          vec4 texColor = texture(colorTexture, v_textureCoordinates);
+          vec3 color = texColor.rgb;
 
-  // 1) invert(1)
-  color = 1.0 - color;
+          // 1) invert(1)
+          color = 1.0 - color;
 
-  // 2) sepia(u_sepiaMix)
-  vec3 sepia = vec3(
-    dot(color, vec3(0.393, 0.769, 0.189)),
-    dot(color, vec3(0.349, 0.686, 0.168)),
-    dot(color, vec3(0.272, 0.534, 0.131))
-  );
-  color = mix(color, sepia, clamp(u_sepiaMix, 0.0, 1.0));
+          // 2) sepia(u_sepiaMix)
+          vec3 sepia = vec3(
+            dot(color, vec3(0.393, 0.769, 0.189)),
+            dot(color, vec3(0.349, 0.686, 0.168)),
+            dot(color, vec3(0.272, 0.534, 0.131))
+          );
+          color = mix(color, sepia, clamp(u_sepiaMix, 0.0, 1.0));
 
-  // 3) saturate(u_saturation)
-  float luminance = dot(color, vec3(0.299, 0.587, 0.114));
-  vec3 gray = vec3(luminance);
-  color = mix(gray, color, max(u_saturation, 0.0));
+          // 3) saturate(u_saturation)
+          float luminance = dot(color, vec3(0.299, 0.587, 0.114));
+          vec3 gray = vec3(luminance);
+          color = mix(gray, color, max(u_saturation, 0.0));
 
-  // 4) hue-rotate(deg)
-  vec3 hsv = rgb2hsv(color);
-  hsv.x = fract(hsv.x + u_hueRotate / 360.0);
-  color = hsv2rgb(hsv);
+          // 4) hue-rotate(deg)
+          vec3 hsv = rgb2hsv(color);
+          hsv.x = fract(hsv.x + u_hueRotate / 360.0);
+          color = hsv2rgb(hsv);
 
-  // 5) contrast(u_contrast)
-  color = (color - 0.5) * u_contrast + 0.5;
+          // 5) contrast(u_contrast)
+          color = (color - 0.5) * u_contrast + 0.5;
 
-  // 6) brightness(u_brightness)
-  color *= u_brightness;
+          // 6) brightness(u_brightness)
+          color *= u_brightness;
 
-  fragColor = vec4(clamp(color, 0.0, 1.0), texColor.a);
-}
+          fragColor = vec4(clamp(color, 0.0, 1.0), texColor.a);
+        }
       `,
       uniforms: {
         u_sepiaMix: options?.sepiaMix ?? 0.5,
