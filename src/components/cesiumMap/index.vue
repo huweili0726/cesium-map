@@ -69,6 +69,7 @@ const initCesium = async () => {
     // 初始化 Cesium 地球
     map = new Cesium.Viewer(cesiumContainer.value, {
       // 配置项
+      imageryProvider: mapOptions.control.imageryProvider, // 是否显示默认影像层
       baseLayerPicker: mapOptions.control.baseLayerPicker, // 底图选择器
       geocoder: mapOptions.control.geocoder, // 地址搜索
       homeButton: mapOptions.control.homeButton, // 主页按钮
