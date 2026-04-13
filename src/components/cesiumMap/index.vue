@@ -43,6 +43,7 @@ const applyCssLikeDarkFilter = (
     hueRotate?: number
     contrast?: number
     brightness?: number
+    yellowSuppress?: number
   }
 ) => {
   // 若已存在则先移除，避免重复叠加导致画面异常
@@ -64,6 +65,7 @@ const applyCssLikeDarkFilter = (
         uniform float u_hueRotate;
         uniform float u_contrast;
         uniform float u_brightness;
+        uniform float u_yellowSuppress;
 
         vec3 rgb2hsv(vec3 c) {
           vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
@@ -103,6 +105,17 @@ const applyCssLikeDarkFilter = (
           // 4) hue-rotate(deg)
           vec3 hsv = rgb2hsv(color);
           hsv.x = fract(hsv.x + u_hueRotate / 360.0);
+
+          // 4.1) suppress yellow/orange roads after dark transform
+          // yellow hue range approx: [30°, 75°]
+          float hDeg = hsv.x * 360.0;
+          float yellowMask = smoothstep(20.0, 35.0, hDeg) * (1.0 - smoothstep(75.0, 90.0, hDeg));
+          // only suppress when color has enough saturation/value
+          float vividMask = smoothstep(0.2, 0.6, hsv.y) * smoothstep(0.2, 0.7, hsv.z);
+          float suppress = clamp(u_yellowSuppress, 0.0, 1.0) * yellowMask * vividMask;
+          // shift yellow hue toward cool blue and lower saturation slightly
+          hsv.x = fract(hsv.x + suppress * (160.0 / 360.0));
+          hsv.y = mix(hsv.y, hsv.y * 0.75, suppress);
           color = hsv2rgb(hsv);
 
           // 5) contrast(u_contrast)
@@ -115,11 +128,12 @@ const applyCssLikeDarkFilter = (
         }
       `,
       uniforms: {
-        u_sepiaMix: options?.sepiaMix ?? 0.5,
-        u_saturation: options?.saturation ?? 2.5,
+        u_sepiaMix: options?.sepiaMix ?? 0.35,
+        u_saturation: options?.saturation ?? 1.45,
         u_hueRotate: options?.hueRotate ?? 180.0,
         u_contrast: options?.contrast ?? 0.95,
-        u_brightness: options?.brightness ?? 0.88
+        u_brightness: options?.brightness ?? 0.88,
+        u_yellowSuppress: options?.yellowSuppress ?? 1.0
       }
     })
   )
@@ -247,6 +261,7 @@ const initCesium = async () => {
         hueRotate: darkFilterConfig?.hueRotate,
         contrast: darkFilterConfig?.contrast,
         brightness: darkFilterConfig?.brightness,
+        yellowSuppress: darkFilterConfig?.yellowSuppress,
       })
     }
 
