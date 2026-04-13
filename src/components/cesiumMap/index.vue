@@ -33,6 +33,97 @@ const props = withDefaults(
 const cesiumContainer = ref<HTMLElement | null>(null)
 // 用于存放地球组件实例
 let map: Cesium.Viewer | null = null
+let darkFilterStage: Cesium.PostProcessStage | null = null
+
+const applyCssLikeDarkFilter = (
+  viewer: Cesium.Viewer,
+  options?: {
+    sepiaMix?: number
+    saturation?: number
+    hueRotate?: number
+    contrast?: number
+    brightness?: number
+  }
+) => {
+  // 若已存在则先移除，避免重复叠加导致画面异常
+  if (darkFilterStage) {
+    viewer.scene.postProcessStages.remove(darkFilterStage)
+    darkFilterStage = null
+  }
+
+  darkFilterStage = viewer.scene.postProcessStages.add(
+    new Cesium.PostProcessStage({
+      name: 'css-like-dark-filter',
+      fragmentShader: `
+uniform sampler2D colorTexture;
+in vec2 v_textureCoordinates;
+out vec4 fragColor;
+
+uniform float u_sepiaMix;
+uniform float u_saturation;
+uniform float u_hueRotate;
+uniform float u_contrast;
+uniform float u_brightness;
+
+vec3 rgb2hsv(vec3 c) {
+  vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+  float d = q.x - min(q.w, q.y);
+  float e = 1e-10;
+  return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+vec3 hsv2rgb(vec3 c) {
+  vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+void main() {
+  vec4 texColor = texture(colorTexture, v_textureCoordinates);
+  vec3 color = texColor.rgb;
+
+  // 1) invert(1)
+  color = 1.0 - color;
+
+  // 2) sepia(u_sepiaMix)
+  vec3 sepia = vec3(
+    dot(color, vec3(0.393, 0.769, 0.189)),
+    dot(color, vec3(0.349, 0.686, 0.168)),
+    dot(color, vec3(0.272, 0.534, 0.131))
+  );
+  color = mix(color, sepia, clamp(u_sepiaMix, 0.0, 1.0));
+
+  // 3) saturate(u_saturation)
+  float luminance = dot(color, vec3(0.299, 0.587, 0.114));
+  vec3 gray = vec3(luminance);
+  color = mix(gray, color, max(u_saturation, 0.0));
+
+  // 4) hue-rotate(deg)
+  vec3 hsv = rgb2hsv(color);
+  hsv.x = fract(hsv.x + u_hueRotate / 360.0);
+  color = hsv2rgb(hsv);
+
+  // 5) contrast(u_contrast)
+  color = (color - 0.5) * u_contrast + 0.5;
+
+  // 6) brightness(u_brightness)
+  color *= u_brightness;
+
+  fragColor = vec4(clamp(color, 0.0, 1.0), texColor.a);
+}
+      `,
+      uniforms: {
+        u_sepiaMix: options?.sepiaMix ?? 0.5,
+        u_saturation: options?.saturation ?? 2.5,
+        u_hueRotate: options?.hueRotate ?? 180.0,
+        u_contrast: options?.contrast ?? 0.95,
+        u_brightness: options?.brightness ?? 0.88
+      }
+    })
+  )
+}
 
 const initCesium = async () => {
   if (!cesiumContainer.value) return
@@ -147,6 +238,18 @@ const initCesium = async () => {
     // 开启地形深度测试，确保在地形上的实体正确渲染
     map.scene.globe.depthTestAgainstTerrain = true;
 
+    // 暗色滤镜（可选）
+    const darkFilterConfig = mapOptions?.scene?.darkFilter
+    if (darkFilterConfig?.enabled ?? true) {
+      applyCssLikeDarkFilter(map, {
+        sepiaMix: darkFilterConfig?.sepiaMix,
+        saturation: darkFilterConfig?.saturation,
+        hueRotate: darkFilterConfig?.hueRotate,
+        contrast: darkFilterConfig?.contrast,
+        brightness: darkFilterConfig?.brightness,
+      })
+    }
+
     // 初始化鼠标控制器
     mouseController(map); 
 
@@ -175,6 +278,11 @@ onMounted(() => {
 
 // 组件销毁时释放资源
 onUnmounted(() => {
+  if (map && darkFilterStage) {
+    map.scene.postProcessStages.remove(darkFilterStage)
+    darkFilterStage = null
+  }
+
   if (map) {
     map.destroy()
     map = null
