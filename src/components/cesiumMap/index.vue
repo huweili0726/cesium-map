@@ -16,7 +16,7 @@ import { customHomeButton } from '@/components/cesiumMap/ts/customHomeButton.ts'
 const mapStore = useMapStore()
 
 // onload事件将在地图渲染后触发
-const emit = defineEmits(["onload"])
+const emit = defineEmits(["onload", "customButtonClick"])
 
 const props = withDefaults(
   defineProps<{
@@ -35,6 +35,30 @@ const props = withDefaults(
 const cesiumContainer = ref<HTMLElement | null>(null)
 // 用于存放地球组件实例
 let map: Cesium.Viewer | null = null
+let customToolbarButton: HTMLButtonElement | null = null
+
+const addCustomToolbarButton = (viewer: Cesium.Viewer) => {
+  const toolbar = viewer.container.querySelector('.cesium-viewer-toolbar') as HTMLElement | null
+  if (!toolbar) return
+
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = 'cesium-button cesium-toolbar-button custom-toolbar-button'
+  button.title = '自定义按钮'
+  button.innerText = '自定义'
+  button.onclick = () => {
+    emit('customButtonClick', viewer)
+  }
+
+  const homeBtn = toolbar.querySelector('.cesium-home-button')
+  if (homeBtn && homeBtn.nextSibling) {
+    toolbar.insertBefore(button, homeBtn.nextSibling)
+  } else {
+    toolbar.appendChild(button)
+  }
+
+  customToolbarButton = button
+}
 
 const initCesium = async () => {
   if (!cesiumContainer.value) return
@@ -70,7 +94,9 @@ const initCesium = async () => {
     // 初始化 Cesium 地球
     map = new Cesium.Viewer(cesiumContainer.value, {
       // 配置项
-      imageryProvider: mapOptions.control.imageryProvider, // 是否显示默认影像层
+      // Cesium 新版 Viewer.ConstructorOptions 中已移除 imageryProvider，改用 baseLayer。
+      // 当配置为 false 时，禁用默认底图；其他情况走 Cesium 默认底图逻辑。
+      baseLayer: mapOptions.control.imageryProvider === false ? false : undefined,
       baseLayerPicker: mapOptions.control.baseLayerPicker, // 底图选择器
       geocoder: mapOptions.control.geocoder, // 地址搜索
       homeButton: mapOptions.control.homeButton, // 主页按钮
@@ -189,6 +215,9 @@ const initCesium = async () => {
       duration: mapOptions.scene.center.duration
     })
 
+    // 在主页按钮附近添加自定义按钮
+    addCustomToolbarButton(map)
+
     console.log('Cesium 地图加载成功')
     emit("onload", map)
   } catch (error) {
@@ -203,6 +232,11 @@ onMounted(() => {
 
 // 组件销毁时释放资源
 onUnmounted(() => {
+  if (customToolbarButton) {
+    customToolbarButton.remove()
+    customToolbarButton = null
+  }
+
   if (map) {
     map.destroy()
     map = null
@@ -220,5 +254,9 @@ const { setCustomHomeButton } = customHomeButton()
   width: 100vw;
   height: 100vh;
   position: relative;
+}
+
+.cesium-container :deep(.custom-toolbar-button) {
+  min-width: 64px;
 }
 </style>
