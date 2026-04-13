@@ -137,7 +137,7 @@ const applyCssLikeDarkFilter = (
 
             // 4.4) shadow deep blue push (暗部 → 更浅的蓝色，不是深黑蓝)
             float darkMask = 1.0 - smoothstep(0.06, 0.45, dot(color, vec3(0.299, 0.587, 0.114)));
-            vec3 shadowBlue = vec3(0.05, 0.12, 0.24); // 这里是关键：调浅了
+            vec3 shadowBlue = vec3(0.07, 0.15, 0.28); // 这里是关键：调浅了
             color = mix(color, max(color, shadowBlue), clamp(u_shadowBlue, 0.0, 1.0) * darkMask);
 
           // 5) contrast(u_contrast)
