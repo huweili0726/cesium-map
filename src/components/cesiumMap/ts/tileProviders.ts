@@ -1,3 +1,14 @@
+/**
+ * 自定义地图颜色瓦片函数
+ * 
+ * 提供在Cesium地图上自定义地图颜色瓦片的功能
+ * 支持自定义地图颜色风格，如深蓝色、深黑色等各种自定义颜色
+ * 
+ * @author huweili
+ * @email czxyhuweili@163.com
+ * @version 1.0.0
+ * @date 2026-04-13
+ */
 import * as Cesium from 'cesium'
 
 /**
