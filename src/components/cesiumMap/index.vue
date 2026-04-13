@@ -11,6 +11,8 @@ import { basicConfig } from '@/components/cesiumMap/ts/basis'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { customColorTileProvider } from '@/components/cesiumMap/ts/tileProviders'
 import { customHomeButton } from '@/components/cesiumMap/ts/customHomeButton.ts'
+import { customToolbarButtons as customToolbarButtonsModule } from '@/components/cesiumMap/ts/customToolbarButtons.ts'
+
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()
@@ -35,30 +37,7 @@ const props = withDefaults(
 const cesiumContainer = ref<HTMLElement | null>(null)
 // 用于存放地球组件实例
 let map: Cesium.Viewer | null = null
-let customToolbarButton: HTMLButtonElement | null = null
-
-const addCustomToolbarButton = (viewer: Cesium.Viewer) => {
-  const toolbar = viewer.container.querySelector('.cesium-viewer-toolbar') as HTMLElement | null
-  if (!toolbar) return
-
-  const button = document.createElement('button')
-  button.type = 'button'
-  button.className = 'cesium-button cesium-toolbar-button custom-toolbar-button'
-  button.title = '自定义按钮'
-  button.innerText = '自定义'
-  button.onclick = () => {
-    emit('customButtonClick', viewer)
-  }
-
-  const homeBtn = toolbar.querySelector('.cesium-home-button')
-  if (homeBtn && homeBtn.nextSibling) {
-    toolbar.insertBefore(button, homeBtn.nextSibling)
-  } else {
-    toolbar.appendChild(button)
-  }
-
-  customToolbarButton = button
-}
+let customButtons: HTMLButtonElement[] = []
 
 const initCesium = async () => {
   if (!cesiumContainer.value) return
@@ -216,7 +195,31 @@ const initCesium = async () => {
     })
 
     // 在主页按钮附近添加自定义按钮
-    addCustomToolbarButton(map)
+    customButtons = addCustomToolbarButtons(map, [
+      {
+        title: '自定义按钮 1',
+        text: '按钮 1',
+        onClick: (viewer) => {
+          console.log('自定义按钮 1 点击')
+          emit('customButtonClick', viewer)
+        }
+      },
+      {
+        title: '自定义按钮 2',
+        text: '按钮 2',
+        onClick: (viewer) => {
+          console.log('自定义按钮 2 点击')
+          // 这里可以添加自定义逻辑
+          if (viewer) {
+            // 示例：飞到上海
+            viewer.camera.flyTo({
+              destination: Cesium.Cartesian3.fromDegrees(121.4737, 31.2304, 10000),
+              duration: 2
+            })
+          }
+        }
+      }
+    ])
 
     console.log('Cesium 地图加载成功')
     emit("onload", map)
@@ -232,10 +235,11 @@ onMounted(() => {
 
 // 组件销毁时释放资源
 onUnmounted(() => {
-  if (customToolbarButton) {
-    customToolbarButton.remove()
-    customToolbarButton = null
-  }
+  // 移除自定义工具栏按钮
+  customButtons.forEach(button => {
+    button.remove()
+  })
+  customButtons = []
 
   if (map) {
     map.destroy()
@@ -247,6 +251,7 @@ const { getJsonFile } = jsonUtils()
 const { merge } = objectUtils()
 const { mouseController, setMapCenter } = basicConfig()
 const { setCustomHomeButton } = customHomeButton()
+const { addCustomToolbarButtons } = customToolbarButtonsModule()
 </script>
 
 <style scoped lang="less">
