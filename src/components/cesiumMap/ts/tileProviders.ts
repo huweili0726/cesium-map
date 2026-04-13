@@ -10,10 +10,10 @@ export interface custumMapColorStyleOptions {
 }
 
 /**
- * 蓝色风格的瓦片提供者
- * 将原始地图瓦片转换为深蓝色风格，使道路和文字呈现亮蓝色
+ * 自定义地图颜色瓦片提供者
+ * 将原始地图瓦片转换为自定义地图颜色风格
  */
-export class BlueTileProvider extends Cesium.UrlTemplateImageryProvider {
+export class customColorTileProvider extends Cesium.UrlTemplateImageryProvider {
   private custumMapColorStyle: custumMapColorStyleOptions
 
   constructor(

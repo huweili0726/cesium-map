@@ -9,7 +9,7 @@ import { jsonUtils } from '@/utils/json'
 import { objectUtils } from '@/utils/object'
 import { basicConfig } from '@/components/cesiumMap/ts/basis'
 import { useMapStore } from '@/stores/modules/mapStore'
-import { BlueTileProvider } from '@/components/cesiumMap/ts/tileProviders'
+import { customColorTileProvider } from '@/components/cesiumMap/ts/tileProviders'
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()
@@ -123,10 +123,10 @@ const initCesium = async () => {
           })
         )
         
-        // 如果配置了蓝色风格，则使用BlueTileProvider
+        // 如果配置了自定义地图颜色风格，则使用customColorTileProvider
         if (activeBasemap.customMapColorStyle && activeBasemap.customMapColorStyle.enabled) {
-          const blueLayer = new Cesium.ImageryLayer(
-            new BlueTileProvider({
+          const customColorLayer = new Cesium.ImageryLayer(
+            new customColorTileProvider({
               url: activeBasemap.url,
               subdomains: ['1', '2', '3', '4'],
               maximumLevel: 18,
@@ -134,7 +134,7 @@ const initCesium = async () => {
             }, activeBasemap.customMapColorStyle)
           )
           map.imageryLayers.remove(layer)
-          map.imageryLayers.add(blueLayer)
+          map.imageryLayers.add(customColorLayer)
         } else {
           map.imageryLayers.add(layer)
         }
