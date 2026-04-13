@@ -33,7 +33,7 @@ const props = withDefaults(
 const cesiumContainer = ref<HTMLElement | null>(null)
 // 用于存放地球组件实例
 let map: Cesium.Viewer | null = null
-let darkFilterStage: Cesium.PostProcessStage | Cesium.PostProcessStageComposite = null
+let darkFilterStage: Cesium.PostProcessStage | Cesium.PostProcessStageComposite | null = null
 
 const applyCssLikeDarkFilter = (
   viewer: Cesium.Viewer,
@@ -44,6 +44,9 @@ const applyCssLikeDarkFilter = (
     contrast?: number
     brightness?: number
     yellowSuppress?: number
+    blueTint?: number
+    cyanBoost?: number
+    shadowBlue?: number
   }
 ) => {
   // 若已存在则先移除，避免重复叠加导致画面异常
@@ -66,6 +69,9 @@ const applyCssLikeDarkFilter = (
         uniform float u_contrast;
         uniform float u_brightness;
         uniform float u_yellowSuppress;
+        uniform float u_blueTint;
+        uniform float u_cyanBoost;
+        uniform float u_shadowBlue;
 
         vec3 rgb2hsv(vec3 c) {
           vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
@@ -121,6 +127,19 @@ const applyCssLikeDarkFilter = (
             hsv.y = mix(hsv.y, hsv.y * 0.75, suppress);
             color = hsv2rgb(hsv);
 
+            // 4.2) global cool-blue tint (科技深蓝基调)
+            float blueTint = clamp(u_blueTint, 0.0, 1.0);
+            color = mix(color, vec3(color.r * 0.72, color.g * 0.90, color.b * 1.26), blueTint);
+
+            // 4.3) cyan highlight boost for bright pixels (道路/文字更“科技感”)
+            float brightMask = smoothstep(0.45, 0.95, max(max(color.r, color.g), color.b));
+            color.gb += vec2(0.06, 0.14) * clamp(u_cyanBoost, 0.0, 1.0) * brightMask;
+
+            // 4.4) shadow deep blue push (暗部压向深蓝而非纯黑)
+            float darkMask = 1.0 - smoothstep(0.06, 0.45, dot(color, vec3(0.299, 0.587, 0.114)));
+            vec3 shadowBlue = vec3(0.02, 0.06, 0.16);
+            color = mix(color, max(color, shadowBlue), clamp(u_shadowBlue, 0.0, 1.0) * darkMask);
+
           // 5) contrast(u_contrast)
           color = (color - 0.5) * u_contrast + 0.5;
 
@@ -131,12 +150,15 @@ const applyCssLikeDarkFilter = (
         }
       `,
       uniforms: {
-        u_sepiaMix: options?.sepiaMix ?? 0.35,
-        u_saturation: options?.saturation ?? 1.45,
-        u_hueRotate: options?.hueRotate ?? 180.0,
-        u_contrast: options?.contrast ?? 0.95,
-        u_brightness: options?.brightness ?? 0.88,
-        u_yellowSuppress: options?.yellowSuppress ?? 1.0
+        u_sepiaMix: options?.sepiaMix ?? 0.16,
+        u_saturation: options?.saturation ?? 1.35,
+        u_hueRotate: options?.hueRotate ?? 188.0,
+        u_contrast: options?.contrast ?? 1.08,
+        u_brightness: options?.brightness ?? 0.9,
+        u_yellowSuppress: options?.yellowSuppress ?? 1.0,
+        u_blueTint: options?.blueTint ?? 0.78,
+        u_cyanBoost: options?.cyanBoost ?? 0.62,
+        u_shadowBlue: options?.shadowBlue ?? 0.72
       }
     })
   )
@@ -265,6 +287,9 @@ const initCesium = async () => {
         contrast: darkFilterConfig?.contrast,
         brightness: darkFilterConfig?.brightness,
         yellowSuppress: darkFilterConfig?.yellowSuppress,
+        blueTint: darkFilterConfig?.blueTint,
+        cyanBoost: darkFilterConfig?.cyanBoost,
+        shadowBlue: darkFilterConfig?.shadowBlue,
       })
     }
 
