@@ -14,13 +14,14 @@
     }
   },
   "control": {
+    "imageryProvider": false,  // 是否显示默认影像层
     "disableDoubleClick": true,  // 是否禁用双击缩放
     "disableEntityClick": true,  // 是否禁用实体点击事件
-    "baseLayerPicker": true,  // 是否显示基础图层选择器
-    "geocoder": true,  // 是否显示地址搜索框
+    "baseLayerPicker": false,  // 是否显示基础图层选择器
+    "geocoder": false,  // 是否显示地址搜索框
     "homeButton": true,  // 是否显示返回首页按钮
-    "sceneModePicker": true,  // 是否显示场景模式选择器
-    "navigationHelpButton": true,  // 是否显示导航帮助按钮
+    "sceneModePicker": false,  // 是否显示场景模式选择器
+    "navigationHelpButton": false,  // 是否显示导航帮助按钮
     "animation": true,  // 是否显示动画控件
     "timeline": true,  // 是否显示时间线控件
     "infoBox": true,  // 是否显示信息框控件
