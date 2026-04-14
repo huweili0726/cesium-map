@@ -176,7 +176,15 @@ const initCesium = async () => {
     map.scene.globe.enableLighting = mapOptions.scene.globe.enableLighting
     // 开启地形深度测试，确保在地形上的实体正确渲染
     map.scene.globe.depthTestAgainstTerrain = mapOptions.scene.globe.depthTestAgainstTerrain;
-
+    // 开启雾效
+    map.scene.fog.enabled = mapOptions.scene.fog.enabled;
+    // 开启/关闭 大气层光环
+    map.scene.skyAtmosphere.show = mapOptions.scene.skyAtmosphere.show;
+    // 开启/关闭 动态大气光照
+    map.scene.globe.dynamicAtmosphereLighting = mapOptions.scene.globe.dynamicAtmosphereLighting;
+    // 开启/关闭 动态大气光照从太阳开始
+    map.scene.globe.dynamicAtmosphereLightingFromSun = mapOptions.scene.globe.dynamicAtmosphereLightingFromSun;
+    
     // 初始化鼠标控制器
     mouseController(map); 
 
