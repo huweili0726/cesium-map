@@ -2,6 +2,10 @@
 
 一个现代化、高性能的 Vue 3 + TypeScript + Cesium 三维地图解决方案，为您提供沉浸式的地理空间可视化体验。
 
+## 分支说明
+- **main 分支**：TypeScript 版本，使用 TypeScript 类型系统，代码质量更高，开发体验更好
+- **js 分支**：JavaScript 版本，移除了 TypeScript 类型注解，更适合纯 JavaScript 项目
+
 ## ✨ 项目亮点
 
 - **现代化技术栈**：Vue 3 + TypeScript + Vite，代码质量高，开发体验优秀
