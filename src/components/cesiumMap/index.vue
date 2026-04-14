@@ -170,12 +170,12 @@ const initCesium = async () => {
       });
     }
 
+    // 显示帧速（FPS）
+    map.scene.debugShowFramesPerSecond = mapOptions.scene.debugShowFramesPerSecond;
     // 开启/关闭 地球光照效果
     map.scene.globe.enableLighting = mapOptions.scene.globe.enableLighting
-    // 显示帧速（FPS）
-    map.scene.debugShowFramesPerSecond = true;
     // 开启地形深度测试，确保在地形上的实体正确渲染
-    map.scene.globe.depthTestAgainstTerrain = true;
+    map.scene.globe.depthTestAgainstTerrain = mapOptions.scene.globe.depthTestAgainstTerrain;
 
     // 初始化鼠标控制器
     mouseController(map); 
