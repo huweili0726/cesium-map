@@ -1,5 +1,6 @@
 {
   "scene": {
+    "debugShowFramesPerSecond": false,  // 是否显示帧数
     "center": {
       "lat": 29.2731078,  // 地图中心点纬度
       "lng": 106.5704352,  // 地图中心点经度
@@ -10,6 +11,7 @@
       "duration": 0  // 地图中心点动画时间
     },
     "globe": {
+      "depthTestAgainstTerrain": true,  // 是否开启地形深度测试，确保在地形上的实体正确渲染
       "enableLighting": false  // 是否开启光照效果
     }
   },
