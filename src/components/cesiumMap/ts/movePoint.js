@@ -14,6 +14,7 @@ import { setPoint } from '@/components/cesiumMap/ts/setPoint'
 import { ClickHandler } from '@/components/cesiumMap/ts/bindClickHandler'
 import { movePathConfig } from '@/components/cesiumMap/ts/movePath'
 import { setPath } from '@/components/cesiumMap/ts/setPath'
+import { groundLinkConfig } from '@/components/cesiumMap/ts/groundLink.js'
 
 export function movePointConfig(baseUrl) {
   // 获取地图store实例
@@ -34,6 +35,12 @@ export function movePointConfig(baseUrl) {
   const {
     bindDroneClickHandler,
   } = ClickHandler()
+
+  const {
+    createGroundLink,
+    clearGroundLink,
+    toggleGroundLinkVisibility
+  } = groundLinkConfig()
 
   /**
    * 移动点位到新的坐标位置
@@ -127,6 +134,14 @@ export function movePointConfig(baseUrl) {
           height: height,
           speed: speed
         }
+
+        // 新建与地面固定点的动态白色虚线（实时连接无人机）
+        createGroundLink({
+          map,
+          modelEntity,
+          pointId: options.pointId
+        })
+
         // 新建实体后立即绑定点击事件
         bindDroneClickHandler({ id: options.pointId, modelEntity: modelEntity })
       }
@@ -174,7 +189,7 @@ export function movePointConfig(baseUrl) {
       newPosition: currentRealPosition
     })
 
-    // ========== 终止当前所有飞行状态 ==========    
+    // ========== 终止当前所有飞行状态 ==========
     // 1. 移除旧的监听器
     if (modelEntity.flightEndListener) {
       map.clock.onTick.removeEventListener(modelEntity.flightEndListener);
@@ -346,6 +361,9 @@ export function movePointConfig(baseUrl) {
     // 控制轨迹显隐
     toggleDroneTrail({ pointId, visible })
     
+    // 同步控制无人机与地面固定点连线显隐
+    toggleGroundLinkVisibility({ pointId, visible })
+    
     return success
   }
 
@@ -392,6 +410,12 @@ export function movePointConfig(baseUrl) {
         droneEntity.destroy();
         droneEntity.destroy = null;
       }
+
+      // 清除无人机与地面固定点连线
+      clearGroundLink({
+        map,
+        pointId
+      })
 
       // 清除无人机实体
       if (droneEntity.entity) {
