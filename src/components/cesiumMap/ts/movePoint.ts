@@ -15,6 +15,10 @@ import { ClickHandler } from '@/components/cesiumMap/ts/bindClickHandler'
 import { movePathConfig } from '@/components/cesiumMap/ts/movePath'
 import { setPath } from '@/components/cesiumMap/ts/setPath'
 
+// 无人机飞行时与地面固定点的动态连接线（白色虚线）
+const GROUND_LINK_LNG = 117.229619
+const GROUND_LINK_LAT = 31.726288
+
 export function movePointConfig(baseUrl: string) {
   // 获取地图store实例
   const mapStore = useMapStore()
@@ -140,6 +144,30 @@ export function movePointConfig(baseUrl: string) {
           height: height,
           speed: speed
         }
+
+        // 新建与地面固定点的动态白色虚线（实时连接无人机）
+        const groundPosition = Cesium.Cartesian3.fromDegrees(GROUND_LINK_LNG, GROUND_LINK_LAT, 0)
+        const groundLinkEntity = map.entities.add({
+          id: `${options.pointId}-ground-link`,
+          polyline: {
+            positions: new Cesium.CallbackProperty(() => {
+              if (!modelEntity?.entity?.position) return [groundPosition, groundPosition]
+              const dronePosition = modelEntity.entity.position.getValue(map.clock.currentTime)
+              if (!dronePosition) return [groundPosition, groundPosition]
+              return [dronePosition, groundPosition]
+            }, false),
+            width: 2,
+            material: new Cesium.PolylineDashMaterialProperty({
+              color: Cesium.Color.WHITE,
+              dashLength: 12,
+              gapColor: Cesium.Color.WHITE.withAlpha(0.15),
+            }),
+            clampToGround: false,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          }
+        })
+        modelEntity.groundLinkEntity = groundLinkEntity
+
         // 新建实体后立即绑定点击事件
         bindDroneClickHandler({ id: options.pointId, modelEntity: modelEntity })
       }
@@ -154,6 +182,31 @@ export function movePointConfig(baseUrl: string) {
       lat: options.lat,
       height: height,
       speed: speed
+    }
+
+    // 兼容历史已存在实体：补建与地面固定点的动态白色虚线
+    if (!modelEntity.groundLinkEntity) {
+      const groundPosition = Cesium.Cartesian3.fromDegrees(GROUND_LINK_LNG, GROUND_LINK_LAT, 0)
+      const groundLinkEntity = map.entities.add({
+        id: `${options.pointId}-ground-link`,
+        polyline: {
+          positions: new Cesium.CallbackProperty(() => {
+            if (!modelEntity?.entity?.position) return [groundPosition, groundPosition]
+            const dronePosition = modelEntity.entity.position.getValue(map.clock.currentTime)
+            if (!dronePosition) return [groundPosition, groundPosition]
+            return [dronePosition, groundPosition]
+          }, false),
+          width: 2,
+          material: new Cesium.PolylineDashMaterialProperty({
+            color: Cesium.Color.WHITE,
+            dashLength: 12,
+            gapColor: Cesium.Color.WHITE.withAlpha(0.15),
+          }),
+          clampToGround: false,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        }
+      })
+      modelEntity.groundLinkEntity = groundLinkEntity
     }
 
     // ========== 核心修复：强制获取无人机实时位置 ==========
@@ -354,6 +407,10 @@ export function movePointConfig(baseUrl: string) {
     const modelEntity = mapStore.getGraphicMap(pointId)
     if (modelEntity && modelEntity.entity) {
       modelEntity.entity.show = visible
+      // 同步控制无人机与地面固定点连线显隐
+      if (modelEntity.groundLinkEntity) {
+        modelEntity.groundLinkEntity.show = visible
+      }
     } else {
       console.warn(`无人机实体不存在，ID: ${pointId}`)
       success = false
@@ -409,6 +466,12 @@ export function movePointConfig(baseUrl: string) {
       if (typeof droneEntity.destroy === 'function') {
         droneEntity.destroy();
         droneEntity.destroy = null;
+      }
+
+      // 清除无人机与地面固定点连线
+      if (droneEntity.groundLinkEntity) {
+        map.entities.remove(droneEntity.groundLinkEntity)
+        droneEntity.groundLinkEntity = null
       }
 
       // 清除无人机实体
