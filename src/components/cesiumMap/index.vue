@@ -229,4 +229,8 @@ onUnmounted(() => {
   height: 100vh;
   position: relative;
 }
+
+.cesium-container :deep(.custom-toolbar-button) {
+  min-width: 64px;
+}
 </style>
