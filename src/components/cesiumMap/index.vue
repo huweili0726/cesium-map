@@ -96,6 +96,8 @@ const initCesium = async () => {
         requestWaterMask: mapOptions.terrain.coastlineData, // 请求水体效果所需要的海岸线数据
         requestVertexNormals: mapOptions.terrain.lightingData, // 请求地形照明数据
       }) : undefined, // 加载自定义地形服务
+      // 核心：隐藏版权水印
+      creditContainer: document.createElement('div'), // 用空容器替换
 
       contextOptions: {
         webgl: {
