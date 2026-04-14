@@ -26,7 +26,7 @@
     "timeline": true,  // 是否显示时间线控件
     "infoBox": true,  // 是否显示信息框控件
     "fullscreenButton": true,  // 是否显示全屏按钮
-    "vrButton": true  // 是否显示 VR 按钮
+    "vrButton": false  // 是否显示 VR 按钮
   },
   "terrain": {
     "url": "http://data.mars3d.cn/terrain",  // 地形数据 URL
