@@ -18,7 +18,7 @@ import * as Cesium from 'cesium'
 import CesiumMap from '@/components/cesiumMap/index.vue'
 import MapControls from '@/views/map/mapControls.vue'
 import { useMapStore, MapLoadStatus } from '@/stores/modules/mapStore'
-import { basicConfig } from '@/components/cesiumMap/ts/basis'
+import { basicConfig } from '@/components/cesiumMap/js/basis'
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()

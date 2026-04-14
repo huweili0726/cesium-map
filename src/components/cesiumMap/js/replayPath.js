@@ -10,9 +10,9 @@
  */
 import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
-import { setPath } from '@/components/cesiumMap/ts/setPath'
-import { setPoint } from '@/components/cesiumMap/ts/setPoint'
-import { ClickHandler } from '@/components/cesiumMap/ts/bindClickHandler'
+import { setPath } from '@/components/cesiumMap/js/setPath'
+import { setPoint } from '@/components/cesiumMap/js/setPoint'
+import { ClickHandler } from '@/components/cesiumMap/js/bindClickHandler'
 
 export function setReplay(baseUrl) {
   // 获取地图store实例

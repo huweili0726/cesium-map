@@ -10,8 +10,8 @@
  */
 import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
-import { setPath } from '@/components/cesiumMap/ts/setPath'
-import { labelDiv } from '@/components/cesiumMap/ts/labelDiv'
+import { setPath } from '@/components/cesiumMap/js/setPath'
+import { labelDiv } from '@/components/cesiumMap/js/labelDiv'
 
 export function setPoint(baseUrl) {
 

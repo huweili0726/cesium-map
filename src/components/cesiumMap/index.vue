@@ -7,10 +7,10 @@ import * as Cesium from 'cesium'
 import { ref, onMounted, onUnmounted, toRaw } from 'vue'
 import { jsonUtils } from '@/utils/json'
 import { objectUtils } from '@/utils/object'
-import { basicConfig } from '@/components/cesiumMap/ts/basis'
+import { basicConfig } from '@/components/cesiumMap/js/basis'
 import { useMapStore } from '@/stores/modules/mapStore'
-import { customColorTileProvider } from '@/components/cesiumMap/ts/tileProviders'
-import { createCustomToolbarButtons } from '@/components/cesiumMap/ts/customToolbarButtons'
+import { customColorTileProvider } from '@/components/cesiumMap/js/tileProviders'
+import { createCustomToolbarButtons } from '@/components/cesiumMap/js/customToolbarButtons'
 
 const { getJsonFile } = jsonUtils()
 const { merge } = objectUtils()

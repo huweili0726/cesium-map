@@ -10,11 +10,11 @@
  */
 import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
-import { setPoint } from '@/components/cesiumMap/ts/setPoint'
-import { ClickHandler } from '@/components/cesiumMap/ts/bindClickHandler'
-import { movePathConfig } from '@/components/cesiumMap/ts/movePath'
-import { setPath } from '@/components/cesiumMap/ts/setPath'
-import { groundLinkConfig } from '@/components/cesiumMap/ts/groundLink.js'
+import { setPoint } from '@/components/cesiumMap/js/setPoint'
+import { ClickHandler } from '@/components/cesiumMap/js/bindClickHandler'
+import { movePathConfig } from '@/components/cesiumMap/js/movePath'
+import { setPath } from '@/components/cesiumMap/js/setPath'
+import { groundLinkConfig } from '@/components/cesiumMap/js/groundLink.js'
 
 export function movePointConfig(baseUrl) {
   // 获取地图store实例

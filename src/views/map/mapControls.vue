@@ -132,13 +132,13 @@
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
 import { useMapStore } from '@/stores/modules/mapStore'
-import { setPoint } from '@/components/cesiumMap/ts/setPoint'
-import { hemisphereConfig } from '@/components/cesiumMap/ts/hemisphere'
-import { movePointConfig } from '@/components/cesiumMap/ts/movePoint'
-import { setReplay } from '@/components/cesiumMap/ts/replayPath'
-import { diffusionConfig } from '@/components/cesiumMap/ts/diffusion'
-import { fenceConfig } from '@/components/cesiumMap/ts/fence'
-import { geometryConfig } from '@/components/cesiumMap/ts/geometry'
+import { setPoint } from '@/components/cesiumMap/js/setPoint'
+import { hemisphereConfig } from '@/components/cesiumMap/js/hemisphere'
+import { movePointConfig } from '@/components/cesiumMap/js/movePoint'
+import { setReplay } from '@/components/cesiumMap/js/replayPath'
+import { diffusionConfig } from '@/components/cesiumMap/js/diffusion'
+import { fenceConfig } from '@/components/cesiumMap/js/fence'
+import { geometryConfig } from '@/components/cesiumMap/js/geometry'
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()
