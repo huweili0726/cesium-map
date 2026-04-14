@@ -232,6 +232,14 @@ onUnmounted(() => {
   position: relative;
 }
 
+// map自定义按钮样式
+.cesium-container :deep(.cesium-viewer-toolbar) {
+  top: auto;
+  bottom: 4vh;
+  right: 5px;
+  display: flex;
+  flex-direction: column;
+}
 .cesium-container :deep(.custom-toolbar-button) {
   min-width: 64px;
 }
