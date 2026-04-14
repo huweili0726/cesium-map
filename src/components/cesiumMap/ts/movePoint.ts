@@ -164,15 +164,6 @@ export function movePointConfig(baseUrl: string) {
       speed: speed
     }
 
-    // 兼容历史已存在实体：补建与地面固定点的动态白色虚线
-    if (!modelEntity.groundLinkEntity) {
-      createGroundLink({
-        map,
-        modelEntity,
-        pointId: options.pointId
-      });
-    }
-
     // ========== 核心修复：强制获取无人机实时位置 ==========
     let currentRealPosition: Cesium.Cartesian3;
 
@@ -436,6 +427,8 @@ export function movePointConfig(baseUrl: string) {
       if (droneEntity.groundLinkEntity) {
         map.entities.remove(droneEntity.groundLinkEntity)
         droneEntity.groundLinkEntity = null
+        // 从 mapStore 中清除
+        mapStore.clearGroundLink(pointId)
       }
 
       // 清除无人机实体
@@ -466,6 +459,12 @@ export function movePointConfig(baseUrl: string) {
   }) => {
     const { map, modelEntity, pointId } = options;
     
+    // 检查是否已存在连接线
+    if (mapStore.hasGroundLink(pointId)) {
+      console.log(`无人机${pointId}的地面连接线已存在，跳过创建`);
+      return;
+    }
+    
     // 地面固定点经纬度
     const GROUND_LINK_LNG = 117.229619;
     const GROUND_LINK_LAT = 31.726288;
@@ -491,7 +490,10 @@ export function movePointConfig(baseUrl: string) {
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
       }
     });
+    
+    // 存储到 modelEntity 和 mapStore
     modelEntity.groundLinkEntity = groundLinkEntity;
+    mapStore.setGroundLink(pointId, groundLinkEntity);
   };
 
   return {

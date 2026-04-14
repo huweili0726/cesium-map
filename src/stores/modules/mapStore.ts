@@ -27,6 +27,8 @@ export const useMapStore = defineStore('map', () => {
   const graphicLayer = ref<any>(null)
   // 无人机轨迹缓存Map，key: 无人机ID + '_trail'，value: 轨迹数据
   const droneTrails = new Map<string, any>()
+  // 无人机地面连接线缓存Map，key: 无人机ID + '_groundLink'，value: 连接线实体
+  const groundLinks = new Map<string, any>()
   // 图层是否已初始化
   const isLayerInitialized = ref(false)
   // 使用Map缓存图形对象，优化查找性能（从O(n)降到O(1)）
@@ -123,6 +125,35 @@ export const useMapStore = defineStore('map', () => {
     })
   }
 
+  // 设置无人机地面连接线
+  const setGroundLink = (droneId: string, linkEntity: any) => {
+    groundLinks.set(`${droneId}_groundLink`, linkEntity)
+  }
+
+  // 获取无人机地面连接线
+  const getGroundLink = (droneId: string) => {
+    return groundLinks.get(`${droneId}_groundLink`)
+  }
+
+  // 检查无人机地面连接线是否存在
+  const hasGroundLink = (droneId: string) => {
+    return groundLinks.has(`${droneId}_groundLink`)
+  }
+
+  // 清除指定无人机地面连接线
+  const clearGroundLink = (droneId: string) => {
+    groundLinks.delete(`${droneId}_groundLink`)
+  }
+
+  // 清除所有无人机地面连接线
+  const clearAllGroundLinks = () => {
+    groundLinks.forEach((_, key) => {
+      if (key.endsWith('_groundLink')) {
+        groundLinks.delete(key)
+      }
+    })
+  }
+
   /**
    * 清除图层中的所有图形
    */
@@ -166,6 +197,11 @@ export const useMapStore = defineStore('map', () => {
     hasDroneTrail,
     clearDroneTrail,
     clearAllDroneTrails,
+    setGroundLink,
+    getGroundLink,
+    hasGroundLink,
+    clearGroundLink,
+    clearAllGroundLinks,
     setMap,
     getMap,
     clearLayer,
