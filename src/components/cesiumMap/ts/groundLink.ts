@@ -111,8 +111,29 @@ export function groundLinkConfig() {
     }
   }
 
+  /**
+   * 控制无人机与地面固定点连线的显隐状态
+   * @param options 配置选项
+   * @param options.pointId 无人机ID
+   * @param options.visible 是否显示
+   */
+  const toggleGroundLinkVisibility = (options: {
+    pointId: string
+    visible: boolean
+  }) => {
+    const { pointId, visible } = options
+    
+    // 从 mapStore 获取连接线实体
+    const groundLinkEntity = mapStore.getGroundLink(pointId)
+    if (groundLinkEntity) {
+      groundLinkEntity.show = visible
+      console.log(`无人机${pointId}的地面连接线已${visible ? '显示' : '隐藏'}`)
+    }
+  }
+
   return {
     createGroundLink,
-    clearGroundLink
+    clearGroundLink,
+    toggleGroundLinkVisibility
   }
 }

@@ -38,7 +38,8 @@ export function movePointConfig(baseUrl: string) {
 
   const {
     createGroundLink,
-    clearGroundLink
+    clearGroundLink,
+    toggleGroundLinkVisibility
   } = groundLinkConfig()
 
   /**
@@ -368,10 +369,6 @@ export function movePointConfig(baseUrl: string) {
     const modelEntity = mapStore.getGraphicMap(pointId)
     if (modelEntity && modelEntity.entity) {
       modelEntity.entity.show = visible
-      // 同步控制无人机与地面固定点连线显隐
-      if (modelEntity.groundLinkEntity) {
-        modelEntity.groundLinkEntity.show = visible
-      }
     } else {
       console.warn(`无人机实体不存在，ID: ${pointId}`)
       success = false
@@ -379,6 +376,9 @@ export function movePointConfig(baseUrl: string) {
     
     // 控制轨迹显隐
     toggleDroneTrail({ pointId, visible })
+    
+    // 同步控制无人机与地面固定点连线显隐
+    toggleGroundLinkVisibility({ pointId, visible })
     
     return success
   }
