@@ -10,12 +10,18 @@ import { objectUtils } from '@/utils/object'
 import { basicConfig } from '@/components/cesiumMap/ts/basis'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { customColorTileProvider } from '@/components/cesiumMap/ts/tileProviders'
+import { createCustomToolbarButtons } from '@/components/cesiumMap/ts/customToolbarButtons'
+
+const { getJsonFile } = jsonUtils()
+const { merge } = objectUtils()
+const { mouseController, setMapCenter } = basicConfig()
+const { addCustomToolbarButtons, removeCustomToolbarButtons, createDefaultToolbarButtons } = createCustomToolbarButtons()
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()
 
 // onload事件将在地图渲染后触发
-const emit = defineEmits(["onload"])
+const emit = defineEmits(["onload", "customButtonClick"])
 
 // ✅ 正确：纯 JS 写法，去掉 withDefaults
 const props = defineProps({
@@ -37,6 +43,7 @@ const props = defineProps({
 const cesiumContainer = ref(null)
 // 用于存放地球组件实例
 let map = null
+let customButtons = []
 
 const initCesium = async () => {
   if (!cesiumContainer.value) return
@@ -72,7 +79,9 @@ const initCesium = async () => {
     // 初始化 Cesium 地球
     map = new Cesium.Viewer(cesiumContainer.value, {
       // 配置项
-      imageryProvider: mapOptions.control.imageryProvider, // 完全禁用默认影像层（彻底阻止Asset 2的请求）
+      // Cesium 新版 Viewer.ConstructorOptions 中已移除 imageryProvider，改用 baseLayer。
+      // 当配置为 false 时，禁用默认底图；其他情况走 Cesium 默认底图逻辑。
+      baseLayer: mapOptions.control.imageryProvider === false ? false : undefined,
       baseLayerPicker: mapOptions.control.baseLayerPicker, // 底图选择器
       geocoder: mapOptions.control.geocoder, // 地址搜索
       homeButton: mapOptions.control.homeButton, // 主页按钮
@@ -180,6 +189,14 @@ const initCesium = async () => {
     // 使用 flyTo 方法实现相机看向中心点的效果
     setMapCenter({lng: mapOptions.scene.center.lng, lat: mapOptions.scene.center.lat, map: map}) // 设置地图中心点
 
+    // 在主页按钮附近添加自定义按钮
+    customButtons = addCustomToolbarButtons(map, createDefaultToolbarButtons({
+      mapOptions,
+      map,
+      setMapCenter,
+      emit
+    }))
+
     console.log('Cesium 地图加载成功')
     emit("onload", map)
   } catch (error) {
@@ -194,15 +211,16 @@ onMounted(() => {
 
 // 组件销毁时释放资源
 onUnmounted(() => {
+  // 移除自定义工具栏按钮
+  removeCustomToolbarButtons(customButtons)
+  customButtons = []
+
   if (map) {
     map.destroy()
     map = null
   }
 })
 
-const { getJsonFile } = jsonUtils()
-const { merge } = objectUtils()
-const { mouseController, setMapCenter } = basicConfig()
 </script>
 
 <style scoped lang="less">
