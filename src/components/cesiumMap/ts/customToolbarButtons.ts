@@ -118,9 +118,22 @@ export function createCustomToolbarButtons() {
     return createdButtons
   }
 
+  /**
+   * 移除自定义工具栏按钮
+   * @param buttons 需要移除的按钮元素数组
+   */
+  const removeCustomToolbarButtons = (buttons: HTMLButtonElement[]): void => {
+    buttons.forEach(button => {
+      if (button && button.parentNode) {
+        button.remove()
+      }
+    })
+  }
+
   return {
     addCustomToolbarButton,
     addCustomToolbarButtons,
-    addCustomIconToolbarButton
+    addCustomIconToolbarButton,
+    removeCustomToolbarButtons
   }
 }

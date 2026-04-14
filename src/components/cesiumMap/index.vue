@@ -12,6 +12,10 @@ import { useMapStore } from '@/stores/modules/mapStore'
 import { customColorTileProvider } from '@/components/cesiumMap/ts/tileProviders'
 import { createCustomToolbarButtons } from '@/components/cesiumMap/ts/customToolbarButtons.ts'
 
+const { getJsonFile } = jsonUtils()
+const { merge } = objectUtils()
+const { mouseController, setMapCenter } = basicConfig()
+const { addCustomToolbarButtons, removeCustomToolbarButtons } = createCustomToolbarButtons()
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()
@@ -223,9 +227,7 @@ onMounted(() => {
 // 组件销毁时释放资源
 onUnmounted(() => {
   // 移除自定义工具栏按钮
-  customButtons.forEach(button => {
-    button.remove()
-  })
+  removeCustomToolbarButtons(customButtons)
   customButtons = []
 
   if (map) {
@@ -234,10 +236,6 @@ onUnmounted(() => {
   }
 })
 
-const { getJsonFile } = jsonUtils()
-const { merge } = objectUtils()
-const { mouseController, setMapCenter } = basicConfig()
-const { addCustomToolbarButtons } = createCustomToolbarButtons()
 </script>
 
 <style scoped lang="less">
