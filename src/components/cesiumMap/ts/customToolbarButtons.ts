@@ -101,7 +101,15 @@ export function createCustomToolbarButtons() {
     const createdButtons: HTMLButtonElement[] = []
     
     buttons.forEach(buttonOptions => {
-      const button = addCustomToolbarButton(viewer, buttonOptions)
+      let button: HTMLButtonElement | null
+      
+      // 根据配置选择使用图标按钮还是文本按钮
+      if (buttonOptions.iconSrc) {
+        button = addCustomIconToolbarButton(viewer, buttonOptions)
+      } else {
+        button = addCustomToolbarButton(viewer, buttonOptions)
+      }
+      
       if (button) {
         createdButtons.push(button)
       }
