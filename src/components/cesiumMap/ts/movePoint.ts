@@ -474,20 +474,37 @@ export function movePointConfig(baseUrl: string) {
     const groundLinkEntity = map.entities.add({
       id: `${pointId}-ground-link`,
       polyline: {
+        // 使用 CallbackProperty 实现动态更新连接线位置
+        // 每次 Cesium 渲染场景时都会调用此回调函数
         positions: new Cesium.CallbackProperty(() => {
-          if (!modelEntity?.entity?.position) return [groundPosition, groundPosition];
+          // 检查无人机实体和位置属性是否存在
+          if (!modelEntity?.entity?.position) {
+            // 如果不存在，返回固定点到自身的线段（避免错误）
+            return [groundPosition, groundPosition];
+          }
+          
+          // 获取无人机当前实时位置
+          // map.clock.currentTime 确保获取的是当前时间点的位置
           const dronePosition = modelEntity.entity.position.getValue(map.clock.currentTime);
-          if (!dronePosition) return [groundPosition, groundPosition];
+          
+          // 检查获取的位置是否有效
+          if (!dronePosition) {
+            // 如果无效，返回固定点到自身的线段（避免错误）
+            return [groundPosition, groundPosition];
+          }
+          
+          // 返回无人机当前位置到地面固定点的线段
+          // 这样连接线会随着无人机移动而实时更新
           return [dronePosition, groundPosition];
-        }, false),
-        width: 2,
+        }, false), // isConstant: false，告诉 Cesium 这个属性是动态变化的
+        width: 2, // 线段宽度
         material: new Cesium.PolylineDashMaterialProperty({
-          color: Cesium.Color.WHITE,
-          dashLength: 12,
-          gapColor: Cesium.Color.WHITE.withAlpha(0.15),
+          color: Cesium.Color.WHITE, // 线段颜色
+          dashLength: 12, // 虚线长度
+          gapColor: Cesium.Color.WHITE.withAlpha(0.15), // 间隙颜色（半透明）
         }),
-        clampToGround: false,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        clampToGround: false, // 不贴地，保持3D效果
+        disableDepthTestDistance: Number.POSITIVE_INFINITY, // 始终显示在最前面，不受深度测试影响
       }
     });
     
