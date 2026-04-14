@@ -195,6 +195,10 @@ const initCesium = async () => {
         iconSrc: `${import.meta.env.BASE_URL}/images/home.svg`,
         onClick: (viewer) => {
           console.log('自定义按钮 1 点击')
+
+          // 使用 flyTo 方法实现相机看向中心点的效果
+          setMapCenter({lng: mapOptions.scene.center.lng, lat: mapOptions.scene.center.lat, map: map}) // 设置地图中心点
+
           emit('customButtonClick', viewer)
         }
       },
