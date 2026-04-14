@@ -130,10 +130,49 @@ export function createCustomToolbarButtons() {
     })
   }
 
+  /**
+   * 创建默认工具栏按钮配置
+   * @param options 配置选项
+   * @returns 默认按钮配置数组
+   */
+  const createDefaultToolbarButtons = (options: {
+    mapOptions: any
+    map: Cesium.Viewer
+    setMapCenter: (options: any) => void
+    emit: (event: string, ...args: any[]) => void
+  }): CustomToolbarButtonOptions[] => {
+    return [
+      {
+        title: '自定义按钮 1',
+        text: '',
+        iconSrc: `${import.meta.env.BASE_URL}/images/home.svg`,
+        onClick: (viewer) => {
+          console.log('自定义按钮 1 点击')
+          options.setMapCenter({
+            lng: options.mapOptions.scene.center.lng,
+            lat: options.mapOptions.scene.center.lat,
+            map: options.map
+          })
+          options.emit('customButtonClick', viewer)
+        }
+      },
+      {
+        title: '自定义按钮 2',
+        text: '按钮 2',
+        onClick: (viewer) => {
+          console.log('自定义按钮 2 点击')
+          if (viewer) {
+          }
+        }
+      }
+    ]
+  }
+
   return {
     addCustomToolbarButton,
     addCustomToolbarButtons,
     addCustomIconToolbarButton,
-    removeCustomToolbarButtons
+    removeCustomToolbarButtons,
+    createDefaultToolbarButtons
   }
 }

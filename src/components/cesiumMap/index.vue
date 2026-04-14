@@ -15,7 +15,7 @@ import { createCustomToolbarButtons } from '@/components/cesiumMap/ts/customTool
 const { getJsonFile } = jsonUtils()
 const { merge } = objectUtils()
 const { mouseController, setMapCenter } = basicConfig()
-const { addCustomToolbarButtons, removeCustomToolbarButtons } = createCustomToolbarButtons()
+const { addCustomToolbarButtons, removeCustomToolbarButtons, createDefaultToolbarButtons } = createCustomToolbarButtons()
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()
@@ -187,34 +187,12 @@ const initCesium = async () => {
     setMapCenter({lng: mapOptions.scene.center.lng, lat: mapOptions.scene.center.lat, map: map}) // 设置地图中心点
 
     // 在主页按钮附近添加自定义按钮
-    customButtons = addCustomToolbarButtons(map, [
-      // 第一个按钮：使用图标，title作为tooltip但不显示文本
-      {
-        title: '自定义按钮 1',
-        text: '', // 文本属性保留以满足类型要求
-        iconSrc: `${import.meta.env.BASE_URL}/images/home.svg`,
-        onClick: (viewer) => {
-          console.log('自定义按钮 1 点击')
-
-          // 使用 flyTo 方法实现相机看向中心点的效果
-          setMapCenter({lng: mapOptions.scene.center.lng, lat: mapOptions.scene.center.lat, map: map}) // 设置地图中心点
-
-          emit('customButtonClick', viewer)
-        }
-      },
-      // 第二个按钮：使用文本
-      {
-        title: '自定义按钮 2',
-        text: '按钮 2',
-        onClick: (viewer) => {
-          console.log('自定义按钮 2 点击')
-          // 这里可以添加自定义逻辑
-          if (viewer) {
-           
-          }
-        }
-      }
-    ])
+    customButtons = addCustomToolbarButtons(map, createDefaultToolbarButtons({
+      mapOptions,
+      map,
+      setMapCenter,
+      emit
+    }))
 
     console.log('Cesium 地图加载成功')
     emit("onload", map)
