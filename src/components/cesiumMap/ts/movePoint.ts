@@ -14,6 +14,7 @@ import { setPoint } from '@/components/cesiumMap/ts/setPoint'
 import { ClickHandler } from '@/components/cesiumMap/ts/bindClickHandler'
 import { movePathConfig } from '@/components/cesiumMap/ts/movePath'
 import { setPath } from '@/components/cesiumMap/ts/setPath'
+import { groundLinkConfig } from '@/components/cesiumMap/ts/groundLink'
 
 export function movePointConfig(baseUrl: string) {
   // 获取地图store实例
@@ -34,6 +35,11 @@ export function movePointConfig(baseUrl: string) {
   const {
     bindDroneClickHandler,
   } = ClickHandler()
+
+  const {
+    createGroundLink,
+    clearGroundLink
+  } = groundLinkConfig()
 
   /**
    * 移动点位到新的坐标位置
@@ -424,12 +430,10 @@ export function movePointConfig(baseUrl: string) {
       }
 
       // 清除无人机与地面固定点连线
-      if (droneEntity.groundLinkEntity) {
-        map.entities.remove(droneEntity.groundLinkEntity)
-        droneEntity.groundLinkEntity = null
-        // 从 mapStore 中清除
-        mapStore.clearGroundLink(pointId)
-      }
+      clearGroundLink({
+        map,
+        pointId
+      })
 
       // 清除无人机实体
       if (droneEntity.entity) {
@@ -445,79 +449,10 @@ export function movePointConfig(baseUrl: string) {
     console.log(`无人机轨迹${pointId}已清除`)
   }
 
-  /**
-   * 为无人机创建与地面固定点的动态虚线连接
-   * @param options 配置选项
-   * @param options.map Cesium 地图实例
-   * @param options.modelEntity 无人机实体
-   * @param options.pointId 无人机ID
-   */
-  const createGroundLink = (options: {
-    map: Cesium.CesiumWidget;
-    modelEntity: any;
-    pointId: string;
-  }) => {
-    const { map, modelEntity, pointId } = options;
-    
-    // 检查是否已存在连接线
-    if (mapStore.hasGroundLink(pointId)) {
-      console.log(`无人机${pointId}的地面连接线已存在，跳过创建`);
-      return;
-    }
-    
-    // 地面固定点经纬度
-    const GROUND_LINK_LNG = 117.229619;
-    const GROUND_LINK_LAT = 31.726288;
-    
-    // 新建与地面固定点的动态白色虚线（实时连接无人机）
-    const groundPosition = Cesium.Cartesian3.fromDegrees(GROUND_LINK_LNG, GROUND_LINK_LAT, 0);
-    const groundLinkEntity = map.entities.add({
-      id: `${pointId}-ground-link`,
-      polyline: {
-        // 使用 CallbackProperty 实现动态更新连接线位置
-        // 每次 Cesium 渲染场景时都会调用此回调函数
-        positions: new Cesium.CallbackProperty(() => {
-          // 检查无人机实体和位置属性是否存在
-          if (!modelEntity?.entity?.position) {
-            // 如果不存在，返回固定点到自身的线段（避免错误）
-            return [groundPosition, groundPosition];
-          }
-          
-          // 获取无人机当前实时位置
-          // map.clock.currentTime 确保获取的是当前时间点的位置
-          const dronePosition = modelEntity.entity.position.getValue(map.clock.currentTime);
-          
-          // 检查获取的位置是否有效
-          if (!dronePosition) {
-            // 如果无效，返回固定点到自身的线段（避免错误）
-            return [groundPosition, groundPosition];
-          }
-          
-          // 返回无人机当前位置到地面固定点的线段
-          // 这样连接线会随着无人机移动而实时更新
-          return [dronePosition, groundPosition];
-        }, false), // isConstant: false，告诉 Cesium 这个属性是动态变化的
-        width: 2, // 线段宽度
-        material: new Cesium.PolylineDashMaterialProperty({
-          color: Cesium.Color.WHITE, // 线段颜色
-          dashLength: 12, // 虚线长度
-          gapColor: Cesium.Color.WHITE.withAlpha(0.15), // 间隙颜色（半透明）
-        }),
-        clampToGround: false, // 不贴地，保持3D效果
-        disableDepthTestDistance: Number.POSITIVE_INFINITY, // 始终显示在最前面，不受深度测试影响
-      }
-    });
-    
-    // 存储到 modelEntity 和 mapStore
-    modelEntity.groundLinkEntity = groundLinkEntity;
-    mapStore.setGroundLink(pointId, groundLinkEntity);
-  };
-
   return {
     movePoint,
     moveDronePoint,
     toggleDroneAndTrailVisibility,
-    destroyDroneTrail,
-    createGroundLink
+    destroyDroneTrail
   }
 }
