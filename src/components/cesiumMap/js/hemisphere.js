@@ -93,7 +93,7 @@ export function hemisphereConfig() {
           // 定位属性
           verticalOrigin: Cesium.VerticalOrigin.TOP,
           horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-          pixelOffset: new Cesium.Cartesian2(0, -10),
+          pixelOffset: new Cesium.Cartesian2(0, -30),
           // 其他属性
           eyeOffset: new Cesium.Cartesian3(0, 0, 0),
           distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 100000)
