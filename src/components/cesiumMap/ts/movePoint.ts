@@ -146,27 +146,11 @@ export function movePointConfig(baseUrl: string) {
         }
 
         // 新建与地面固定点的动态白色虚线（实时连接无人机）
-        const groundPosition = Cesium.Cartesian3.fromDegrees(GROUND_LINK_LNG, GROUND_LINK_LAT, 0)
-        const groundLinkEntity = map.entities.add({
-          id: `${options.pointId}-ground-link`,
-          polyline: {
-            positions: new Cesium.CallbackProperty(() => {
-              if (!modelEntity?.entity?.position) return [groundPosition, groundPosition]
-              const dronePosition = modelEntity.entity.position.getValue(map.clock.currentTime)
-              if (!dronePosition) return [groundPosition, groundPosition]
-              return [dronePosition, groundPosition]
-            }, false),
-            width: 2,
-            material: new Cesium.PolylineDashMaterialProperty({
-              color: Cesium.Color.WHITE,
-              dashLength: 12,
-              gapColor: Cesium.Color.WHITE.withAlpha(0.15),
-            }),
-            clampToGround: false,
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          }
+        createGroundLink({
+          map,
+          modelEntity,
+          pointId: options.pointId
         })
-        modelEntity.groundLinkEntity = groundLinkEntity
 
         // 新建实体后立即绑定点击事件
         bindDroneClickHandler({ id: options.pointId, modelEntity: modelEntity })
@@ -488,10 +472,53 @@ export function movePointConfig(baseUrl: string) {
     console.log(`无人机轨迹${pointId}已清除`)
   }
 
+  /**
+   * 为无人机创建与地面固定点的动态虚线连接
+   * @param options 配置选项
+   * @param options.map Cesium 地图实例
+   * @param options.modelEntity 无人机实体
+   * @param options.pointId 无人机ID
+   */
+  const createGroundLink = (options: {
+    map: Cesium.CesiumWidget;
+    modelEntity: any;
+    pointId: string;
+  }) => {
+    const { map, modelEntity, pointId } = options;
+    
+    // 地面固定点经纬度
+    const GROUND_LINK_LNG = 117.229619;
+    const GROUND_LINK_LAT = 31.726288;
+    
+    // 新建与地面固定点的动态白色虚线（实时连接无人机）
+    const groundPosition = Cesium.Cartesian3.fromDegrees(GROUND_LINK_LNG, GROUND_LINK_LAT, 0);
+    const groundLinkEntity = map.entities.add({
+      id: `${pointId}-ground-link`,
+      polyline: {
+        positions: new Cesium.CallbackProperty(() => {
+          if (!modelEntity?.entity?.position) return [groundPosition, groundPosition];
+          const dronePosition = modelEntity.entity.position.getValue(map.clock.currentTime);
+          if (!dronePosition) return [groundPosition, groundPosition];
+          return [dronePosition, groundPosition];
+        }, false),
+        width: 2,
+        material: new Cesium.PolylineDashMaterialProperty({
+          color: Cesium.Color.WHITE,
+          dashLength: 12,
+          gapColor: Cesium.Color.WHITE.withAlpha(0.15),
+        }),
+        clampToGround: false,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      }
+    });
+    modelEntity.groundLinkEntity = groundLinkEntity;
+  };
+
   return {
     movePoint,
     moveDronePoint,
     toggleDroneAndTrailVisibility,
-    destroyDroneTrail
+    destroyDroneTrail,
+    createGroundLink
   }
 }
