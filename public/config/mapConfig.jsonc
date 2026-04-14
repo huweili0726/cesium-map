@@ -12,7 +12,7 @@
     },
     "fog": { "enabled": false },  // 是否开启雾效
     "skyAtmosphere": {
-      "show": false  // 是否显示 大气层光环
+      "show": true  // 是否显示 大气层光环
     },
     "globe": {
       "depthTestAgainstTerrain": true,  // 是否开启地形深度测试，确保在地形上的实体正确渲染
