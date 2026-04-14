@@ -10,7 +10,7 @@ import { objectUtils } from '@/utils/object'
 import { basicConfig } from '@/components/cesiumMap/ts/basis'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { customColorTileProvider } from '@/components/cesiumMap/ts/tileProviders'
-import { createCustomToolbarButtons } from '@/components/cesiumMap/ts/customToolbarButtons.ts'
+import { createCustomToolbarButtons } from '@/components/cesiumMap/ts/customToolbarButtons.js'
 
 
 // 获取store实例，保持响应性
@@ -183,27 +183,37 @@ const initCesium = async () => {
     setMapCenter({lng: mapOptions.scene.center.lng, lat: mapOptions.scene.center.lat, map: map}) // 设置地图中心点
 
     // 在主页按钮附近添加自定义按钮
-    customButtons = addCustomToolbarButtons(map, [
-      {
-        title: '自定义按钮 1',
-        text: '按钮 1',
-        onClick: (viewer) => {
-          console.log('自定义按钮 1 点击')
-          emit('customButtonClick', viewer)
-        }
-      },
-      {
-        title: '自定义按钮 2',
-        text: '按钮 2',
-        onClick: (viewer) => {
-          console.log('自定义按钮 2 点击')
-          // 这里可以添加自定义逻辑
-          if (viewer) {
+    customButtons = []
+    
+    // 第一个按钮：使用图标，title作为tooltip但不显示文本
+    const iconButton = addCustomIconToolbarButton(map, {
+      text: '', // 图标按钮不需要文本，但类型要求必须提供
+      title: '自定义按钮 1',
+      iconSrc: `${import.meta.env.BASE_URL}/images/home.svg`,
+      onClick: (viewer) => {
+        console.log('自定义按钮 1 点击')
+        emit('customButtonClick', viewer)
+      }
+    })
+    if (iconButton) {
+      customButtons.push(iconButton)
+    }
+    
+    // 第二个按钮：使用文本
+    const textButton = addCustomToolbarButton(map, {
+      title: '自定义按钮 2',
+      text: '按钮 2',
+      onClick: (viewer) => {
+        console.log('自定义按钮 2 点击')
+        // 这里可以添加自定义逻辑
+        if (viewer) {
        
-          }
         }
       }
-    ])
+    })
+    if (textButton) {
+      customButtons.push(textButton)
+    }
 
     console.log('Cesium 地图加载成功')
     emit("onload", map)
@@ -234,7 +244,7 @@ onUnmounted(() => {
 const { getJsonFile } = jsonUtils()
 const { merge } = objectUtils()
 const { mouseController, setMapCenter } = basicConfig()
-const { addCustomToolbarButtons } = createCustomToolbarButtons()
+const { addCustomIconToolbarButton, addCustomToolbarButton, addCustomToolbarButtons } = createCustomToolbarButtons()
 </script>
 
 <style scoped lang="less">

@@ -18,6 +18,7 @@ export interface CustomToolbarButtonOptions {
   text: string
   onClick: (viewer: Cesium.Viewer) => void
   className?: string
+  iconSrc?: string
 }
 
 /**
@@ -54,6 +55,43 @@ export function createCustomToolbarButtons() {
   }
 
   /**
+   * 添加自定义工具栏按钮（显示图标）
+   * @param viewer Cesium Viewer 实例
+   * @param options 自定义按钮选项
+   * @returns 创建的按钮元素
+   */
+  const addCustomIconToolbarButton = (viewer: Cesium.Viewer, options: CustomToolbarButtonOptions): HTMLButtonElement | null => {
+    const toolbar = viewer.container.querySelector('.cesium-viewer-toolbar') as HTMLElement | null
+    if (!toolbar || !options.iconSrc) return null
+
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = `cesium-button cesium-toolbar-button ${options.className || 'custom-toolbar-button'}`
+    button.title = options.title
+    
+    // 创建图标元素
+    const img = document.createElement('img')
+    img.src = options.iconSrc
+    img.style.width = '20px'
+    img.style.height = '20px'
+    img.style.objectFit = 'contain'
+    button.appendChild(img)
+    
+    button.onclick = () => {
+      options.onClick(viewer)
+    }
+
+    const homeBtn = toolbar.querySelector('.cesium-home-button')
+    if (homeBtn && homeBtn.nextSibling) {
+      toolbar.insertBefore(button, homeBtn.nextSibling)
+    } else {
+      toolbar.appendChild(button)
+    }
+
+    return button
+  }
+
+  /**
    * 添加多个自定义工具栏按钮
    * @param viewer Cesium Viewer 实例
    * @param buttons 自定义按钮选项数组
@@ -74,6 +112,7 @@ export function createCustomToolbarButtons() {
 
   return {
     addCustomToolbarButton,
-    addCustomToolbarButtons
+    addCustomToolbarButtons,
+    addCustomIconToolbarButton
   }
 }
