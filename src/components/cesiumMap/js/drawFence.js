@@ -232,14 +232,12 @@ export function drawFence() {
 
       isFinished = true
       destroyHandler()
-      cleanupTempEntities()
-      cleanupPointEntities()
 
       const finalPositions = positions.map(item => Cesium.Cartesian3.clone(item))
       const finalWallPositions = [...finalPositions, finalPositions[0]]
       const lngLatPositions = finalPositions.map(item => cartesianToLngLatHeight(item))
 
-      const fenceEntity = map.entities.add({
+      const fenceEntity = wallEntity || map.entities.add({
         id: options.id,
         name: options.name || `多边形电子围栏-${options.id}`,
         wall: {
@@ -258,6 +256,34 @@ export function drawFence() {
           arcType: Cesium.ArcType.NONE
         }
       })
+
+      fenceEntity.name = options.name || `多边形电子围栏-${options.id}`
+      fenceEntity.wall.positions = finalWallPositions
+      fenceEntity.wall.maximumHeights = finalWallPositions.map(() => height)
+      fenceEntity.wall.minimumHeights = finalWallPositions.map(() => 0)
+      fenceEntity.wall.material = color.withAlpha(0.18)
+      fenceEntity.wall.outline = true
+      fenceEntity.wall.outlineColor = color
+
+      if (polylineEntity) {
+        map.entities.remove(polylineEntity)
+        polylineEntity = null
+      }
+
+      fenceEntity.polyline = {
+        positions: finalWallPositions,
+        width: outlineWidth,
+        material: color,
+        clampToGround: false,
+        arcType: Cesium.ArcType.NONE
+      }
+
+      if (activePointEntity) {
+        map.entities.remove(activePointEntity)
+        activePointEntity = null
+      }
+      wallEntity = null
+      cleanupPointEntities()
 
       fenceEntity._originalOptions = {
         ...options,
