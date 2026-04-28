@@ -110,17 +110,6 @@
         </div>
       </div>
 
-      <!-- 平面电子围栏控制按钮组 -->
-      <div class="button-group plane-fence-controls">
-        <div class="group-title" @click="toggleControls('planeFence')">
-          立体电子围栏
-          <span class="toggle-icon">{{ isPlaneFenceControlsOpen ? '▼' : '▶' }}</span>
-        </div>
-        <div v-if="isPlaneFenceControlsOpen" class="controls-content">
-          <button @click="toCreateDrawPolygonFence" class="control-btn">创建多边形围栏</button>
-        </div>
-      </div>
-
       <!-- 椎体控制按钮组 -->
       <div class="button-group pyramid-controls">
         <div class="group-title" @click="toggleControls('pyramid')">
@@ -134,6 +123,17 @@
             <button @click="toUpdateRectangularPyramidEffect" class="control-btn">更新四棱锥高度</button>
 
             <button @click="toCreateRectangularPyramidEffect1" class="control-btn">创建四棱锥方法2</button>
+        </div>
+      </div>
+
+      <!-- 平面电子围栏控制按钮组 -->
+      <div class="button-group plane-fence-controls">
+        <div class="group-title" @click="toggleControls('planeFence')">
+          立体电子围栏
+          <span class="toggle-icon">{{ isPlaneFenceControlsOpen ? '▼' : '▶' }}</span>
+        </div>
+        <div v-if="isPlaneFenceControlsOpen" class="controls-content">
+          <button @click="toCreateDrawPolygonFence" class="control-btn">创建多边形围栏</button>
         </div>
       </div>
     </div>
