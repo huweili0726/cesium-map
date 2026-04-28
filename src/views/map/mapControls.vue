@@ -622,6 +622,11 @@ const toDrawCircleFence = () => {
   })
 }
 
+const toDestroyCircleFence = () => {
+  // 销毁圆形围栏
+  destroyCircleFence(drawId)
+}
+
 // 创建圆锥体特效
 let conicalTimer: number | null = null;
 let currentHeading = 45;
@@ -924,7 +929,8 @@ const {
   createPolygonFence,
   showPolygonFence,
   removePolygonFence,
-  drawCircleFence
+  drawCircleFence,
+  destroyCircleFence
 } = fenceDraw()
 
 const {

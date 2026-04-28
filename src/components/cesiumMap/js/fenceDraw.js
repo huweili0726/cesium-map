@@ -762,7 +762,7 @@ export function fenceDraw() {
    * @param {string} id 围栏ID
    * @returns {boolean}
    */
-  const removeCircleFence = (id) => {
+  const destroyCircleFence = (id) => {
     const map = mapStore.getMap()
     if (!map) {
       console.error('地图实例不存在')
@@ -787,6 +787,6 @@ export function fenceDraw() {
     showPolygonFence,
     removePolygonFence,
     drawCircleFence,
-    removeCircleFence
+    destroyCircleFence
   }
 }
