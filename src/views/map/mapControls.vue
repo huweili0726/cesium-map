@@ -565,7 +565,7 @@ const toCreateDrawPolygonFence = () => {
   createPolygonFence({
     id: drawId,
     color: '#E81224',
-    height: 1,
+    height: 2,
     opacity: 0.28,
     outlineWidth: 2,
     zoomTo: false,
@@ -588,7 +588,7 @@ const toShowPolygonFence = () => {
       { lng: 117.40, lat: 31.91, height: 1 },
       { lng: 117.39, lat: 31.91, height: 1 }    
     ],
-    height: 1,
+    height: 2,
     color: '#E81224',
     opacity: 0.28,
     outlineWidth: 2,
