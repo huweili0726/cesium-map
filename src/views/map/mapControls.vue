@@ -110,6 +110,17 @@
         </div>
       </div>
 
+      <!-- 平面电子围栏控制按钮组 -->
+      <div class="button-group plane-fence-controls">
+        <div class="group-title" @click="toggleControls('planeFence')">
+          立体电子围栏
+          <span class="toggle-icon">{{ isPlaneFenceControlsOpen ? '▼' : '▶' }}</span>
+        </div>
+        <div v-if="isPlaneFenceControlsOpen" class="controls-content">
+          <button @click="toCreateDrawPolygonFence" class="control-btn">创建多边形围栏</button>
+        </div>
+      </div>
+
       <!-- 椎体控制按钮组 -->
       <div class="button-group pyramid-controls">
         <div class="group-title" @click="toggleControls('pyramid')">
@@ -139,6 +150,7 @@ import { setReplay } from '@/components/cesiumMap/js/replayPath'
 import { diffusionConfig } from '@/components/cesiumMap/js/diffusion'
 import { fenceConfig } from '@/components/cesiumMap/js/fence'
 import { geometryConfig } from '@/components/cesiumMap/js/geometry'
+import { fenceDraw } from '@/components/cesiumMap/js/fenceDraw'
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()
@@ -151,6 +163,7 @@ const isDroneControlsOpen = ref(false)
 const isReplayControlsOpen = ref(false)
 const isDiffusionControlsOpen = ref(false)
 const isFenceControlsOpen = ref(false)
+const isPlaneFenceControlsOpen = ref(false)
 const isPyramidControlsOpen = ref(false)
 
 // 切换按钮组展开/折叠状态
@@ -176,6 +189,9 @@ const toggleControls = (controlType: string) => {
       break
     case 'fence':
       isFenceControlsOpen.value = !isFenceControlsOpen.value
+      break
+    case 'planeFence':
+      isPlaneFenceControlsOpen.value = !isPlaneFenceControlsOpen.value
       break
     case 'pyramid':
       isPyramidControlsOpen.value = !isPyramidControlsOpen.value
@@ -540,6 +556,26 @@ const toCreateFenceFlowEffect = () => {
   }) 
 }
 
+// 交互式创建多边形平面围栏
+const toCreateDrawPolygonFence = () => {
+  const drawId = `plane_polygon_fence_${Date.now()}`
+
+  createPolygonFence({
+    id: drawId,
+    color: '#E81224',
+    height: 200,
+    opacity: 0.28,
+    outlineWidth: 2,
+    zoomTo: false,
+    onFinish: (result: any) => {
+      console.log('多边形平面电子围栏创建完成:', result)
+    },
+    onCancel: () => {
+      console.log('多边形平面电子围栏绘制已取消')
+    }
+  })
+}
+
 // 创建圆锥体特效
 let conicalTimer: number | null = null;
 let currentHeading = 45;
@@ -837,6 +873,10 @@ const {
   circleDiffuseFence,
   polygonDiffuseFence
 } = fenceConfig()
+
+const {
+  createPolygonFence
+} = fenceDraw()
 
 const {
   conicalWave,
