@@ -467,6 +467,100 @@ export function fenceDraw() {
   }
 
   /**
+   * 回显圆形电子围栏（根据已有圆心和半径数据显示）
+   * @param {Object} options 配置项
+   * @param {string} options.id 围栏唯一标识
+   * @param {Object} options.center 圆心坐标，格式: {lng, lat, height}
+   * @param {number} options.radius 围栏半径（米）
+   * @param {number} [options.height=100] 围栏高度（米）
+   * @param {string} [options.color='#00ffff'] 围栏颜色
+   * @param {number} [options.opacity=0.35] 面透明度
+   * @param {number} [options.outlineWidth=2] 边线宽度
+   * @param {boolean} [options.zoomTo=false] 是否飞行到围栏位置
+   * @returns {Object|null} 围栏实体信息
+   */
+  const showCircleFence = (options = {}) => {
+    const map = mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return null
+    }
+
+    if (!options.id) {
+      console.error('回显圆形电子围栏时必须提供 id')
+      return null
+    }
+
+    if (!options.center || typeof options.center.lng !== 'number' || typeof options.center.lat !== 'number') {
+      console.error('回显圆形电子围栏时必须提供有效的圆心坐标 center')
+      return null
+    }
+
+    if (typeof options.radius !== 'number' || options.radius <= 0) {
+      console.error('回显圆形电子围栏时必须提供大于 0 的 radius')
+      return null
+    }
+
+    if (mapStore.hasGraphicMap(options.id)) {
+      console.warn(`id: ${options.id} 围栏已存在，将被替换`)
+      destroyCircleFence(options.id)
+    }
+
+    const color = Cesium.Color.fromCssColorString(options.color || '#00ffff')
+    const height = options.height ?? 100
+    const opacity = options.opacity ?? 0.35
+    const outlineWidth = options.outlineWidth ?? 2
+
+    const centerCartesian = Cesium.Cartesian3.fromDegrees(
+      options.center.lng,
+      options.center.lat,
+      options.center.height || 0
+    )
+
+    const fenceEntity = map.entities.add({
+      id: options.id,
+      name: options.name || `圆形电子围栏-${options.id}`,
+      position: centerCartesian,
+      ellipse: {
+        semiMajorAxis: options.radius,
+        semiMinorAxis: options.radius,
+        height: 0,
+        extrudedHeight: height,
+        material: color.withAlpha(0),
+        outline: true,
+        outlineColor: color,
+        outlineWidth,
+        numberOfVerticalLines: 64
+      }
+    })
+
+    fenceEntity._originalOptions = {
+      ...options,
+      center: options.center,
+      radius: options.radius,
+      height,
+      color: options.color || '#00ffff',
+      opacity,
+      outlineWidth
+    }
+
+    mapStore.setGraphicMap(options.id, fenceEntity)
+
+    if (options.zoomTo) {
+      map.flyTo(fenceEntity)
+    }
+
+    return {
+      id: options.id,
+      entity: fenceEntity,
+      center: options.center,
+      centerCartesian,
+      radius: options.radius,
+      height
+    }
+  }
+
+  /**
    * 交互式创建圆形电子围栏（带高度）
    * @param {Object} options 配置项
    * @param {string} options.id 围栏唯一标识
@@ -786,6 +880,7 @@ export function fenceDraw() {
     createPolygonFence,
     showPolygonFence,
     removePolygonFence,
+    showCircleFence,
     drawCircleFence,
     destroyCircleFence
   }

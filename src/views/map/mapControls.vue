@@ -137,6 +137,7 @@
           <button @click="toShowPolygonFence" class="control-btn">回显多边形围栏</button>
           <button @click="toDestroyPolygonFence" class="control-btn">销毁多边形围栏</button>
           <button @click="toDrawCircleFence" class="control-btn">创建圆形围栏</button>
+          <button @click="toShowCircleFence" class="control-btn">回显圆形围栏</button>
           <button @click="toDestroyCircleFence" class="control-btn">销毁圆形围栏</button>
         </div>
       </div>
@@ -622,9 +623,27 @@ const toDrawCircleFence = () => {
   })
 }
 
+const toShowCircleFence = () => {
+  // 回显圆形围栏
+  showCircleFence({
+    id: 'circle_001',
+    center: {
+      lng: 117.229619,
+      lat: 31.726288,
+      height: 500
+    },
+    radius: 1500,
+    height: 2,
+    color: '#E81224',
+    opacity: 0.28,
+    outlineWidth: 2,
+    zoomTo: true
+  })
+}
+
 const toDestroyCircleFence = () => {
   // 销毁圆形围栏
-  destroyCircleFence(drawId)
+  destroyCircleFence(`circle_001`)
 }
 
 // 创建圆锥体特效
@@ -930,6 +949,7 @@ const {
   showPolygonFence,
   removePolygonFence,
   drawCircleFence,
+  showCircleFence,
   destroyCircleFence
 } = fenceDraw()
 
