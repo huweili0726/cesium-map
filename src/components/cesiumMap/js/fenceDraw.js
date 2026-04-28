@@ -466,9 +466,327 @@ export function fenceDraw() {
     return removed
   }
 
+  /**
+   * 交互式创建圆形电子围栏（带高度）
+   * @param {Object} options 配置项
+   * @param {string} options.id 围栏唯一标识
+   * @param {number} [options.height=100] 围栏高度（米）
+   * @param {string} [options.color='#00ffff'] 围栏颜色
+   * @param {number} [options.opacity=0.35] 面透明度
+   * @param {number} [options.outlineWidth=2] 边线宽度
+   * @param {boolean} [options.zoomTo=false] 完成后是否飞行到围栏
+   * @param {(result: Object) => void} [options.onFinish] 完成后的回调
+   * @param {(result: Object) => void} [options.onChange] 绘制过程中的回调
+   * @param {() => void} [options.onCancel] 取消时回调
+   * @returns {Object|null} 绘制控制器
+   */
+  const drawCircleFence = (options = {}) => {
+    const map = mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return null
+    }
+
+    if (!options.id) {
+      console.error('创建圆形电子围栏时必须提供 id')
+      return null
+    }
+
+    if (mapStore.hasGraphicMap(options.id)) {
+      console.warn(`id: ${options.id} 围栏已存在`)
+      return null
+    }
+
+    const color = Cesium.Color.fromCssColorString(options.color || '#00ffff')
+    const height = options.height ?? 100
+    const opacity = options.opacity ?? 0.35
+    const outlineWidth = options.outlineWidth ?? 2
+
+    let centerPosition = null
+    let edgePosition = null
+    let centerPointEntity = null
+    let activePointEntity = null
+    let ellipseEntity = null
+    let handler = null
+    let isFinished = false
+
+    const tempIds = {
+      ellipse: `${options.id}_draw_circle_wall`,
+      center: `${options.id}_draw_center_point`,
+      active: `${options.id}_draw_active_point`
+    }
+
+    const getCatesianFromScreen = (screenPosition) => {
+      if (!screenPosition) return null
+
+      const scene = map.scene
+      let cartesian = null
+
+      if (scene.pickPositionSupported) {
+        cartesian = scene.pickPosition(screenPosition)
+      }
+
+      if (!Cesium.defined(cartesian)) {
+        const ray = map.camera.getPickRay(screenPosition)
+        if (!ray) return null
+        cartesian = scene.globe.pick(ray, scene)
+      }
+
+      return Cesium.defined(cartesian) ? cartesian : null
+    }
+
+    const cartesianToLngLatHeight = (cartesian) => {
+      const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
+      return {
+        lng: Cesium.Math.toDegrees(cartographic.longitude),
+        lat: Cesium.Math.toDegrees(cartographic.latitude),
+        height: cartographic.height || 0
+      }
+    }
+
+    const getRadius = () => {
+      if (!centerPosition || !edgePosition) return 0
+      return Cesium.Cartesian3.distance(centerPosition, edgePosition)
+    }
+
+    const emitChange = () => {
+      if (typeof options.onChange !== 'function' || !centerPosition) return
+
+      options.onChange({
+        id: options.id,
+        center: cartesianToLngLatHeight(centerPosition),
+        edge: edgePosition ? cartesianToLngLatHeight(edgePosition) : null,
+        radius: getRadius(),
+        height
+      })
+    }
+
+    const ensurePreviewEntities = () => {
+      if (!centerPointEntity) {
+        centerPointEntity = map.entities.add({
+          id: tempIds.center,
+          position: centerPosition,
+          point: {
+            pixelSize: 10,
+            color,
+            outlineColor: Cesium.Color.WHITE,
+            outlineWidth: 2,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+          }
+        })
+      }
+
+      if (!ellipseEntity) {
+        ellipseEntity = map.entities.add({
+          id: tempIds.ellipse,
+          position: new Cesium.CallbackProperty(() => centerPosition, false),
+          ellipse: {
+            semiMajorAxis: new Cesium.CallbackProperty(() => getRadius(), false),
+            semiMinorAxis: new Cesium.CallbackProperty(() => getRadius(), false),
+            height: 0,
+            extrudedHeight: height,
+            material: color.withAlpha(opacity),
+            outline: true,
+            outlineColor: color,
+            outlineWidth,
+            numberOfVerticalLines: 64
+          }
+        })
+      }
+
+      if (!activePointEntity) {
+        activePointEntity = map.entities.add({
+          id: tempIds.active,
+          position: new Cesium.CallbackProperty(() => edgePosition, false),
+          point: {
+            pixelSize: 8,
+            color: Cesium.Color.WHITE,
+            outlineColor: color,
+            outlineWidth: 2,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+          }
+        })
+      }
+    }
+
+    const cleanupTempEntities = () => {
+      ;[ellipseEntity, centerPointEntity, activePointEntity].forEach((entity) => {
+        if (entity) {
+          map.entities.remove(entity)
+        }
+      })
+      ellipseEntity = null
+      centerPointEntity = null
+      activePointEntity = null
+    }
+
+    const destroyHandler = () => {
+      if (handler) {
+        handler.destroy()
+        handler = null
+      }
+      map.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK)
+    }
+
+    const finalize = () => {
+      if (isFinished) return null
+
+      const radius = getRadius()
+      if (!centerPosition || radius <= 0) {
+        console.warn('至少需要 2 个点才能形成圆形电子围栏')
+        return null
+      }
+
+      isFinished = true
+      destroyHandler()
+      cleanupTempEntities()
+
+      const finalCenter = Cesium.Cartesian3.clone(centerPosition)
+      const finalEdge = Cesium.Cartesian3.clone(edgePosition)
+
+      const fenceEntity = map.entities.add({
+        id: options.id,
+        name: options.name || `圆形电子围栏-${options.id}`,
+        position: finalCenter,
+        ellipse: {
+          semiMajorAxis: radius,
+          semiMinorAxis: radius,
+          height: 0,
+          extrudedHeight: height,
+          material: color.withAlpha(opacity),
+          outline: true,
+          outlineColor: color,
+          outlineWidth,
+          numberOfVerticalLines: 64
+        }
+      })
+
+      fenceEntity._originalOptions = {
+        ...options,
+        center: cartesianToLngLatHeight(finalCenter),
+        edge: cartesianToLngLatHeight(finalEdge),
+        radius,
+        height,
+        color: options.color || '#00ffff',
+        opacity,
+        outlineWidth
+      }
+
+      mapStore.setGraphicMap(options.id, fenceEntity)
+
+      if (options.zoomTo) {
+        map.flyTo(fenceEntity)
+      }
+
+      const result = {
+        id: options.id,
+        entity: fenceEntity,
+        center: cartesianToLngLatHeight(finalCenter),
+        edge: cartesianToLngLatHeight(finalEdge),
+        centerCartesian: finalCenter,
+        edgeCartesian: finalEdge,
+        radius,
+        height
+      }
+
+      if (typeof options.onFinish === 'function') {
+        options.onFinish(result)
+      }
+
+      return result
+    }
+
+    const cancel = () => {
+      if (isFinished) return
+      destroyHandler()
+      cleanupTempEntities()
+      centerPosition = null
+      edgePosition = null
+
+      if (typeof options.onCancel === 'function') {
+        options.onCancel()
+      }
+    }
+
+    handler = new Cesium.ScreenSpaceEventHandler(map.scene.canvas)
+
+    handler.setInputAction((event) => {
+      const cartesian = getCatesianFromScreen(event.position)
+      if (!cartesian) return
+
+      if (!centerPosition) {
+        centerPosition = Cesium.Cartesian3.clone(cartesian)
+        edgePosition = Cesium.Cartesian3.clone(cartesian)
+        ensurePreviewEntities()
+        emitChange()
+        return
+      }
+
+      edgePosition = Cesium.Cartesian3.clone(cartesian)
+      emitChange()
+      finalize()
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+
+    handler.setInputAction((event) => {
+      if (!centerPosition) return
+      const cartesian = getCatesianFromScreen(event.endPosition)
+      if (!cartesian) return
+      edgePosition = Cesium.Cartesian3.clone(cartesian)
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+
+    handler.setInputAction(() => {
+      finalize()
+    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+
+    handler.setInputAction(() => {
+      finalize()
+    }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK)
+
+    map.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK)
+
+    return {
+      id: options.id,
+      finish: finalize,
+      cancel,
+      destroy: cancel,
+      getCenter: () => (centerPosition ? cartesianToLngLatHeight(centerPosition) : null),
+      getEdge: () => (edgePosition ? cartesianToLngLatHeight(edgePosition) : null),
+      getRadius
+    }
+  }
+
+  /**
+   * 删除圆形电子围栏
+   * @param {string} id 围栏ID
+   * @returns {boolean}
+   */
+  const removeCircleFence = (id) => {
+    const map = mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return false
+    }
+
+    const entity = mapStore.getGraphicMap(id)
+    if (!entity) {
+      console.warn(`id: ${id} 围栏不存在`)
+      return false
+    }
+
+    const removed = map.entities.remove(entity)
+    if (removed) {
+      mapStore.removeGraphicMap(id)
+    }
+    return removed
+  }
+
   return {
     createPolygonFence,
     showPolygonFence,
-    removePolygonFence
+    removePolygonFence,
+    drawCircleFence,
+    removeCircleFence
   }
 }

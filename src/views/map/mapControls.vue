@@ -136,6 +136,8 @@
           <button @click="toCreateDrawPolygonFence" class="control-btn">创建多边形围栏</button>
           <button @click="toShowPolygonFence" class="control-btn">回显多边形围栏</button>
           <button @click="toDestroyPolygonFence" class="control-btn">销毁多边形围栏</button>
+          <button @click="toDrawCircleFence" class="control-btn">创建圆形围栏</button>
+          <button @click="toDestroyCircleFence" class="control-btn">销毁圆形围栏</button>
         </div>
       </div>
     </div>
@@ -601,6 +603,25 @@ const toDestroyPolygonFence = () => {
   removePolygonFence('fence_001')
 }
 
+const toDrawCircleFence = () => {
+  const drawId = `plane_circle_fence_${Date.now()}`
+  // 创建圆形围栏
+  drawCircleFence({
+    id: drawId,
+    color: '#E81224',
+    height: 2,
+    opacity: 0.28,
+    outlineWidth: 2,
+    zoomTo: false,
+    onFinish: (result: any) => {
+      console.log('圆形平面电子围栏创建完成:', result)
+    },
+    onCancel: () => {
+      console.log('圆形平面电子围栏绘制已取消')
+    }
+  })
+}
+
 // 创建圆锥体特效
 let conicalTimer: number | null = null;
 let currentHeading = 45;
@@ -902,7 +923,8 @@ const {
 const {
   createPolygonFence,
   showPolygonFence,
-  removePolygonFence
+  removePolygonFence,
+  drawCircleFence
 } = fenceDraw()
 
 const {
