@@ -38,7 +38,7 @@
   },
   "terrain": {
     "url": "http://data.mars3d.cn/terrain",  // 地形数据 URL
-    "show": true,  // 是否显示地形
+    "show": false,  // 是否显示地形
     "coastlineData": true,  // 是否显示海岸线数据
     "lightingData": true  // 是否显示光照数据
   },
