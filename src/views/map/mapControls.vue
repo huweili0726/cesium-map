@@ -135,6 +135,7 @@
         <div v-if="isPlaneFenceControlsOpen" class="controls-content">
           <button @click="toCreateDrawPolygonFence" class="control-btn">创建多边形围栏</button>
           <button @click="toShowPolygonFence" class="control-btn">回显多边形围栏</button>
+          <button @click="toDestroyPolygonFence" class="control-btn">销毁多边形围栏</button>
         </div>
       </div>
     </div>
@@ -582,10 +583,10 @@ const toShowPolygonFence = () => {
   showPolygonFence({
     id: 'fence_001',
     positions: [
-      { lng: 116.39, lat: 39.90, height: 0 },
-      { lng: 116.40, lat: 39.90, height: 0 },
-      { lng: 116.40, lat: 39.91, height: 0 },
-      { lng: 116.39, lat: 39.91, height: 0 }
+      { lng: 117.39, lat: 31.90, height: 1 },
+      { lng: 117.40, lat: 31.90, height: 1 },
+      { lng: 117.40, lat: 31.91, height: 1 },
+      { lng: 117.39, lat: 31.91, height: 1 }    
     ],
     height: 1,
     color: '#E81224',
@@ -593,6 +594,11 @@ const toShowPolygonFence = () => {
     outlineWidth: 2,
     zoomTo: true
   })
+}
+
+const toDestroyPolygonFence = () => {
+  // 销毁多边形围栏
+  removePolygonFence('fence_001')
 }
 
 // 创建圆锥体特效
@@ -895,7 +901,8 @@ const {
 
 const {
   createPolygonFence,
-  showPolygonFence
+  showPolygonFence,
+  removePolygonFence
 } = fenceDraw()
 
 const {
