@@ -156,7 +156,7 @@ import { setReplay } from '@/components/cesiumMap/js/replayPath'
 import { diffusionConfig } from '@/components/cesiumMap/js/diffusion'
 import { fenceConfig } from '@/components/cesiumMap/js/fence'
 import { geometryConfig } from '@/components/cesiumMap/js/geometry'
-import { fenceDraw } from '@/components/cesiumMap/js/fenceDraw'
+import { drawFence } from '@/components/cesiumMap/js/drawFence'
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()
@@ -959,7 +959,7 @@ const {
   showCircleFence,
   destroyCircleFence,
   destroyAllFence
-} = fenceDraw()
+} = drawFence()
 
 const {
   conicalWave,

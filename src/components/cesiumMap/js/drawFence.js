@@ -11,7 +11,7 @@
 import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
 
-export function fenceDraw() {
+export function drawFence() {
   const mapStore = useMapStore()
 
   /**
