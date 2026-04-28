@@ -139,6 +139,7 @@
           <button @click="toDrawCircleFence" class="control-btn">创建圆形围栏</button>
           <button @click="toShowCircleFence" class="control-btn">回显圆形围栏</button>
           <button @click="toDestroyCircleFence" class="control-btn">销毁圆形围栏</button>
+          <button @click="toDestroyAllFence" class="control-btn">销毁所有电子围栏</button>
         </div>
       </div>
     </div>
@@ -646,6 +647,12 @@ const toDestroyCircleFence = () => {
   destroyCircleFence(`circle_001`)
 }
 
+const toDestroyAllFence = () => {
+  // 销毁所有电子围栏
+  const removedCount = destroyAllFence()
+  console.log(`成功删除 ${removedCount} 个电子围栏`)
+}
+
 // 创建圆锥体特效
 let conicalTimer: number | null = null;
 let currentHeading = 45;
@@ -950,7 +957,8 @@ const {
   removePolygonFence,
   drawCircleFence,
   showCircleFence,
-  destroyCircleFence
+  destroyCircleFence,
+  destroyAllFence
 } = fenceDraw()
 
 const {

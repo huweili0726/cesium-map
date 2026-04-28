@@ -876,12 +876,48 @@ export function fenceDraw() {
     return removed
   }
 
+  /**
+   * 销毁所有电子围栏（包含绘制和回显的多边形、圆形围栏）
+   * @returns {number} 成功删除的围栏数量
+   */
+  const destroyAllFence = () => {
+    const map = mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return 0
+    }
+
+    let removedCount = 0
+    const fenceIds = []
+
+    mapStore.graphicMap.forEach((entity, id) => {
+      const isFence = entity?.wall || entity?.ellipse || entity?.polyline
+      if (isFence) {
+        fenceIds.push(id)
+      }
+    })
+
+    fenceIds.forEach((id) => {
+      const entity = mapStore.getGraphicMap(id)
+      if (!entity) return
+
+      const removed = map.entities.remove(entity)
+      if (removed) {
+        mapStore.removeGraphicMap(id)
+        removedCount += 1
+      }
+    })
+
+    return removedCount
+  }
+
   return {
     createPolygonFence,
     showPolygonFence,
     removePolygonFence,
     showCircleFence,
     drawCircleFence,
-    destroyCircleFence
+    destroyCircleFence,
+    destroyAllFence
   }
 }
