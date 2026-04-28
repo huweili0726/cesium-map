@@ -5,6 +5,8 @@
  *
  * 右键结束绘制，双击也可结束绘制。
  *
+ * @author huweili
+ * @email czxyhuweili@163.com
  * @version 1.0.0
  * @date 2026-04-28
  */
