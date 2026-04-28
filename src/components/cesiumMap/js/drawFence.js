@@ -737,12 +737,11 @@ export function drawFence() {
 
       isFinished = true
       destroyHandler()
-      cleanupTempEntities()
 
       const finalCenter = Cesium.Cartesian3.clone(centerPosition)
       const finalEdge = Cesium.Cartesian3.clone(edgePosition)
 
-      const fenceEntity = map.entities.add({
+      const fenceEntity = ellipseEntity || map.entities.add({
         id: options.id,
         name: options.name || `圆形电子围栏-${options.id}`,
         position: finalCenter,
@@ -758,6 +757,27 @@ export function drawFence() {
           numberOfVerticalLines: 64
         }
       })
+
+      fenceEntity.name = options.name || `圆形电子围栏-${options.id}`
+      fenceEntity.position = finalCenter
+      fenceEntity.ellipse.semiMajorAxis = radius
+      fenceEntity.ellipse.semiMinorAxis = radius
+      fenceEntity.ellipse.height = 0
+      fenceEntity.ellipse.extrudedHeight = height
+      fenceEntity.ellipse.material = color.withAlpha(0)
+      fenceEntity.ellipse.outline = true
+      fenceEntity.ellipse.outlineColor = color
+      fenceEntity.ellipse.outlineWidth = outlineWidth
+      fenceEntity.ellipse.numberOfVerticalLines = 64
+
+      ;[centerPointEntity, activePointEntity].forEach((entity) => {
+        if (entity) {
+          map.entities.remove(entity)
+        }
+      })
+      centerPointEntity = null
+      activePointEntity = null
+      ellipseEntity = null
 
       fenceEntity._originalOptions = {
         ...options,
@@ -808,6 +828,8 @@ export function drawFence() {
 
     handler = new Cesium.ScreenSpaceEventHandler(map.scene.canvas)
 
+    map.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK)
+
     handler.setInputAction((event) => {
       const cartesian = getCatesianFromScreen(event.position)
       if (!cartesian) return
@@ -835,12 +857,6 @@ export function drawFence() {
     handler.setInputAction(() => {
       finalize()
     }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
-
-    handler.setInputAction(() => {
-      finalize()
-    }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK)
-
-    map.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK)
 
     return {
       id: options.id,
