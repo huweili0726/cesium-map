@@ -134,6 +134,7 @@
         </div>
         <div v-if="isPlaneFenceControlsOpen" class="controls-content">
           <button @click="toCreateDrawPolygonFence" class="control-btn">创建多边形围栏</button>
+          <button @click="toShowPolygonFence" class="control-btn">回显多边形围栏</button>
         </div>
       </div>
     </div>
@@ -576,6 +577,24 @@ const toCreateDrawPolygonFence = () => {
   })
 }
 
+const toShowPolygonFence = () => {
+  // 回显多边形围栏
+  const result = showPolygonFence({
+    id: 'fence_001',
+    positions: [
+      { lng: 116.39, lat: 39.90, height: 0 },
+      { lng: 116.40, lat: 39.90, height: 0 },
+      { lng: 116.40, lat: 39.91, height: 0 },
+      { lng: 116.39, lat: 39.91, height: 0 }
+    ],
+    height: 1,
+    color: '#E81224',
+    opacity: 0.28,
+    outlineWidth: 2,
+    zoomTo: true
+  })
+}
+
 // 创建圆锥体特效
 let conicalTimer: number | null = null;
 let currentHeading = 45;
@@ -875,7 +894,8 @@ const {
 } = fenceConfig()
 
 const {
-  createPolygonFence
+  createPolygonFence,
+  showPolygonFence
 } = fenceDraw()
 
 const {

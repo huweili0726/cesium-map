@@ -386,6 +386,104 @@ export function fenceDraw() {
   }
 
   /**
+   * 回显多边形电子围栏（根据已有坐标数据显示）
+   * @param {Object} options 配置项
+   * @param {string} options.id 围栏唯一标识
+   * @param {Array} options.positions 围栏顶点坐标数组，格式: [{lng, lat, height}, ...]
+   * @param {number} [options.height=100] 围栏高度（米）
+   * @param {string} [options.color='#00ffff'] 围栏颜色
+   * @param {number} [options.opacity=0.35] 面透明度
+   * @param {number} [options.outlineWidth=2] 边线宽度
+   * @param {boolean} [options.zoomTo=false] 是否飞行到围栏位置
+   * @returns {Object|null} 围栏实体信息
+   */
+  const showPolygonFence = (options = {}) => {
+    const map = mapStore.getMap()
+    if (!map) {
+      console.error('地图实例不存在')
+      return null
+    }
+
+    if (!options.id) {
+      console.error('回显多边形电子围栏时必须提供 id')
+      return null
+    }
+
+    if (!options.positions || !Array.isArray(options.positions) || options.positions.length < 3) {
+      console.error('回显多边形电子围栏时必须提供至少 3 个顶点坐标')
+      return null
+    }
+
+    if (mapStore.hasGraphicMap(options.id)) {
+      console.warn(`id: ${options.id} 围栏已存在，将被替换`)
+      removePolygonFence(options.id)
+    }
+
+    const color = Cesium.Color.fromCssColorString(options.color || '#00ffff')
+    const height = options.height ?? 100
+    const opacity = options.opacity ?? 0.35
+    const outlineWidth = options.outlineWidth ?? 2
+
+    const lngLatToCartesian = (lngLat) => {
+      return Cesium.Cartesian3.fromDegrees(lngLat.lng, lngLat.lat, lngLat.height || 0)
+    }
+
+    const finalPositions = options.positions.map(pos => lngLatToCartesian(pos))
+    const finalWallPositions = [...finalPositions, finalPositions[0]]
+
+    const fenceEntity = map.entities.add({
+      id: options.id,
+      name: options.name || `多边形电子围栏-${options.id}`,
+      polygon: {
+        hierarchy: finalPositions,
+        material: Cesium.Color.TRANSPARENT,
+        perPositionHeight: true,
+        outline: true,
+        outlineColor: color,
+        outlineWidth
+      },
+      wall: {
+        positions: finalWallPositions,
+        maximumHeights: finalWallPositions.map(() => height),
+        minimumHeights: finalWallPositions.map(() => 0),
+        material: color.withAlpha(opacity),
+        outline: true,
+        outlineColor: color
+      },
+      polyline: {
+        positions: finalWallPositions,
+        width: outlineWidth,
+        material: color,
+        clampToGround: false,
+        arcType: Cesium.ArcType.NONE
+      }
+    })
+
+    fenceEntity._originalOptions = {
+      ...options,
+      positions: options.positions,
+      height,
+      color: options.color || '#00ffff',
+      opacity,
+      outlineWidth
+    }
+
+    mapStore.setGraphicMap(options.id, fenceEntity)
+
+    if (options.zoomTo) {
+      map.flyTo(fenceEntity)
+    }
+
+    return {
+      id: options.id,
+      entity: fenceEntity,
+      positions: options.positions,
+      cartesianPositions: finalPositions,
+      height
+    }
+  }
+
+  /**
    * 删除多边形电子围栏
    * @param {string} id 围栏ID
    * @returns {boolean}
@@ -412,6 +510,7 @@ export function fenceDraw() {
 
   return {
     createPolygonFence,
+    showPolygonFence,
     removePolygonFence
   }
 }
