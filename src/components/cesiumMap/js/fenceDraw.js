@@ -173,7 +173,7 @@ export function fenceDraw() {
           id: tempIds.polygon,
           polygon: {
             hierarchy: new Cesium.CallbackProperty(() => getPolygonHierarchy(), false),
-            material: color.withAlpha(opacity),
+            material: Cesium.Color.TRANSPARENT,
             perPositionHeight: true,
             outline: false
           }
@@ -268,7 +268,7 @@ export function fenceDraw() {
         name: options.name || `多边形电子围栏-${options.id}`,
         polygon: {
           hierarchy: finalPositions,
-          material: color.withAlpha(opacity),
+          material: Cesium.Color.TRANSPARENT,
           perPositionHeight: true,
           outline: true,
           outlineColor: color,
