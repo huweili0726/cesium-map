@@ -52,7 +52,6 @@ export function fenceDraw() {
 
     const positions = []
     let floatingPosition = null
-    let polygonEntity = null
     let wallEntity = null
     let polylineEntity = null
     let activePointEntity = null
@@ -61,7 +60,6 @@ export function fenceDraw() {
 
     const pointEntityIds = []
     const tempIds = {
-      polygon: `${options.id}_draw_polygon`,
       wall: `${options.id}_draw_wall`,
       line: `${options.id}_draw_line`,
       active: `${options.id}_draw_active_point`
@@ -93,17 +91,6 @@ export function fenceDraw() {
         lat: Cesium.Math.toDegrees(cartographic.latitude),
         height: cartographic.height || 0
       }
-    }
-
-    const getPolygonHierarchy = () => {
-      if (positions.length < 3) return null
-
-      const hierarchyPositions = floatingPosition
-        ? [...positions, floatingPosition]
-        : [...positions]
-
-      if (hierarchyPositions.length < 3) return null
-      return new Cesium.PolygonHierarchy(hierarchyPositions)
     }
 
     const getPolylinePositions = () => {
@@ -168,18 +155,6 @@ export function fenceDraw() {
         })
       }
 
-      if (!polygonEntity) {
-        polygonEntity = map.entities.add({
-          id: tempIds.polygon,
-          polygon: {
-            hierarchy: new Cesium.CallbackProperty(() => getPolygonHierarchy(), false),
-            material: Cesium.Color.TRANSPARENT,
-            perPositionHeight: true,
-            outline: false
-          }
-        })
-      }
-
       if (!wallEntity) {
         wallEntity = map.entities.add({
           id: tempIds.wall,
@@ -217,12 +192,11 @@ export function fenceDraw() {
     }
 
     const cleanupTempEntities = () => {
-      ;[polygonEntity, wallEntity, polylineEntity, activePointEntity].forEach((entity) => {
+      ;[wallEntity, polylineEntity, activePointEntity].forEach((entity) => {
         if (entity) {
           map.entities.remove(entity)
         }
       })
-      polygonEntity = null
       wallEntity = null
       polylineEntity = null
       activePointEntity = null
@@ -266,14 +240,6 @@ export function fenceDraw() {
       const fenceEntity = map.entities.add({
         id: options.id,
         name: options.name || `多边形电子围栏-${options.id}`,
-        polygon: {
-          hierarchy: finalPositions,
-          material: Cesium.Color.TRANSPARENT,
-          perPositionHeight: true,
-          outline: true,
-          outlineColor: color,
-          outlineWidth
-        },
         wall: {
           positions: finalWallPositions,
           maximumHeights: finalWallPositions.map(() => height),
@@ -434,14 +400,6 @@ export function fenceDraw() {
     const fenceEntity = map.entities.add({
       id: options.id,
       name: options.name || `多边形电子围栏-${options.id}`,
-      polygon: {
-        hierarchy: finalPositions,
-        material: Cesium.Color.TRANSPARENT,
-        perPositionHeight: true,
-        outline: true,
-        outlineColor: color,
-        outlineWidth
-      },
       wall: {
         positions: finalWallPositions,
         maximumHeights: finalWallPositions.map(() => height),

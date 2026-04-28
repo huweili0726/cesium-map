@@ -579,7 +579,7 @@ const toCreateDrawPolygonFence = () => {
 
 const toShowPolygonFence = () => {
   // 回显多边形围栏
-  const result = showPolygonFence({
+  showPolygonFence({
     id: 'fence_001',
     positions: [
       { lng: 116.39, lat: 39.90, height: 0 },
