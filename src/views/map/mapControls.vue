@@ -4,6 +4,44 @@
     地图加载状态：{{ mapStore.mapStatus?.info || '未知状态' }}
   </div>
 
+  <!-- 时间段回放弹窗 -->
+  <div v-if="showTimeRangeModal" class="time-range-modal">
+    <div class="modal-overlay" @click="closeTimeRangeModal"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title">按时间段回放</span>
+        <button class="close-btn" @click="closeTimeRangeModal">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>开始时间：</label>
+          <input 
+            type="datetime-local" 
+            v-model="startTimeInput" 
+            class="time-input"
+            placeholder="yyyy-MM-dd HH:mm:ss"
+          />
+        </div>
+        <div class="form-group">
+          <label>结束时间：</label>
+          <input 
+            type="datetime-local" 
+            v-model="endTimeInput" 
+            class="time-input"
+            placeholder="yyyy-MM-dd HH:mm:ss"
+          />
+        </div>
+        <div class="form-tip">
+          示例时间范围：2024-01-07 00:00:00 至 2024-01-07 00:00:10
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-cancel" @click="closeTimeRangeModal">取消</button>
+        <button class="btn btn-confirm" @click="executeTimeRangeReplay">确定</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 点位控制按钮 -->
   <div class="map-controls">
     <div class="button-group">
@@ -76,6 +114,7 @@
           <button @click="toContinueDronePath" class="control-btn">继续回放</button>
           <button @click="toStopDronePath" class="control-btn">停止回放</button>
           <button @click="toJumpToTime" class="control-btn">跳转到指定时间点</button>
+          <button @click="toReplayByTimeRange" class="control-btn">按时间段回放</button>
           <button @click="toDestroyDronePath" class="control-btn">销毁回放</button>
         </div>
       </div>
@@ -322,6 +361,12 @@ const toDestroyDronePoint = () => {
 // 回放控制器
 let replayController: any = null
 let replayController1: any = null
+
+// 时间段回放相关
+const showTimeRangeModal = ref(false)
+const startTimeInput = ref('')
+const endTimeInput = ref('')
+
 const toReplayDronePath = () => {
   // 示例回放数据：无人机飞行轨迹点
   // 格式：[{lng: 经度, lat: 纬度, height: 高度, timestamp: 时间戳(秒)}, ...]
@@ -420,6 +465,83 @@ const toDestroyDronePath = () => {
   if (replayController1) {
     replayController1.destroy()
   }
+}
+
+// 按时间段回放
+const toReplayByTimeRange = () => {
+  showTimeRangeModal.value = true
+}
+
+// 执行时间段回放
+const executeTimeRangeReplay = () => {
+  const startTimeStr = startTimeInput.value
+  const endTimeStr = endTimeInput.value
+  
+  if (!startTimeStr || !endTimeStr) {
+    alert('请输入开始时间和结束时间')
+    return
+  }
+
+  const startTime = Date.parse(startTimeStr) / 1000
+  const endTime = Date.parse(endTimeStr) / 1000
+
+  if (isNaN(startTime) || isNaN(endTime)) {
+    alert('时间格式不正确，请使用 yyyy-MM-dd HH:mm:ss 格式')
+    return
+  }
+
+  if (startTime >= endTime) {
+    alert('开始时间必须早于结束时间')
+    return
+  }
+
+  showTimeRangeModal.value = false
+
+  const exampleReplayData = [
+    { lng: 117.229334, lat: 31.706787, height: 100, timestamp: 1710000000 },
+    { lng: 117.230334, lat: 31.706787, height: 120, timestamp: 1710000001 },
+    { lng: 117.231334, lat: 31.707787, height: 150, timestamp: 1710000002 },
+    { lng: 117.232334, lat: 31.708787, height: 180, timestamp: 1710000003 },
+    { lng: 117.233334, lat: 31.709787, height: 200, timestamp: 1710000004 },
+    { lng: 117.234334, lat: 31.710787, height: 220, timestamp: 1710000005 },
+    { lng: 117.235334, lat: 31.711787, height: 250, timestamp: 1710000006 },
+    { lng: 117.236334, lat: 31.712787, height: 280, timestamp: 1710000007 },
+    { lng: 117.237334, lat: 31.713787, height: 300, timestamp: 1710000008 },
+    { lng: 117.238334, lat: 31.714787, height: 320, timestamp: 1710000009 },
+    { lng: 117.239334, lat: 31.715787, height: 350, timestamp: 1710000010 }
+  ]
+
+  const filteredData = exampleReplayData.filter(point => 
+    point.timestamp >= startTime && point.timestamp <= endTime
+  )
+
+  if (filteredData.length < 2) {
+    alert('所选时间段内没有足够的轨迹数据')
+    return
+  }
+
+  replayController = replayDronePath({
+    droneId: 'drone_replay_time_range',
+    replayData: filteredData,
+    speed: 1.0,
+    loop: false
+  })
+
+  configureClock({
+    startTime: startTime,
+    endTime: endTime,
+    speed: 1,
+    loop: false
+  })
+
+  replayController.play()
+}
+
+// 关闭时间段选择弹窗
+const closeTimeRangeModal = () => {
+  showTimeRangeModal.value = false
+  startTimeInput.value = ''
+  endTimeInput.value = ''
 }
 
 // 涟漪效果控制方法
@@ -1140,6 +1262,163 @@ const {
 .control-input:focus {
   border-color: rgba(24, 144, 255, 0.9);
   box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* 时间段回放弹窗样式 */
+.time-range-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+}
+
+.modal-content {
+  position: relative;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 12px;
+  padding: 0;
+  min-width: 360px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(100, 255, 218, 0.3);
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(100, 255, 218, 0.2);
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #64ffda;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #fff;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  color: #ccc;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.time-input {
+  padding: 10px 12px;
+  border: 1px solid rgba(100, 255, 218, 0.3);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.time-input:focus {
+  border-color: #64ffda;
+  box-shadow: 0 0 0 2px rgba(100, 255, 218, 0.2);
+}
+
+.time-input::placeholder {
+  color: #666;
+}
+
+.form-tip {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(100, 255, 218, 0.2);
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ccc;
+}
+
+.btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, #64ffda 0%, #00bcd4 100%);
+  color: #000;
+}
+
+.btn-confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(100, 255, 218, 0.4);
 }
 
 /* 圆圈控制按钮样式 */
