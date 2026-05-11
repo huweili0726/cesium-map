@@ -198,6 +198,15 @@ const initCesium = async () => {
     mouseController(map); 
 
     // 初始化业务回放主时钟：所有自定义回放引擎统一挂到这里，Cesium Clock 不再作为业务主时钟
+    // BusinessReplayClock 实例数据格式：
+    // {
+    //   frameInterval: 33.33,      // 帧间隔时间（毫秒），默认每秒30帧
+    //   subscribers: Set(),         // 订阅者集合，存储所有注册的回调函数
+    //   isRunning: false,           // 是否正在运行
+    //   rafId: null,                // requestAnimationFrame 的ID，用于取消
+    //   lastFrameTime: 0,           // 上一帧的时间戳
+    //   accumulator: 0              // 时间累加器，用于实现固定帧率
+    // }
     businessReplayClock = new BusinessReplayClock()
     mapStore.setReplayClock(businessReplayClock)
 
