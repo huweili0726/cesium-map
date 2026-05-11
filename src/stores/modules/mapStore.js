@@ -37,6 +37,10 @@ export const useMapStore = defineStore('map', () => {
   const mapInfo = new Map()
   // 展示最近多少时间的轨迹，之前的轨迹渐影式移除（单位：秒）
   const trailTime = ref(30)
+  // 业务回放主时钟：用于驱动所有自定义回放引擎，Cesium 只负责渲染
+  const replayClock = shallowRef(null)
+  // 当前激活的业务回放引擎：用于地图上的统一时间轴控件拖拽控制
+  const activeReplayEngine = shallowRef(null)
 
   // 计算地图状态信息
   const mapStatus = computed(() => {
@@ -70,6 +74,22 @@ export const useMapStore = defineStore('map', () => {
 
   const getTrailTime = () => {
     return trailTime.value
+  }
+
+  const setReplayClock = (clock) => {
+    replayClock.value = clock
+  }
+
+  const getReplayClock = () => {
+    return replayClock.value
+  }
+
+  const setActiveReplayEngine = (engine) => {
+    activeReplayEngine.value = engine
+  }
+
+  const getActiveReplayEngine = () => {
+    return activeReplayEngine.value
   }
 
   const setGraphicMap = (id, graphic) => {
@@ -208,6 +228,12 @@ export const useMapStore = defineStore('map', () => {
     resetLayer,
     setTrailTime,
     getTrailTime,
+    replayClock,
+    setReplayClock,
+    getReplayClock,
+    activeReplayEngine,
+    setActiveReplayEngine,
+    getActiveReplayEngine,
     mapInfo,
     setMapInfo,
     getMapInfo

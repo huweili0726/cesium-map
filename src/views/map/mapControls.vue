@@ -187,12 +187,12 @@
 
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
-import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { setPoint } from '@/components/cesiumMap/js/setPoint'
 import { hemisphereConfig } from '@/components/cesiumMap/js/hemisphere'
 import { movePointConfig } from '@/components/cesiumMap/js/movePoint'
 import { setReplay } from '@/components/cesiumMap/js/replayPath'
+import { CesiumRendererAdapter, ReplayEngine, TrackBuffer } from '@/components/cesiumMap/js/replayEngine'
 import { diffusionConfig } from '@/components/cesiumMap/js/diffusion'
 import { fenceConfig } from '@/components/cesiumMap/js/fence'
 import { geometryConfig } from '@/components/cesiumMap/js/geometry'
@@ -363,6 +363,8 @@ const toDestroyDronePoint = () => {
 // 回放控制器
 let replayController: any = null
 let replayController1: any = null
+let timeRangeReplayEngine: ReplayEngine | null = null
+let timeRangeReplayPreloadOff: (() => void) | null = null
 
 // 时间段回放相关
 const showTimeRangeModal = ref(false)
@@ -555,6 +557,7 @@ const executeTimeRangeReplay = async() => {
   const queryTrackChunk = async(chunkStartTime: number) => {
     const chunkEndTime = Math.min(chunkStartTime + ONE_MINUTE, endTime)
     const res = await getDroneTrack({
+      droneId: 'AWHZTR9S2603CC005196',
       startTime: chunkStartTime,
       endTime: chunkEndTime
     })
@@ -569,36 +572,47 @@ const executeTimeRangeReplay = async() => {
     return
   }
 
-  if (replayController) {
-    replayController.destroy()
+  if (timeRangeReplayPreloadOff) {
+    timeRangeReplayPreloadOff()
+    timeRangeReplayPreloadOff = null
   }
 
-  replayController = replayDronePath({
+  if (timeRangeReplayEngine) {
+    timeRangeReplayEngine.destroy()
+    timeRangeReplayEngine = null
+  }
+
+  const trackBuffer = new TrackBuffer(firstTrackData)
+  const renderer = new CesiumRendererAdapter({
     droneId: 'drone_replay_time_range',
-    replayData: firstTrackData,
-    speed: 1.0,
-    loop: false
+    baseUrl: process.env.BASE_URL,
+    trackBuffer
   })
 
-  if (!replayController) {
-    alert('轨迹回放初始化失败')
-    return
-  }
-
-  configureClock({
+  timeRangeReplayEngine = new ReplayEngine({
+    trackBuffer,
+    renderer,
     startTime,
     endTime,
     speed: 1,
     loop: false
   })
 
+  if (!timeRangeReplayEngine.init()) {
+    alert('轨迹回放初始化失败')
+    timeRangeReplayEngine = null
+    return
+  }
+
+  replayController = timeRangeReplayEngine
+  mapStore.setActiveReplayEngine(timeRangeReplayEngine)
+
   let nextChunkStartTime = startTime + ONE_MINUTE
   let loadingNextChunk = false
   const loadedChunkStartTimes = new Set<number>([startTime])
-  const map = mapStore.getMap()
 
   const preloadNextChunk = async() => {
-    if (loadingNextChunk || nextChunkStartTime >= endTime || loadedChunkStartTimes.has(nextChunkStartTime)) {
+    if (!timeRangeReplayEngine || loadingNextChunk || nextChunkStartTime >= endTime || loadedChunkStartTimes.has(nextChunkStartTime)) {
       return
     }
 
@@ -608,7 +622,7 @@ const executeTimeRangeReplay = async() => {
     try {
       const nextTrackData = await queryTrackChunk(currentChunkStartTime)
       if (nextTrackData.length) {
-        replayController?.appendData(nextTrackData)
+        timeRangeReplayEngine.appendData(nextTrackData)
       }
       loadedChunkStartTimes.add(currentChunkStartTime)
       nextChunkStartTime = currentChunkStartTime + ONE_MINUTE
@@ -619,20 +633,18 @@ const executeTimeRangeReplay = async() => {
     }
   }
 
-  const preloadHandler = (clock) => {
-    const currentTime = Cesium.JulianDate.toDate(clock.currentTime).getTime()
-
+  timeRangeReplayPreloadOff = timeRangeReplayEngine.onTick(({ currentTime }) => {
     if (nextChunkStartTime < endTime && currentTime >= nextChunkStartTime - ONE_MINUTE + PRELOAD_OFFSET) {
       preloadNextChunk()
     }
 
     if (currentTime >= endTime || nextChunkStartTime >= endTime) {
-      map?.clock.onTick.removeEventListener(preloadHandler)
+      timeRangeReplayPreloadOff?.()
+      timeRangeReplayPreloadOff = null
     }
-  }
+  })
 
-  map?.clock.onTick.addEventListener(preloadHandler)
-  replayController.play()
+  timeRangeReplayEngine.play()
 
   // const exampleReplayData = [
   //   { lng: 117.229334, lat: 31.706787, height: 100, timestamp: 1710000000000 },
