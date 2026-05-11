@@ -371,17 +371,17 @@ const toReplayDronePath = () => {
   // 示例回放数据：无人机飞行轨迹点
   // 格式：[{lng: 经度, lat: 纬度, height: 高度, timestamp: 时间戳(秒)}, ...]
   const exampleReplayData = [
-    { lng: 117.229334, lat: 31.706787, height: 100, timestamp: 1710000000 },
-    { lng: 117.230334, lat: 31.706787, height: 120, timestamp: 1710000001 },
-    { lng: 117.231334, lat: 31.707787, height: 150, timestamp: 1710000002 },
-    { lng: 117.232334, lat: 31.708787, height: 180, timestamp: 1710000003 },
-    { lng: 117.233334, lat: 31.709787, height: 200, timestamp: 1710000004 },
-    { lng: 117.234334, lat: 31.710787, height: 220, timestamp: 1710000005 },
-    { lng: 117.235334, lat: 31.711787, height: 250, timestamp: 1710000006 },
-    { lng: 117.236334, lat: 31.712787, height: 280, timestamp: 1710000007 },
-    { lng: 117.237334, lat: 31.713787, height: 300, timestamp: 1710000008 },
-    { lng: 117.238334, lat: 31.714787, height: 320, timestamp: 1710000009 },
-    { lng: 117.239334, lat: 31.715787, height: 350, timestamp: 1710000010 }
+    { lng: 117.229334, lat: 31.706787, height: 100, timestamp: 1710000000000 },
+    { lng: 117.230334, lat: 31.706787, height: 120, timestamp: 1710000001000 },
+    { lng: 117.231334, lat: 31.707787, height: 150, timestamp: 1710000002000 },
+    { lng: 117.232334, lat: 31.708787, height: 180, timestamp: 1710000003000 },
+    { lng: 117.233334, lat: 31.709787, height: 200, timestamp: 1710000004000 },
+    { lng: 117.234334, lat: 31.710787, height: 220, timestamp: 1710000005000 },
+    { lng: 117.235334, lat: 31.711787, height: 250, timestamp: 1710000006000 },
+    { lng: 117.236334, lat: 31.712787, height: 280, timestamp: 1710000007000 },
+    { lng: 117.237334, lat: 31.713787, height: 300, timestamp: 1710000008000 },
+    { lng: 117.238334, lat: 31.714787, height: 320, timestamp: 1710000009000 },
+    { lng: 117.239334, lat: 31.715787, height: 350, timestamp: 1710000010000 }
   ]
   // 回放无人机轨迹
   replayController = replayDronePath({
@@ -392,19 +392,19 @@ const toReplayDronePath = () => {
   })
 
   // 创建另一个不同轨迹的回放数据，在当前点附近
-  // 时间戳从1710000005开始，比第一个轨迹滞后5秒
+  // 时间戳从1710000005000开始，比第一个轨迹滞后5秒
   const exampleReplayData1 = [
-    { lng: 117.227834, lat: 31.705987, height: 100, timestamp: 1710000005 }, // 稍微偏西南方的起点，滞后5秒
-    { lng: 117.228334, lat: 31.707487, height: 130, timestamp: 1710000006 }, // 向西北方向移动
-    { lng: 117.227834, lat: 31.708087, height: 160, timestamp: 1710000007 }, // 继续向西北
-    { lng: 117.227334, lat: 31.708687, height: 190, timestamp: 1710000008 }, // 保持西北方向
-    { lng: 117.226834, lat: 31.709287, height: 220, timestamp: 1710000009 }, // 高度继续增加
-    { lng: 117.226334, lat: 31.709887, height: 200, timestamp: 1710000010 }, // 开始降低高度
-    { lng: 117.225834, lat: 31.710487, height: 180, timestamp: 1710000011 }, // 继续降低
-    { lng: 117.225334, lat: 31.711087, height: 160, timestamp: 1710000012 }, // 保持较低高度
-    { lng: 117.224834, lat: 31.711687, height: 140, timestamp: 1710000013 }, // 继续降低
-    { lng: 117.224334, lat: 31.712287, height: 120, timestamp: 1710000014 }, // 接近结束高度
-    { lng: 117.223834, lat: 31.712887, height: 100, timestamp: 1710000015 }  // 结束在较低高度
+    { lng: 117.227834, lat: 31.705987, height: 100, timestamp: 1710000005000 }, // 稍微偏西南方的起点，滞后5秒
+    { lng: 117.228334, lat: 31.707487, height: 130, timestamp: 1710000006000 }, // 向西北方向移动
+    { lng: 117.227834, lat: 31.708087, height: 160, timestamp: 1710000007000 }, // 继续向西北
+    { lng: 117.227334, lat: 31.708687, height: 190, timestamp: 1710000008000 }, // 保持西北方向
+    { lng: 117.226834, lat: 31.709287, height: 220, timestamp: 1710000009000 }, // 高度继续增加
+    { lng: 117.226334, lat: 31.709887, height: 200, timestamp: 1710000010000 }, // 开始降低高度
+    { lng: 117.225834, lat: 31.710487, height: 180, timestamp: 1710000011000 }, // 继续降低
+    { lng: 117.225334, lat: 31.711087, height: 160, timestamp: 1710000012000 }, // 保持较低高度
+    { lng: 117.224834, lat: 31.711687, height: 140, timestamp: 1710000013000 }, // 继续降低
+    { lng: 117.224334, lat: 31.712287, height: 120, timestamp: 1710000014000 }, // 接近结束高度
+    { lng: 117.223834, lat: 31.712887, height: 100, timestamp: 1710000015000 }  // 结束在较低高度
   ]
   // 回放无人机轨迹
   replayController1 = replayDronePath({
@@ -416,8 +416,8 @@ const toReplayDronePath = () => {
 
   // 配置时钟，设置回放时间范围
   configureClock({
-    startTime: 1710000000,
-    endTime: 1710000015,
+    startTime: 1710000000000,
+    endTime: 1710000015000,
     speed: 1,
     loop: false
   })
@@ -482,8 +482,8 @@ const executeTimeRangeReplay = () => {
     return
   }
 
-  const startTime = Date.parse(startTimeStr) / 1000
-  const endTime = Date.parse(endTimeStr) / 1000
+  const startTime = Date.parse(startTimeStr)
+  const endTime = Date.parse(endTimeStr)
 
   if (isNaN(startTime) || isNaN(endTime)) {
     alert('时间格式不正确，请使用 yyyy-MM-dd HH:mm:ss 格式')
@@ -498,17 +498,17 @@ const executeTimeRangeReplay = () => {
   showTimeRangeModal.value = false
 
   const exampleReplayData = [
-    { lng: 117.229334, lat: 31.706787, height: 100, timestamp: 1710000000 },
-    { lng: 117.230334, lat: 31.706787, height: 120, timestamp: 1710000001 },
-    { lng: 117.231334, lat: 31.707787, height: 150, timestamp: 1710000002 },
-    { lng: 117.232334, lat: 31.708787, height: 180, timestamp: 1710000003 },
-    { lng: 117.233334, lat: 31.709787, height: 200, timestamp: 1710000004 },
-    { lng: 117.234334, lat: 31.710787, height: 220, timestamp: 1710000005 },
-    { lng: 117.235334, lat: 31.711787, height: 250, timestamp: 1710000006 },
-    { lng: 117.236334, lat: 31.712787, height: 280, timestamp: 1710000007 },
-    { lng: 117.237334, lat: 31.713787, height: 300, timestamp: 1710000008 },
-    { lng: 117.238334, lat: 31.714787, height: 320, timestamp: 1710000009 },
-    { lng: 117.239334, lat: 31.715787, height: 350, timestamp: 1710000010 }
+    { lng: 117.229334, lat: 31.706787, height: 100, timestamp: 1710000000000 },
+    { lng: 117.230334, lat: 31.706787, height: 120, timestamp: 1710000001000 },
+    { lng: 117.231334, lat: 31.707787, height: 150, timestamp: 1710000002000 },
+    { lng: 117.232334, lat: 31.708787, height: 180, timestamp: 1710000003000 },
+    { lng: 117.233334, lat: 31.709787, height: 200, timestamp: 1710000004000 },
+    { lng: 117.234334, lat: 31.710787, height: 220, timestamp: 1710000005000 },
+    { lng: 117.235334, lat: 31.711787, height: 250, timestamp: 1710000006000 },
+    { lng: 117.236334, lat: 31.712787, height: 280, timestamp: 1710000007000 },
+    { lng: 117.237334, lat: 31.713787, height: 300, timestamp: 1710000008000 },
+    { lng: 117.238334, lat: 31.714787, height: 320, timestamp: 1710000009000 },
+    { lng: 117.239334, lat: 31.715787, height: 350, timestamp: 1710000010000 }
   ]
 
   const filteredData = exampleReplayData.filter(point => 

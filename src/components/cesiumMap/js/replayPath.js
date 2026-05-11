@@ -118,7 +118,7 @@ export function setReplay(baseUrl) {
         point.lat,
         point.height || 0
       )
-      const timestamp = Cesium.JulianDate.fromDate(new Date(point.timestamp * 1000))
+      const timestamp = Cesium.JulianDate.fromDate(new Date(point.timestamp))
       
       // 添加到轨迹
       trailData.positions.push({ position: cartesian.clone(), timestamp })
@@ -308,9 +308,9 @@ export function setReplay(baseUrl) {
       console.error('地图实例不存在')
       return
     }
-    map.clock.startTime = Cesium.JulianDate.fromDate(new Date(startTime * 1000))
-    map.clock.stopTime = Cesium.JulianDate.fromDate(new Date(endTime * 1000))
-    map.clock.currentTime = Cesium.JulianDate.fromDate(new Date(startTime * 1000))
+    map.clock.startTime = Cesium.JulianDate.fromDate(new Date(startTime))
+    map.clock.stopTime = Cesium.JulianDate.fromDate(new Date(endTime))
+    map.clock.currentTime = Cesium.JulianDate.fromDate(new Date(startTime))
     map.clock.multiplier = speed
     map.clock.clockRange = loop ? Cesium.ClockRange.LOOP_STOP : Cesium.ClockRange.CLAMPED
     map.clock.shouldAnimate = true
