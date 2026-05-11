@@ -127,6 +127,12 @@ export function useBusinessReplayTimeline() {
     const targetTime = Number(event.target.value)
     // 更新时间轴当前时间
     timeline.currentTime = targetTime
+    
+    // 计算并打印当前时间点和剩余时间
+    const remainingMs = timeline.endTime - targetTime  // 剩余毫秒数
+    const remainingSeconds = Math.ceil(remainingMs / 1000)  // 转换为秒（向上取整）
+    console.log(`当前时间点: ${formatTimelineTime(targetTime)}`, `距离结束时间剩余: ${remainingSeconds} 秒`)
+    
     // 计算新的进度
     timeline.progress = timeline.endTime > timeline.startTime 
       ? (targetTime - timeline.startTime) / (timeline.endTime - timeline.startTime) 
