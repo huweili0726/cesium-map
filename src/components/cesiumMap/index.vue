@@ -1,7 +1,9 @@
 <template>
   <div class="cesium-map-wrapper">
+    <!-- Cesium 地球渲染容器 -->
     <div class="cesium-container" ref="cesiumContainer" />
 
+    <!-- 业务回放时间轴组件：提供回放进度显示和时间滑块交互 -->
     <BusinessReplayTimeline />
   </div>
 </template>
