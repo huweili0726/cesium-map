@@ -187,6 +187,7 @@
 
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
+import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { setPoint } from '@/components/cesiumMap/js/setPoint'
 import { hemisphereConfig } from '@/components/cesiumMap/js/hemisphere'
@@ -503,6 +504,29 @@ const toReplayByTimeRange = () => {
   showTimeRangeModal.value = true
 }
 
+const ONE_MINUTE = 60 * 1000
+const PRELOAD_OFFSET = 40 * 1000
+
+const getTrackList = (res: any) => {
+  if (Array.isArray(res)) {
+    return res
+  }
+
+  if (Array.isArray(res?.data)) {
+    return res.data
+  }
+
+  if (Array.isArray(res?.data?.list)) {
+    return res.data.list
+  }
+
+  if (Array.isArray(res?.list)) {
+    return res.list
+  }
+
+  return []
+}
+
 // 执行时间段回放
 const executeTimeRangeReplay = async() => {
   const startTimeStr = startTimeInput.value
@@ -528,11 +552,87 @@ const executeTimeRangeReplay = async() => {
 
   showTimeRangeModal.value = false
 
-  let res = await getDroneTrack({
-    startTime: startTime,
-    endTime: endTime
+  const queryTrackChunk = async(chunkStartTime: number) => {
+    const chunkEndTime = Math.min(chunkStartTime + ONE_MINUTE, endTime)
+    const res = await getDroneTrack({
+      startTime: chunkStartTime,
+      endTime: chunkEndTime
+    })
+
+    return getTrackList(res)
+  }
+
+  const firstTrackData = await queryTrackChunk(startTime)
+
+  if (firstTrackData.length < 2) {
+    alert('所选时间段内没有足够的轨迹数据')
+    return
+  }
+
+  if (replayController) {
+    replayController.destroy()
+  }
+
+  replayController = replayDronePath({
+    droneId: 'drone_replay_time_range',
+    replayData: firstTrackData,
+    speed: 1.0,
+    loop: false
   })
-  debugger
+
+  if (!replayController) {
+    alert('轨迹回放初始化失败')
+    return
+  }
+
+  configureClock({
+    startTime,
+    endTime,
+    speed: 1,
+    loop: false
+  })
+
+  let nextChunkStartTime = startTime + ONE_MINUTE
+  let loadingNextChunk = false
+  const loadedChunkStartTimes = new Set<number>([startTime])
+  const map = mapStore.getMap()
+
+  const preloadNextChunk = async() => {
+    if (loadingNextChunk || nextChunkStartTime >= endTime || loadedChunkStartTimes.has(nextChunkStartTime)) {
+      return
+    }
+
+    loadingNextChunk = true
+    const currentChunkStartTime = nextChunkStartTime
+
+    try {
+      const nextTrackData = await queryTrackChunk(currentChunkStartTime)
+      if (nextTrackData.length) {
+        replayController?.appendData(nextTrackData)
+      }
+      loadedChunkStartTimes.add(currentChunkStartTime)
+      nextChunkStartTime = currentChunkStartTime + ONE_MINUTE
+    } catch (error) {
+      console.error('预加载下一段无人机轨迹失败:', error)
+    } finally {
+      loadingNextChunk = false
+    }
+  }
+
+  const preloadHandler = (clock) => {
+    const currentTime = Cesium.JulianDate.toDate(clock.currentTime).getTime()
+
+    if (nextChunkStartTime < endTime && currentTime >= nextChunkStartTime - ONE_MINUTE + PRELOAD_OFFSET) {
+      preloadNextChunk()
+    }
+
+    if (currentTime >= endTime || nextChunkStartTime >= endTime) {
+      map?.clock.onTick.removeEventListener(preloadHandler)
+    }
+  }
+
+  map?.clock.onTick.addEventListener(preloadHandler)
+  replayController.play()
 
   // const exampleReplayData = [
   //   { lng: 117.229334, lat: 31.706787, height: 100, timestamp: 1710000000000 },

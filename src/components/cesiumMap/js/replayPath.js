@@ -54,7 +54,15 @@ export function setReplay(baseUrl) {
     }
 
     // 排序回放数据（按时间戳升序）
-    const sortedData = [...options.replayData].sort((a, b) => a.timestamp - b.timestamp)
+    let sortedData = [...options.replayData].sort((a, b) => a.timestamp - b.timestamp)
+    let cartesianPositions = []
+
+    // 创建位置属性用于插值
+    const positionProperty = new Cesium.SampledPositionProperty()
+    positionProperty.setInterpolationOptions({
+      interpolationAlgorithm: Cesium.HermitePolynomialApproximation, // 使用埃尔米特多项式插值
+      interpolationDegree: 2 // 插值次数，2表示二阶埃尔米特插值
+    })
 
     // 创建回放控制器
     // 添加一个标志记录是否已调用过play函数
@@ -69,6 +77,7 @@ export function setReplay(baseUrl) {
       continue: () => continueReplay(), // 继续回放（从当前位置恢复，仅暂停后可用）
       stop: () => stopReplay(), // 停止回放（随时可用）
       seek: (time) => seekReplay(time), // 跳转回放时间（随时可用）
+      appendData: (replayData) => appendReplayData(replayData), // 追加回放数据
       destroy: () => destroyReplay() // 销毁回放控制器（仅play后可用）
     }
 
@@ -110,41 +119,57 @@ export function setReplay(baseUrl) {
 
     // 清空现有轨迹点
     trailData.positions = []
-    
-    // 转换回放数据为Cesium坐标并添加到轨迹
-    const cartesianPositions = sortedData.map(point => {
-      const cartesian = Cesium.Cartesian3.fromDegrees(
-        point.lng,
-        point.lat,
-        point.height || 0
+
+    const addReplaySamples = (replayData) => {
+      const existedTimestamps = new Set(
+        cartesianPositions.map(pos => Cesium.JulianDate.toDate(pos.timestamp).getTime())
       )
-      const timestamp = Cesium.JulianDate.fromDate(new Date(point.timestamp))
-      
-      // 添加到轨迹
-      trailData.positions.push({ position: cartesian.clone(), timestamp })
-      
-      return { cartesian, timestamp }
-    })
+      const newData = replayData
+        .filter(point => point && !existedTimestamps.has(point.timestamp))
+        .sort((a, b) => a.timestamp - b.timestamp)
 
-    // 更新轨迹最后更新时间
-    trailData.lastUpdateTime = cartesianPositions[cartesianPositions.length - 1].timestamp
+      if (!newData.length) {
+        return []
+      }
 
-    // 创建位置属性用于插值
-    const positionProperty = new Cesium.SampledPositionProperty()
-    positionProperty.setInterpolationOptions({
-      interpolationAlgorithm: Cesium.HermitePolynomialApproximation, // 使用埃尔米特多项式插值
-      interpolationDegree: 2 // 插值次数，2表示二阶埃尔米特插值
-    })
+      newData.forEach(point => {
+        const cartesian = Cesium.Cartesian3.fromDegrees(
+          point.lng,
+          point.lat,
+          point.height || 0
+        )
+        const timestamp = Cesium.JulianDate.fromDate(new Date(point.timestamp))
 
-    // 添加采样点到位置属性
-    cartesianPositions.forEach(pos => {
-      positionProperty.addSample(pos.timestamp, pos.cartesian)
-    })
+        sortedData.push(point)
+        cartesianPositions.push({ cartesian, timestamp })
+        trailData.positions.push({ position: cartesian.clone(), timestamp })
+        positionProperty.addSample(timestamp, cartesian)
+      })
+
+      sortedData.sort((a, b) => a.timestamp - b.timestamp)
+      cartesianPositions.sort((a, b) => Cesium.JulianDate.compare(a.timestamp, b.timestamp))
+      trailData.positions.sort((a, b) => Cesium.JulianDate.compare(a.timestamp, b.timestamp))
+      trailData.lastUpdateTime = cartesianPositions[cartesianPositions.length - 1].timestamp
+
+      return newData
+    }
+
+    addReplaySamples(sortedData)
 
     // 更新无人机实体的位置属性
     if (droneEntity && droneEntity.entity) {
       droneEntity.entity.position = positionProperty
       droneEntity.positionProperty = positionProperty
+    }
+
+    const appendReplayData = (replayData) => {
+      if (!Array.isArray(replayData) || replayData.length === 0) {
+        return 0
+      }
+
+      const addedData = addReplaySamples(replayData)
+      console.log(`无人机${options.droneId}追加回放数据数量: ${addedData.length}`)
+      return addedData.length
     }
 
     // 播放函数
