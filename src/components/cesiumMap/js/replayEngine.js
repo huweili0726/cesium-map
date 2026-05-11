@@ -24,7 +24,7 @@ const DEFAULT_FRAME_INTERVAL = 1000 / 30
 const MIN_TRAIL_DISTANCE = 1
 
 /**
- * 业务回放主时钟类
+ * 业务回放主时钟类（相当于：节拍器/心跳）
  * 
  * 这是一个全局单例时钟，不依赖Cesium的Clock，使用浏览器的requestAnimationFrame实现。
  * 作用：以固定帧率产生时间脉冲，驱动所有回放引擎同步更新。
@@ -152,7 +152,7 @@ export class BusinessReplayClock {
 }
 
 /**
- * 轨迹数据缓存器类
+ * 轨迹数据缓存器类（相当于：数据仓库/插值计算器）
  * 
  * 负责存储轨迹点数据，并提供根据时间戳获取插值状态的能力。
  * 核心功能：
@@ -318,7 +318,7 @@ export class TrackBuffer {
 }
 
 /**
- * Cesium渲染适配器类
+ * Cesium渲染适配器类（相当于：画家/渲染器）
  * 
  * 负责将回放状态渲染到Cesium地图上，包括：
  * - 无人机模型的位置和姿态更新
@@ -556,7 +556,7 @@ export class CesiumRendererAdapter {
 }
 
 /**
- * 回放引擎主控制器类
+ * 回放引擎主控制器类（相当于：导演/播放器）
  * 
  * 这是整个回放系统的核心，负责协调：
  * - 时间推进（通过BusinessReplayClock）

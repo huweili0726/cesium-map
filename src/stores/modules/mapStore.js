@@ -76,18 +76,36 @@ export const useMapStore = defineStore('map', () => {
     return trailTime.value
   }
 
+  /**
+   * 设置业务回放主时钟
+   * @param {BusinessReplayClock} clock 业务时钟实例
+   * @description 全局单例时钟，所有回放引擎共享同一个时钟以保证同步
+   */
   const setReplayClock = (clock) => {
     replayClock.value = clock
   }
 
+  /**
+   * 获取业务回放主时钟
+   * @returns {BusinessReplayClock|null} 业务时钟实例
+   */
   const getReplayClock = () => {
     return replayClock.value
   }
 
+  /**
+   * 设置当前活跃的回放引擎
+   * @param {ReplayEngine|null} engine 回放引擎实例
+   * @description 时间轴组件通过此方法获取当前要控制的回放引擎
+   */
   const setActiveReplayEngine = (engine) => {
     activeReplayEngine.value = engine
   }
 
+  /**
+   * 获取当前活跃的回放引擎
+   * @returns {ReplayEngine|null} 当前活跃的回放引擎实例
+   */
   const getActiveReplayEngine = () => {
     return activeReplayEngine.value
   }
