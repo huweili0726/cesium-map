@@ -130,6 +130,115 @@ npm run build
 ### 无人机点击事件
 **对应的 JavaScript 文件**：`src/components/cesiumMap/ts/bindClickHandler.js`
 
+## 🔧 回放引擎架构
+
+### 🎭 四大核心类
+
+回放引擎由四个核心类组成，各司其职：
+
+| 类名 | 角色比喻 | 职责 | 文件位置 |
+|------|----------|------|----------|
+| `BusinessReplayClock` | 🥁 节拍器/心跳 | 全局单例时钟，产生固定帧率的时间脉冲 | `src/components/cesiumMap/js/replayEngine.js` |
+| `TrackBuffer` | 📦 数据仓库/插值计算器 | 存储轨迹数据，计算任意时间点的无人机状态 | `src/components/cesiumMap/js/replayEngine.js` |
+| `CesiumRendererAdapter` | 🎨 画家/渲染器 | 将回放状态渲染到 Cesium 地图上 | `src/components/cesiumMap/js/replayEngine.js` |
+| `ReplayEngine` | 🎬 导演/播放器 | 协调整个回放流程，提供播放控制 API | `src/components/cesiumMap/js/replayEngine.js` |
+
+### 📊 调用关系总览
+
+| 类名 | 被谁调用 | 调用的方法 | 调用位置 |
+|------|----------|-----------|----------|
+| `BusinessReplayClock` | ReplayEngine | `subscribe()`, `unsubscribe()` | `ReplayEngine.play()/pause()` |
+| `TrackBuffer` | ReplayEngine | `getStateAt()`, `append()` | `ReplayEngine.tick()/seekToTime()/appendData()` |
+| `CesiumRendererAdapter` | ReplayEngine | `init()`, `render()`, `seek()`, `destroy()` | `ReplayEngine.init()/tick()/seekToTime()/destroy()` |
+| `ReplayEngine` | 业务层/时间轴 | `play()`, `pause()`, `stop()`, `seekToTime()` | `replayPath.js`, `useBusinessReplayTimeline.js` |
+
+### 🚀 调用顺序详解
+
+#### **阶段一：初始化（页面加载时）**
+
+```
+CesiumMap 挂载
+    │
+    ▼
+new BusinessReplayClock()
+    │
+    ▼
+mapStore.setReplayClock(clock)  ← 存入全局状态
+```
+
+#### **阶段二：开始回放（用户触发）**
+
+```
+replayDronePath(options)
+    │
+    ├──► ① new TrackBuffer(sortedData)       ← 创建数据仓库
+    │
+    ├──► ② new CesiumRendererAdapter({ trackBuffer })  ← 创建渲染器
+    │
+    └──► ③ new ReplayEngine({ trackBuffer, renderer }) ← 创建引擎
+                │
+                ▼
+         ④ mapStore.setActiveReplayEngine(engine)  ← 设置活跃引擎
+                │
+                ▼
+         ⑤ engine.init()
+                │
+                ├──► renderer.init()          ← 初始化渲染器
+                │
+                └──► engine.seek(0)           ← 跳转到开始位置
+```
+
+#### **阶段三：播放中（时钟驱动）**
+
+```
+engine.play()
+    │
+    ▼
+businessClock.subscribe(({ delta }) => engine.tick(delta))
+    │
+    ▼
+BusinessReplayClock 每秒触发 30 次 tick
+    │
+    ▼
+engine.tick(delta)
+    │
+    ├──► ① trackBuffer.getStateAt(currentTime)  ← 获取插值状态
+    │
+    └──► ② renderer.render(state)                ← 渲染到地图
+                │
+                ├──► update position (位置)
+                ├──► update orientation (朝向)
+                └──► updateTrail() (轨迹线)
+```
+
+#### **阶段四：拖动时间轴（用户交互）**
+
+```
+用户拖动滑块 → onTimelineInput(event)
+    │
+    ▼
+mapStore.getActiveReplayEngine()  ← 获取活跃引擎
+    │
+    ▼
+engine.seekToTime(targetTime)
+    │
+    ├──► trackBuffer.getStateAt(targetTime)  ← 获取目标时间状态
+    │
+    └──► renderer.seek(state)                 ← 跳转渲染
+                │
+                ├──► 重置轨迹线
+                └──► renderer.render(state, { forceTrail: true })
+```
+
+### 🔄 核心调用链总结
+
+| 场景 | 调用链 |
+|------|--------|
+| **启动回放** | `replayDronePath()` → `new TrackBuffer()` → `new CesiumRendererAdapter()` → `new ReplayEngine()` → `engine.init()` |
+| **播放** | `engine.play()` → `businessClock.subscribe()` → `engine.tick()` → `trackBuffer.getStateAt()` → `renderer.render()` |
+| **拖动时间轴** | `onTimelineInput()` → `engine.seekToTime()` → `trackBuffer.getStateAt()` → `renderer.seek()` |
+| **暂停** | `engine.pause()` → `businessClock.unsubscribe()` |
+
 ## 🎯 应用场景
 
 - **无人机监控系统**：实时追踪无人机位置和轨迹
