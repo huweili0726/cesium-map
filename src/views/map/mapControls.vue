@@ -365,8 +365,38 @@ let replayController1: any = null
 
 // 时间段回放相关
 const showTimeRangeModal = ref(false)
-const startTimeInput = ref('')
-const endTimeInput = ref('')
+const startTimeInput = ref('2023-05-01T00:00:00')
+const endTimeInput = ref('2023-05-01T00:08:20')
+
+// 将 datetime-local 格式转换为毫秒级时间戳（统一使用UTC，避免时区问题）
+const convertToTimestamp = (dateTimeStr) => {
+  if (!dateTimeStr) {
+    return NaN
+  }
+  
+  try {
+    const match = dateTimeStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/)
+    if (!match) {
+      return NaN
+    }
+    const [, year, month, day, hour, minute, second] = match.map(Number)
+    
+    if (year < 1970 || month < 1 || month > 12 || day < 1 || day > 31 || 
+        hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
+      return NaN
+    }
+    
+    return Date.UTC(year, month - 1, day, hour, minute, second)
+  } catch (e) {
+    console.error('时间转换异常:', e)
+    return NaN
+  }
+}
+
+// 获取当前时间戳（UTC毫秒级）
+const getCurrentTimestamp = () => {
+  return Date.now()
+}
 
 const toReplayDronePath = () => {
   // 示例回放数据：无人机飞行轨迹点
@@ -483,8 +513,8 @@ const executeTimeRangeReplay = async() => {
     return
   }
 
-  const startTime = Date.parse(startTimeStr)
-  const endTime = Date.parse(endTimeStr)
+  const startTime = convertToTimestamp(startTimeInput.value)
+  const endTime = convertToTimestamp(endTimeInput.value)
 
   if (isNaN(startTime) || isNaN(endTime)) {
     alert('时间格式不正确，请使用 yyyy-MM-dd HH:mm:ss 格式')
@@ -499,7 +529,6 @@ const executeTimeRangeReplay = async() => {
   showTimeRangeModal.value = false
 
   let res = await getDroneTrack({
-    droneId: 'AWHZTR9S2603CC005194',
     startTime: startTime,
     endTime: endTime
   })
