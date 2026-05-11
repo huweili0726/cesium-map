@@ -33,6 +33,11 @@ export default ({ mode }) => {
           target: 'https://data.mars3d.cn',//目标地址（跨域）
           changeOrigin: true,
         },
+        // 自定义地形服务
+        '/replay': {
+          target: 'http://localhost:8081',//目标地址（跨域）
+          changeOrigin: true,
+        },
     }
     },
     define: {

@@ -196,6 +196,7 @@ import { diffusionConfig } from '@/components/cesiumMap/js/diffusion'
 import { fenceConfig } from '@/components/cesiumMap/js/fence'
 import { geometryConfig } from '@/components/cesiumMap/js/geometry'
 import { drawFence } from '@/components/cesiumMap/js/drawFence'
+import { getDroneTrack } from '@/api/replay'
 
 // 获取store实例，保持响应性
 const mapStore = useMapStore()
@@ -473,7 +474,7 @@ const toReplayByTimeRange = () => {
 }
 
 // 执行时间段回放
-const executeTimeRangeReplay = () => {
+const executeTimeRangeReplay = async() => {
   const startTimeStr = startTimeInput.value
   const endTimeStr = endTimeInput.value
   
@@ -497,44 +498,51 @@ const executeTimeRangeReplay = () => {
 
   showTimeRangeModal.value = false
 
-  const exampleReplayData = [
-    { lng: 117.229334, lat: 31.706787, height: 100, timestamp: 1710000000000 },
-    { lng: 117.230334, lat: 31.706787, height: 120, timestamp: 1710000001000 },
-    { lng: 117.231334, lat: 31.707787, height: 150, timestamp: 1710000002000 },
-    { lng: 117.232334, lat: 31.708787, height: 180, timestamp: 1710000003000 },
-    { lng: 117.233334, lat: 31.709787, height: 200, timestamp: 1710000004000 },
-    { lng: 117.234334, lat: 31.710787, height: 220, timestamp: 1710000005000 },
-    { lng: 117.235334, lat: 31.711787, height: 250, timestamp: 1710000006000 },
-    { lng: 117.236334, lat: 31.712787, height: 280, timestamp: 1710000007000 },
-    { lng: 117.237334, lat: 31.713787, height: 300, timestamp: 1710000008000 },
-    { lng: 117.238334, lat: 31.714787, height: 320, timestamp: 1710000009000 },
-    { lng: 117.239334, lat: 31.715787, height: 350, timestamp: 1710000010000 }
-  ]
-
-  const filteredData = exampleReplayData.filter(point => 
-    point.timestamp >= startTime && point.timestamp <= endTime
-  )
-
-  if (filteredData.length < 2) {
-    alert('所选时间段内没有足够的轨迹数据')
-    return
-  }
-
-  replayController = replayDronePath({
-    droneId: 'drone_replay_time_range',
-    replayData: filteredData,
-    speed: 1.0,
-    loop: false
-  })
-
-  configureClock({
+  let res = await getDroneTrack({
+    droneId: 'AWHZTR9S2603CC005194',
     startTime: startTime,
-    endTime: endTime,
-    speed: 1,
-    loop: false
+    endTime: endTime
   })
+  debugger
 
-  replayController.play()
+  // const exampleReplayData = [
+  //   { lng: 117.229334, lat: 31.706787, height: 100, timestamp: 1710000000000 },
+  //   { lng: 117.230334, lat: 31.706787, height: 120, timestamp: 1710000001000 },
+  //   { lng: 117.231334, lat: 31.707787, height: 150, timestamp: 1710000002000 },
+  //   { lng: 117.232334, lat: 31.708787, height: 180, timestamp: 1710000003000 },
+  //   { lng: 117.233334, lat: 31.709787, height: 200, timestamp: 1710000004000 },
+  //   { lng: 117.234334, lat: 31.710787, height: 220, timestamp: 1710000005000 },
+  //   { lng: 117.235334, lat: 31.711787, height: 250, timestamp: 1710000006000 },
+  //   { lng: 117.236334, lat: 31.712787, height: 280, timestamp: 1710000007000 },
+  //   { lng: 117.237334, lat: 31.713787, height: 300, timestamp: 1710000008000 },
+  //   { lng: 117.238334, lat: 31.714787, height: 320, timestamp: 1710000009000 },
+  //   { lng: 117.239334, lat: 31.715787, height: 350, timestamp: 1710000010000 }
+  // ]
+
+  // const filteredData = exampleReplayData.filter(point => 
+  //   point.timestamp >= startTime && point.timestamp <= endTime
+  // )
+
+  // if (filteredData.length < 2) {
+  //   alert('所选时间段内没有足够的轨迹数据')
+  //   return
+  // }
+
+  // replayController = replayDronePath({
+  //   droneId: 'drone_replay_time_range',
+  //   replayData: filteredData,
+  //   speed: 1.0,
+  //   loop: false
+  // })
+
+  // configureClock({
+  //   startTime: startTime,
+  //   endTime: endTime,
+  //   speed: 1,
+  //   loop: false
+  // })
+
+  // replayController.play()
 }
 
 // 关闭时间段选择弹窗
