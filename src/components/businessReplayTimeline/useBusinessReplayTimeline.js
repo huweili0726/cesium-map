@@ -220,6 +220,112 @@ export function useBusinessReplayTimeline() {
     }
   }
 
+  // 快进快退配置
+  const SEEK_STEP = 5000           // 每次快进/快退的步长（毫秒）
+  const SEEK_INTERVAL = 100         // 连续快进/快退的间隔（毫秒）
+  const SEEK_ACCELERATION = 0.95   // 加速因子，按住时间越长越快
+
+  let seekIntervalId = null        // 快进快退定时器ID
+  let seekDirection = 0            // 快进方向：1=快进，-1=快退，0=停止
+  let seekStartTime = 0            // 快进开始时间（用于计算加速）
+  let wasPlayingBeforeSeek = false // 快进前是否正在播放
+
+  /**
+   * 执行单次快进/快退
+   * @param {number} direction - 方向：1=快进，-1=快退
+   */
+  const doSeek = (direction) => {
+    const engine = mapStore.getActiveReplayEngine()
+    if (!engine) return
+
+    // 计算加速后的步长（按住时间越长，步长越大）
+    const holdDuration = seekDirection !== 0 ? Date.now() - seekStartTime : 0
+    const acceleration = Math.pow(SEEK_ACCELERATION, -holdDuration / 500)
+    const step = Math.floor(SEEK_STEP * acceleration * direction)
+
+    // 计算新时间
+    let newTime = timeline.currentTime + step
+    newTime = Math.max(timeline.startTime, Math.min(newTime, timeline.endTime))
+
+    // 更新时间轴和引擎
+    timeline.currentTime = newTime
+    timeline.progress = timeline.endTime > timeline.startTime
+      ? (newTime - timeline.startTime) / (timeline.endTime - timeline.startTime)
+      : 0
+    engine.seekToTime(newTime)
+  }
+
+  /**
+   * 开始快进/快退
+   * @param {number} direction - 方向：1=快进，-1=快退
+   */
+  const startSeek = (direction) => {
+    // 如果已经在快进/快退，忽略
+    if (seekIntervalId) return
+
+    const engine = mapStore.getActiveReplayEngine()
+    if (!engine) return
+
+    // 记录快进前的播放状态并暂停
+    wasPlayingBeforeSeek = engine.isPlaying
+    if (wasPlayingBeforeSeek) {
+      engine.pause()
+    }
+
+    // 设置快进状态
+    seekDirection = direction
+    seekStartTime = Date.now()
+
+    // 立即执行一次快进
+    doSeek(direction)
+
+    // 启动定时器连续快进
+    seekIntervalId = setInterval(() => {
+      doSeek(direction)
+    }, SEEK_INTERVAL)
+  }
+
+  /**
+   * 停止快进/快退
+   */
+  const stopSeek = () => {
+    // 如果没有在快进/快退，忽略
+    if (!seekIntervalId) return
+
+    // 清除定时器
+    clearInterval(seekIntervalId)
+    seekIntervalId = null
+    seekDirection = 0
+
+    // 如果快进前正在播放，恢复播放
+    const engine = mapStore.getActiveReplayEngine()
+    if (engine && wasPlayingBeforeSeek) {
+      engine.continue()
+    }
+    wasPlayingBeforeSeek = false
+  }
+
+  /**
+   * 快进按钮按下
+   */
+  const onFastForwardDown = () => {
+    startSeek(1)
+  }
+
+  /**
+   * 快退按钮按下
+   */
+  const onRewindDown = () => {
+    startSeek(-1)
+  }
+
+  /**
+   * 快进/快退按钮松开
+   */
+  const onSeekUp = () => {
+    stopSeek()
+  }
+
   /**
    * 返回时间轴状态和方法，供组件使用
    */
@@ -228,8 +334,9 @@ export function useBusinessReplayTimeline() {
     formatTimelineTime,    // 时间格式化函数
     onTimelineInput,       // 滑块输入事件处理
     onTimelineChange,      // 滑块变化事件处理
-    pauseReplay,           // 暂停回放方法
-    continueReplay,        // 继续回放方法
-    togglePlay             // 切换播放状态方法
+    togglePlay,            // 切换播放状态方法
+    onFastForwardDown,     // 快进按钮按下
+    onRewindDown,          // 快退按钮按下
+    onSeekUp               // 快进/快退按钮松开
   }
 }

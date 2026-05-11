@@ -3,9 +3,31 @@
     <div class="timeline-header">
       <span class="timeline-title">业务回放时间轴</span>
       <div class="timeline-controls">
-        <button class="control-btn" @click="togglePlay" :title="timeline.isPlaying ? '暂停' : '继续'">
+        <button 
+          class="control-btn" 
+          @mousedown="onRewindDown"
+          @mouseup="onSeekUp"
+          @mouseleave="onSeekUp"
+          @touchstart.prevent="onRewindDown"
+          @touchend.prevent="onSeekUp"
+          title="快退（按住不放连续快退）"
+        >
+          <span class="control-icon">⏪</span>
+        </button>
+        <button class="control-btn play-btn" @click="togglePlay" :title="timeline.isPlaying ? '暂停' : '继续'">
           <span v-if="timeline.isPlaying" class="control-icon">⏸</span>
           <span v-else class="control-icon">▶</span>
+        </button>
+        <button 
+          class="control-btn" 
+          @mousedown="onFastForwardDown"
+          @mouseup="onSeekUp"
+          @mouseleave="onSeekUp"
+          @touchstart.prevent="onFastForwardDown"
+          @touchend.prevent="onSeekUp"
+          title="快进（按住不放连续快进）"
+        >
+          <span class="control-icon">⏩</span>
         </button>
         <span class="timeline-time">{{ formatTimelineTime(timeline.currentTime) }}</span>
       </div>
@@ -36,7 +58,10 @@ const {
   formatTimelineTime,
   onTimelineInput,
   onTimelineChange,
-  togglePlay
+  togglePlay,
+  onFastForwardDown,
+  onRewindDown,
+  onSeekUp
 } = useBusinessReplayTimeline()
 </script>
 
@@ -96,6 +121,21 @@ const {
 .control-icon {
   font-size: 14px;
   line-height: 1;
+}
+
+.play-btn {
+  width: 34px;
+  height: 34px;
+  background: rgba(64, 196, 255, 0.2);
+  border-color: rgba(64, 196, 255, 0.7);
+
+  .control-icon {
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: rgba(64, 196, 255, 0.35);
+  }
 }
 
 .timeline-footer {
