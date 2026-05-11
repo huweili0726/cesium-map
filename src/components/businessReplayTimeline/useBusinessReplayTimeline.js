@@ -41,19 +41,19 @@ export function useBusinessReplayTimeline() {
   })
 
   /**
-   * 格式化时间戳为时分秒格式
+   * 格式化时间戳为年月日时分秒格式
    * @param {number} timestamp 时间戳（毫秒）
-   * @returns {string} 格式化后的时间字符串，如 "12:34:56"
+   * @returns {string} 格式化后的时间字符串，如 "2024-01-15 12:34:56"
    */
   const formatTimelineTime = (timestamp) => {
     // 如果时间戳无效，返回占位符
-    if (!timestamp) return '--:--:--'
+    if (!timestamp) return '----/--/-- --:--:--'
     // 转换为Date对象
     const date = new Date(timestamp)
     // 补零函数：小于10的数字前面补0
     const pad = (value) => String(value).padStart(2, '0')
-    // 格式化为 "HH:MM:SS"
-    return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+    // 格式化为 "YYYY-MM-DD HH:MM:SS"
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
   }
 
   /**
