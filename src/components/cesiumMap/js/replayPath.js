@@ -12,6 +12,7 @@ import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { setPath } from '@/components/cesiumMap/js/setPath'
 import { setPoint } from '@/components/cesiumMap/js/setPoint'
+import { movePathConfig } from '@/components/cesiumMap/js/movePath'
 import { ClickHandler } from '@/components/cesiumMap/js/bindClickHandler'
 
 export function setReplay(baseUrl) {
@@ -21,6 +22,10 @@ export function setReplay(baseUrl) {
     setDroneTrail,
     clearDroneTrail
   } = setPath()
+
+  const {
+    moveDroneTrail
+  } = movePathConfig()
 
   const {
     setDronePointByGlb
@@ -56,6 +61,7 @@ export function setReplay(baseUrl) {
     // 排序回放数据（按时间戳升序）
     let sortedData = [...options.replayData].sort((a, b) => a.timestamp - b.timestamp)
     let cartesianPositions = []
+    let lastTrailPosition = null
 
     // 创建位置属性用于插值
     const positionProperty = new Cesium.SampledPositionProperty()
@@ -103,22 +109,24 @@ export function setReplay(baseUrl) {
     // 直接使用与原轨迹相同的ID，避免修改Entity的只读id属性
     const trailId = `${options.droneId}_trail`
     let trailData = mapStore.getDroneTrail(trailId)
+    const firstCartesian = Cesium.Cartesian3.fromDegrees(
+      sortedData[0].lng,
+      sortedData[0].lat,
+      sortedData[0].height || 0
+    )
     
     if (!trailData) {
       // 创建新轨迹
-      const firstCartesian = Cesium.Cartesian3.fromDegrees(
-        sortedData[0].lng,
-        sortedData[0].lat,
-        sortedData[0].height || 0
-      )
       trailData = setDroneTrail({
         pointId: options.droneId,
         startPosition: firstCartesian
       })
     }
 
-    // 清空现有轨迹点
-    trailData.positions = []
+    // 回放轨迹不要一次性展示，播放过程中按当前位置动态追加拖尾
+    trailData.positions = [{ position: firstCartesian.clone(), timestamp: map.clock.currentTime }]
+    trailData.lastUpdateTime = map.clock.currentTime
+    lastTrailPosition = firstCartesian.clone()
 
     const addReplaySamples = (replayData) => {
       const existedTimestamps = new Set(
@@ -142,14 +150,11 @@ export function setReplay(baseUrl) {
 
         sortedData.push(point)
         cartesianPositions.push({ cartesian, timestamp })
-        trailData.positions.push({ position: cartesian.clone(), timestamp })
         positionProperty.addSample(timestamp, cartesian)
       })
 
       sortedData.sort((a, b) => a.timestamp - b.timestamp)
       cartesianPositions.sort((a, b) => Cesium.JulianDate.compare(a.timestamp, b.timestamp))
-      trailData.positions.sort((a, b) => Cesium.JulianDate.compare(a.timestamp, b.timestamp))
-      trailData.lastUpdateTime = cartesianPositions[cartesianPositions.length - 1].timestamp
 
       return newData
     }
@@ -170,6 +175,30 @@ export function setReplay(baseUrl) {
       const addedData = addReplaySamples(replayData)
       console.log(`无人机${options.droneId}追加回放数据数量: ${addedData.length}`)
       return addedData.length
+    }
+
+    const updateReplayTrail = (clock) => {
+      if (!replayController.isPlaying || !droneEntity?.positionProperty) {
+        return
+      }
+
+      const currentPosition = droneEntity.positionProperty.getValue(clock.currentTime)
+      if (!currentPosition) {
+        return
+      }
+
+      if (lastTrailPosition) {
+        const distance = Cesium.Cartesian3.distance(lastTrailPosition, currentPosition)
+        if (distance <= 1) {
+          return
+        }
+      }
+
+      moveDroneTrail({
+        pointId: options.droneId,
+        newPosition: currentPosition
+      })
+      lastTrailPosition = currentPosition.clone()
     }
 
     // 播放函数
@@ -227,6 +256,8 @@ export function setReplay(baseUrl) {
       if (droneEntity && droneEntity.entity) {
         droneEntity.entity.position = cartesianPositions[0].cartesian
       }
+      trailData.positions = [{ position: cartesianPositions[0].cartesian.clone(), timestamp: map.clock.startTime }]
+      lastTrailPosition = cartesianPositions[0].cartesian.clone()
       
       console.log(`无人机${options.droneId}回放停止`)
     }
@@ -298,7 +329,10 @@ export function setReplay(baseUrl) {
 
     // 添加时钟事件监听（可选，用于自定义逻辑）
     replayController.tickHandler = (clock) => {
+      updateReplayTrail(clock)
+
       if (!options.loop && map.clock.stopTime && Cesium.JulianDate.compare(clock.currentTime, map.clock.stopTime) >= 0) {
+        updateReplayTrail(clock)
         replayController.isPlaying = false
         console.log(`回放结束`)
 
