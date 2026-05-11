@@ -529,123 +529,191 @@ const getTrackList = (res: any) => {
   return []
 }
 
-// 执行时间段回放
+/**
+ * 执行时间段轨迹回放
+ * 
+ * 该函数实现了无人机轨迹的时间段回放功能，支持分段加载和预加载机制，
+ * 用于处理长时间范围的轨迹数据，避免一次性加载过多数据导致性能问题。
+ * 
+ * 核心流程：
+ * 1. 参数验证：检查开始时间和结束时间的有效性
+ * 2. 分段查询：以1分钟为单位分段查询轨迹数据
+ * 3. 初始化回放引擎：创建TrackBuffer、Renderer和ReplayEngine
+ * 4. 预加载机制：在回放过程中提前加载下一段数据
+ */
 const executeTimeRangeReplay = async() => {
+  // 获取用户输入的开始时间和结束时间字符串
   const startTimeStr = startTimeInput.value
   const endTimeStr = endTimeInput.value
   
+  // 验证：确保开始时间和结束时间都已输入
   if (!startTimeStr || !endTimeStr) {
     alert('请输入开始时间和结束时间')
     return
   }
 
+  // 将时间字符串转换为时间戳（毫秒）
   const startTime = convertToTimestamp(startTimeInput.value)
   const endTime = convertToTimestamp(endTimeInput.value)
 
+  // 验证：时间格式是否正确
   if (isNaN(startTime) || isNaN(endTime)) {
     alert('时间格式不正确，请使用 yyyy-MM-dd HH:mm:ss 格式')
     return
   }
 
+  // 验证：开始时间必须早于结束时间
   if (startTime >= endTime) {
     alert('开始时间必须早于结束时间')
     return
   }
 
+  // 关闭时间段选择弹窗
   showTimeRangeModal.value = false
 
+  /**
+   * 分段查询轨迹数据的内部函数
+   * @param chunkStartTime - 当前分段的开始时间戳
+   * @returns 该时间段内的轨迹点列表
+   */
   const queryTrackChunk = async(chunkStartTime: number) => {
+    // 当前分段结束时间 = 开始时间 + 1分钟，不超过总结束时间
     const chunkEndTime = Math.min(chunkStartTime + ONE_MINUTE, endTime)
+    
+    // 查询无人机轨迹API
     const res = await getDroneTrack({
-      droneId: 'AWHZTR9S2603CC005196',
+      droneId: 'AWHZTR9S2603CC005196',  // 固定无人机ID
       startTime: chunkStartTime,
       endTime: chunkEndTime
     })
 
+    // 将API返回结果转换为轨迹列表格式
     return getTrackList(res)
   }
 
+  // 查询第一段轨迹数据（用于初始化）
   const firstTrackData = await queryTrackChunk(startTime)
 
+  // 验证：至少需要2个轨迹点才能进行回放
   if (firstTrackData.length < 2) {
     alert('所选时间段内没有足够的轨迹数据')
     return
   }
 
+  // 清理：移除之前的预加载监听
   if (timeRangeReplayPreloadOff) {
     timeRangeReplayPreloadOff()
     timeRangeReplayPreloadOff = null
   }
 
+  // 清理：销毁之前的回放引擎实例
   if (timeRangeReplayEngine) {
     timeRangeReplayEngine.destroy()
     timeRangeReplayEngine = null
   }
 
+  // 创建轨迹缓冲区，用于存储和管理轨迹数据
   const trackBuffer = new TrackBuffer(firstTrackData)
+  
+  // 创建渲染适配器，负责将轨迹数据渲染到Cesium地图上
   const renderer = new CesiumRendererAdapter({
     droneId: 'drone_replay_time_range',
     baseUrl: process.env.BASE_URL,
     trackBuffer
   })
 
+  // 创建回放引擎实例
   timeRangeReplayEngine = new ReplayEngine({
-    trackBuffer,
-    renderer,
-    startTime,
-    endTime,
-    speed: 1,
-    loop: false
+    trackBuffer,    // 轨迹缓冲区
+    renderer,       // 渲染器
+    startTime,      // 回放开始时间
+    endTime,        // 回放结束时间
+    speed: 1,       // 回放速度倍数
+    loop: false     // 是否循环播放
   })
 
+  // 初始化回放引擎
   if (!timeRangeReplayEngine.init()) {
     alert('轨迹回放初始化失败')
     timeRangeReplayEngine = null
     return
   }
 
+  // 设置全局回放控制器和状态管理
   replayController = timeRangeReplayEngine
   mapStore.setActiveReplayEngine(timeRangeReplayEngine)
 
-  let nextChunkStartTime = startTime + ONE_MINUTE
-  let loadingNextChunk = false
-  const loadedChunkStartTimes = new Set<number>([startTime])
+  // 预加载相关变量初始化
+  let nextChunkStartTime = startTime + ONE_MINUTE  // 下一个要加载的分段开始时间
+  let loadingNextChunk = false                      // 是否正在加载中（防止重复加载）
+  const loadedChunkStartTimes = new Set<number>([startTime])  // 已加载的分段起始时间集合
 
+  /**
+   * 预加载下一段轨迹数据
+   * 
+   * 该函数负责异步加载下一分钟的轨迹数据，并追加到回放引擎中。
+   * 使用loadingNextChunk标志防止并发加载同一分段。
+   */
   const preloadNextChunk = async() => {
+    // 前置条件检查：
+    // 1. 回放引擎存在
+    // 2. 不在加载中
+    // 3. 还有未加载的分段
+    // 4. 该分段尚未加载过
     if (!timeRangeReplayEngine || loadingNextChunk || nextChunkStartTime >= endTime || loadedChunkStartTimes.has(nextChunkStartTime)) {
       return
     }
 
+    // 设置加载中标志
     loadingNextChunk = true
     const currentChunkStartTime = nextChunkStartTime
 
     try {
+      // 查询下一段轨迹数据
       const nextTrackData = await queryTrackChunk(currentChunkStartTime)
+      
+      // 如果获取到数据，追加到回放引擎
       if (nextTrackData.length) {
         timeRangeReplayEngine.appendData(nextTrackData)
       }
+      
+      // 记录已加载的分段
       loadedChunkStartTimes.add(currentChunkStartTime)
+      
+      // 更新下一个要加载的分段时间
       nextChunkStartTime = currentChunkStartTime + ONE_MINUTE
     } catch (error) {
+      // 记录加载失败日志
       console.error('预加载下一段无人机轨迹失败:', error)
     } finally {
+      // 重置加载中标志
       loadingNextChunk = false
     }
   }
 
+  /**
+   * 注册回放引擎的tick事件监听
+   * 
+   * 在每帧更新时检查是否需要预加载下一段数据，实现平滑的分段回放体验。
+   */
   timeRangeReplayPreloadOff = timeRangeReplayEngine.onTick(({ currentTime }) => {
+    // 预加载触发条件：
+    // 当前时间接近下一个分段开始时间（提前PRELOAD_OFFSET毫秒）
     if (nextChunkStartTime < endTime && currentTime >= nextChunkStartTime - ONE_MINUTE + PRELOAD_OFFSET) {
       preloadNextChunk()
     }
 
+    // 清理条件：回放到达终点或所有分段已加载完成
     if (currentTime >= endTime || nextChunkStartTime >= endTime) {
       timeRangeReplayPreloadOff?.()
       timeRangeReplayPreloadOff = null
     }
   })
 
+  // 开始播放
   timeRangeReplayEngine.play()
 
+  // ========== 以下为测试代码（已注释）==========
   // const exampleReplayData = [
   //   { lng: 117.229334, lat: 31.706787, height: 100, timestamp: 1710000000000 },
   //   { lng: 117.230334, lat: 31.706787, height: 120, timestamp: 1710000001000 },
