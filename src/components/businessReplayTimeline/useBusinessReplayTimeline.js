@@ -187,12 +187,49 @@ export function useBusinessReplayTimeline() {
   })
 
   /**
+   * 暂停回放
+   */
+  const pauseReplay = () => {
+    const engine = mapStore.getActiveReplayEngine()
+    if (engine && engine.isPlaying) {
+      engine.pause()
+    }
+  }
+
+  /**
+   * 继续回放
+   */
+  const continueReplay = () => {
+    const engine = mapStore.getActiveReplayEngine()
+    if (engine && !engine.isPlaying) {
+      engine.continue()
+    }
+  }
+
+  /**
+   * 切换播放状态（暂停/继续）
+   */
+  const togglePlay = () => {
+    const engine = mapStore.getActiveReplayEngine()
+    if (!engine) return
+    
+    if (engine.isPlaying) {
+      engine.pause()
+    } else {
+      engine.continue()
+    }
+  }
+
+  /**
    * 返回时间轴状态和方法，供组件使用
    */
   return {
     timeline,              // 时间轴响应式状态
     formatTimelineTime,    // 时间格式化函数
     onTimelineInput,       // 滑块输入事件处理
-    onTimelineChange       // 滑块变化事件处理
+    onTimelineChange,      // 滑块变化事件处理
+    pauseReplay,           // 暂停回放方法
+    continueReplay,        // 继续回放方法
+    togglePlay             // 切换播放状态方法
   }
 }

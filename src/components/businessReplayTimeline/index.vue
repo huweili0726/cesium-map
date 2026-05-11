@@ -2,7 +2,13 @@
   <div v-if="timeline.visible" class="business-replay-timeline">
     <div class="timeline-header">
       <span class="timeline-title">业务回放时间轴</span>
-      <span class="timeline-time">{{ formatTimelineTime(timeline.currentTime) }}</span>
+      <div class="timeline-controls">
+        <button class="control-btn" @click="togglePlay" :title="timeline.isPlaying ? '暂停' : '继续'">
+          <span v-if="timeline.isPlaying" class="control-icon">⏸</span>
+          <span v-else class="control-icon">▶</span>
+        </button>
+        <span class="timeline-time">{{ formatTimelineTime(timeline.currentTime) }}</span>
+      </div>
     </div>
     <input
       class="timeline-slider"
@@ -29,7 +35,8 @@ const {
   timeline,
   formatTimelineTime,
   onTimelineInput,
-  onTimelineChange
+  onTimelineChange,
+  togglePlay
 } = useBusinessReplayTimeline()
 </script>
 
@@ -50,7 +57,47 @@ const {
   color: #e8f7ff;
 }
 
-.timeline-header,
+.timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.timeline-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.control-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(64, 196, 255, 0.5);
+  border-radius: 6px;
+  background: rgba(64, 196, 255, 0.1);
+  color: #7ee7ff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(64, 196, 255, 0.25);
+    border-color: rgba(64, 196, 255, 0.8);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.control-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
 .timeline-footer {
   display: flex;
   align-items: center;
