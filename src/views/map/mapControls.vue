@@ -530,46 +530,72 @@ const getTrackList = (res: any) => {
   return []
 }
 
+/**
+ * 执行时间段轨迹回放
+ * 
+ * 该函数是时间段回放功能的主入口，负责协调各个模块完成轨迹回放。
+ * 
+ * 整体流程：
+ * 1. 验证用户输入的时间范围
+ * 2. 查询初始轨迹数据（第一段）
+ * 3. 清理之前的回放资源
+ * 4. 创建并初始化回放引擎
+ * 5. 设置全局回放控制器
+ * 6. 启动预加载机制
+ * 7. 开始回放
+ */
 const executeTimeRangeReplay = async() => {
+  // 1. 验证时间输入并转换为时间戳
   const timeRange = validateTimeInput(startTimeInput.value, endTimeInput.value)
   if (!timeRange) return
 
   const { startTime, endTime } = timeRange
+  // 关闭时间段选择弹窗
   showTimeRangeModal.value = false
 
+  // 2. 查询第一段轨迹数据（用于初始化回放引擎）
   const firstTrackData = await queryTrackChunk(startTime, endTime)
+  // 验证：至少需要2个轨迹点才能进行回放
   if (firstTrackData.length < 2) {
     alert('所选时间段内没有足够的轨迹数据')
     return
   }
 
+  // 3. 清理之前的回放资源（避免内存泄漏）
   cleanupReplayResources(timeRangeReplayPreloadOff, timeRangeReplayEngine)
   timeRangeReplayPreloadOff = null
   timeRangeReplayEngine = null
 
+  // 4. 创建并初始化回放引擎
   timeRangeReplayEngine = createReplayEngine(firstTrackData, startTime, endTime)
   if (!timeRangeReplayEngine) {
     alert('轨迹回放初始化失败')
     return
   }
 
+  // 5. 设置全局回放控制器和状态管理
   replayController = timeRangeReplayEngine
   mapStore.setActiveReplayEngine(timeRangeReplayEngine)
 
+  // 6. 创建预加载管理器，负责动态加载后续轨迹数据
   const preloader = new TrackPreloader(timeRangeReplayEngine, startTime, endTime)
 
+  // 注册tick事件监听，实现实时预加载
   timeRangeReplayPreloadOff = timeRangeReplayEngine.onTick(({ currentTime }) => {
+    // 预加载触发条件：当前时间接近下一个分段的开始时间（提前PRELOAD_OFFSET毫秒）
     if (!preloader.isAllLoaded() && 
         currentTime >= preloader.getNextChunkStartTime() - REPLAY_CONFIG.CHUNK_DURATION + PRELOAD_OFFSET) {
       preloader.loadNextChunk()
     }
 
+    // 清理条件：回放到达终点或所有分段已加载完成
     if (currentTime >= endTime || preloader.isAllLoaded()) {
       timeRangeReplayPreloadOff?.()
       timeRangeReplayPreloadOff = null
     }
   })
 
+  // 7. 开始播放
   timeRangeReplayEngine.play()
 }
 
