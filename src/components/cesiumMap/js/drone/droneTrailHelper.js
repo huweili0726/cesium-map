@@ -14,6 +14,8 @@ const DEFAULT_TRAIL_COLOR = '#fbff00ff'
 const DEFAULT_TRAIL_WIDTH = 2
 const DEFAULT_MAX_POINTS = 512
 const DEFAULT_SMOOTH_SAMPLE_MS = 250
+/** smooth 采样默认最小间距（米），避免每帧追点 */
+const DEFAULT_SMOOTH_MIN_DISTANCE = 8
 const DEFAULT_CORNER_DOT_THRESHOLD = 0.5
 const DEFAULT_CORNER_RADIUS = 25
 const DEFAULT_CORNER_STEPS = 5
@@ -342,6 +344,7 @@ export const ensureDroneTrail = (map, pointId, trailConfig = {}) => {
       primitive: null,
       points: [],
       lastSampleTime: 0,
+      sampleSegmentId: 0,
     }
     context.trailMap.set(pointId, trailState)
   }
@@ -353,6 +356,26 @@ export const ensureDroneTrail = (map, pointId, trailConfig = {}) => {
   }
 
   return trailState
+}
+
+/**
+ * smooth 改目标/新航段：立刻在无人机当前位置落点并重置采样，避免仍按上一段插值 minDistance 滞后
+ */
+export const syncSmoothTrailSegment = (map, pointId, position, trailConfig = {}) => {
+  if (!map || !pointId || !position) return false
+
+  const mapStore = useMapStore()
+  const config = normalizeTrailConfig(trailConfig, mapStore)
+  if (!config.enabled) return false
+
+  const context = getTrailContext(map)
+  const trailState = ensureDroneTrail(map, pointId, config)
+  if (!trailState) return false
+
+  const now = performance.now()
+  appendTrailPointInternal(context, trailState, position, now, true)
+  trailState.lastSampleTime = 0
+  return true
 }
 
 export const appendDroneTrailPoint = (options) => {
@@ -401,34 +424,37 @@ export const sampleSmoothMovingTrails = (moveContext) => {
   if (!moveContext?.movingMap?.size) return
 
   const context = getTrailContext(moveContext.map)
+  const now = performance.now()
 
   moveContext.movingMap.forEach((moveState, pointId) => {
-    const { dronePrimitive, targetOptions } = moveState
+    const { dronePrimitive, targetOptions, currentPosition, segmentId } = moveState
     const trailConfig = dronePrimitive?.trailConfig
     if (!trailConfig?.enabled) return
 
-    const position = dronePrimitive.position || dronePrimitive.billboard?.position
+    const position = currentPosition || dronePrimitive.position || dronePrimitive.billboard?.position
     if (!position) return
 
-    const trailState = ensureDroneTrail(moveContext.map, pointId, trailConfig)
+    const trailInput = targetOptions?.trail || {}
+    const smoothMinDistance = Math.max(
+      trailInput.minDistance ?? trailConfig.minDistance ?? 0,
+      trailInput.smoothMinDistance ?? DEFAULT_SMOOTH_MIN_DISTANCE
+    )
+    const smoothSampleInterval = trailInput.sampleInterval ?? trailConfig.sampleInterval ?? DEFAULT_SMOOTH_SAMPLE_MS
+
+    const trailState = ensureDroneTrail(moveContext.map, pointId, {
+      ...trailConfig,
+      minDistance: smoothMinDistance,
+      sampleInterval: smoothSampleInterval,
+    })
     if (!trailState) return
 
-    if (targetOptions?.trail) {
-      applyTrailConfigToState(
-        context,
-        trailState,
-        normalizeTrailConfig(
-          {
-            ...trailConfig,
-            minDistance: targetOptions.trail.minDistance ?? trailConfig.minDistance ?? 1,
-            sampleInterval: targetOptions.trail.sampleInterval ?? trailConfig.sampleInterval,
-          },
-          useMapStore()
-        )
-      )
+    if (segmentId !== trailState.sampleSegmentId) {
+      trailState.sampleSegmentId = segmentId
+      appendTrailPointInternal(context, trailState, position, now, true)
+      return
     }
 
-    appendTrailPointInternal(context, trailState, position, performance.now(), false)
+    appendTrailPointInternal(context, trailState, position, now, false)
   })
 }
 

@@ -10,10 +10,10 @@ import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { getMoveContext, stopAllMove, stopMoveByPointId, syncDronePosition } from './droneMoveHelper'
 import {
-  appendDroneTrailPoint,
   clearDronePrimitiveTrail,
   normalizeTrailConfig,
   syncDroneTrailOnMove,
+  syncSmoothTrailSegment,
   toggleDronePrimitiveTrail,
   updateDronePrimitiveTrailConfig,
 } from './droneTrailHelper'
@@ -39,6 +39,7 @@ export function moveDronePrimitivePoint() {
    * @param options.trail.retainSeconds 保留时长（秒），-1 永久；未传时使用 mapStore.getTrailTime()
    * @param options.trail.maxPoints 永久/高频场景下单机最大点数（默认 512）
    * @param options.trail.minDistance 追加点的最小间距（米），非 smooth 默认 0（每次更新都追加）
+   * @param options.trail.smoothMinDistance smooth 时最小采样间距（米，默认 8，低于此值用 8）
    * @param options.trail.sampleInterval smooth 模式下采样间隔（毫秒，默认 250）
    * @param options.trail.cornerRadius 急弯/掉头圆角半径（米，默认 25，避免转弯处轨迹变细）
    * @returns 移动后的无人机对象
@@ -92,17 +93,11 @@ export function moveDronePrimitivePoint() {
       16
     )
 
-    if (dronePrimitive.trailConfig?.enabled !== false && options.trail?.enabled !== false) {
-      const hasTrail = dronePrimitive.trailConfig || options.trail
-      if (hasTrail) {
-        appendDroneTrailPoint({
-          map,
-          pointId: options.pointId,
-          position: startPosition,
-          trailConfig: { ...dronePrimitive.trailConfig, ...options.trail },
-          force: true,
-        })
-      }
+    const prevMove = context.movingMap.get(options.pointId)
+    const segmentId = (prevMove?.segmentId ?? 0) + 1
+    const mergedTrailConfig = {
+      ...(dronePrimitive.trailConfig || {}),
+      ...(options.trail ? normalizeTrailConfig(options.trail, mapStore) : {}),
     }
 
     context.movingMap.set(options.pointId, {
@@ -112,7 +107,13 @@ export function moveDronePrimitivePoint() {
       startTime: performance.now(),
       duration,
       targetOptions,
+      segmentId,
     })
+
+    // 收到新经纬度：终止上一段插值的同时，拖尾立刻切到当前机位，不再沿旧段采样
+    if (mergedTrailConfig.enabled !== false && prevMove) {
+      syncSmoothTrailSegment(map, options.pointId, startPosition, mergedTrailConfig)
+    }
 
     return dronePrimitive
   }

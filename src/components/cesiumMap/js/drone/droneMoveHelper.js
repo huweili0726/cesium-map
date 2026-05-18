@@ -64,23 +64,31 @@ const updateMovingDrones = (context) => {
     )
 
     syncDronePosition(dronePrimitive, currentPosition)
-
-    if (progress >= 1) {
-      syncDronePosition(dronePrimitive, targetPosition, targetOptions)
-      if (dronePrimitive.trailConfig?.enabled !== false) {
-        appendDroneTrailPoint({
-          map: context.map,
-          pointId,
-          position: targetPosition,
-          trailConfig: dronePrimitive.trailConfig,
-          force: true,
-        })
-      }
-      context.movingMap.delete(pointId)
-    }
+    moveState.currentPosition = currentPosition
+    moveState.progress = progress
   })
 
+  // 先对移动中的飞机采样，再处理到达终点（避免末帧漏采且减少重复点）
   sampleSmoothMovingTrails(context)
+
+  context.movingMap.forEach((moveState, pointId) => {
+    if (moveState.progress < 1) return
+
+    const { dronePrimitive, targetPosition, targetOptions } = moveState
+    syncDronePosition(dronePrimitive, targetPosition, targetOptions)
+
+    if (dronePrimitive.trailConfig?.enabled !== false) {
+      appendDroneTrailPoint({
+        map: context.map,
+        pointId,
+        position: targetPosition,
+        trailConfig: dronePrimitive.trailConfig,
+        force: false,
+      })
+    }
+    context.movingMap.delete(pointId)
+  })
+
   destroyMoveContextIfEmpty(context)
 }
 
