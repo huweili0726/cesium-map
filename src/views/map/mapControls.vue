@@ -102,6 +102,7 @@
           <button @click="toDestroyDronePoint" class="control-btn">destroy(无人机1)</button>
 
           <button @click="toMoveDronePrimitivePoint" class="control-btn">move(primitive无人机)</button>
+          <button @click="toMoveDronePrimitivePoint1" class="control-btn">move(primitive无人机)1</button>
         </div>
       </div>
 
@@ -405,6 +406,32 @@ const toMoveDronePrimitivePoint = () => {
       sampleInterval: 250,    // smooth 下每 250ms 采样一点
       smoothMinDistance: 1,  // 可选，默认至少 8m
       minDistance: 0,         // 仅影响 smooth: false
+    }
+  });
+}
+
+const toMoveDronePrimitivePoint1 = () => {
+  // 在原位置附近随机生成新的坐标
+  const newLng = 117.236334 + (Math.random() - 0.5) * 0.01;
+  const newLat = 31.715287 + (Math.random() - 0.5) * 0.01;
+  const newHeight =  500;
+
+  moveDronePrimitivePointByLngLat({
+    pointId: 'drone-primitive-1', 
+    lng: newLng, 
+    lat: newLat, 
+    height: newHeight, 
+    speed: 100,
+    smooth: false,
+    trail: { 
+      color: '#ff6600',
+      width: 2, 
+      retainSeconds: 10,
+      cornerRadius: 5,  // 掉头弯更圆滑、更不易变细
+      // retainSeconds: -1,      // 永久
+      // sampleInterval: 250,    // smooth 下每 250ms 采样一点
+      // smoothMinDistance: 1,  // 可选，默认至少 8m
+      minDistance: 1,         // 仅影响 smooth: false
     }
   });
 }
