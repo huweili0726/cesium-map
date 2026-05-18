@@ -105,6 +105,11 @@
           <button @click="toMoveDronePrimitivePoint" class="control-btn">move(primitive无人机)</button>
           <button @click="toMoveDronePrimitivePointb" class="control-btn">move(primitive无人机b)</button>
           <button @click="toMoveDronePrimitivePoint1" class="control-btn">move(primitive无人机)1</button>
+          <button @click="toCreate500DronePrimitives" class="control-btn">创建500架primitive无人机</button>
+          <button @click="toMove500DronePrimitivesRandom" class="control-btn">500架随机移动一次</button>
+          <button @click="toStart500DroneRandomMoveLoop" class="control-btn">500架定时随机移动</button>
+          <button @click="toStop500DroneRandomMoveLoop" class="control-btn">停止500架定时移动</button>
+          <button @click="toDestroy500DronePrimitives" class="control-btn">销毁500架primitive无人机</button>
         </div>
       </div>
 
@@ -455,6 +460,108 @@ const toMoveDronePrimitivePointb = () => {
       minDistance: 1,         // 仅影响 smooth: false
     }
   });
+}
+
+/** 500 架批量无人机 */
+const DRONE_BATCH_COUNT = 500
+const DRONE_BATCH_PREFIX = 'drone-batch-'
+const DRONE_BATCH_CENTER = { lng: 117.229629, lat: 31.716888 }
+const DRONE_BATCH_SPREAD = 0.04
+const DRONE_BATCH_BASE_HEIGHT = 500
+
+const droneBatchTrailConfig = {
+  color: '#ff6600',
+  width: 2,
+  retainSeconds: 10,
+  maxPoints: 128,
+  cornerRadius: 5,
+  retainSeconds: 10,
+  minDistance: 1,  
+  // sampleInterval: 300,
+  // smoothMinDistance: 8,
+}
+
+let droneBatchMoveTimer = null
+
+const getDroneBatchId = (index) => `${DRONE_BATCH_PREFIX}${index}`
+
+const randomDroneBatchPosition = () => ({
+  lng: DRONE_BATCH_CENTER.lng + (Math.random() - 0.5) * DRONE_BATCH_SPREAD,
+  lat: DRONE_BATCH_CENTER.lat + (Math.random() - 0.5) * DRONE_BATCH_SPREAD,
+  height: DRONE_BATCH_BASE_HEIGHT + Math.random() * 80,
+})
+
+const toCreate500DronePrimitives = () => {
+  let created = 0
+  for (let i = 0; i < DRONE_BATCH_COUNT; i += 1) {
+    const pos = randomDroneBatchPosition()
+    const drone = setDronePrimitivePointByImg({
+      id: getDroneBatchId(i),
+      lng: pos.lng,
+      lat: pos.lat,
+      height: pos.height,
+      name: `无人机${i}`,
+      labelText: `UAV${i}`,
+      labelBgColor: 'rgba(31, 96, 78, 0.65)',
+      trail: { ...droneBatchTrailConfig },
+    })
+    if (drone) created += 1
+  }
+  console.log(`批量创建 Primitive 无人机：${created}/${DRONE_BATCH_COUNT}`)
+}
+
+const toMove500DronePrimitivesRandom = () => {
+  for (let i = 0; i < DRONE_BATCH_COUNT; i += 1) {
+    const pos = randomDroneBatchPosition()
+    moveDronePrimitivePointByLngLat({
+      pointId: getDroneBatchId(i),
+      lng: pos.lng,
+      lat: pos.lat,
+      height: pos.height,
+      speed: 60 + Math.random() * 60,
+      smooth: false,
+      trail: droneBatchTrailConfig,
+    })
+  }
+  console.log(`已对 ${DRONE_BATCH_COUNT} 架无人机下发随机移动`)
+}
+
+const toStart500DroneRandomMoveLoop = () => {
+  if (droneBatchMoveTimer) {
+    clearInterval(droneBatchMoveTimer)
+  }
+  toMove500DronePrimitivesRandom()
+  droneBatchMoveTimer = window.setInterval(() => {
+    toMove500DronePrimitivesRandom()
+  }, 2500)
+  console.log('已启动 500 架无人机定时随机移动（2.5s/次）')
+}
+
+const toStop500DroneRandomMoveLoop = () => {
+  if (droneBatchMoveTimer) {
+    clearInterval(droneBatchMoveTimer)
+    droneBatchMoveTimer = null
+    console.log('已停止 500 架无人机定时随机移动')
+  }
+}
+
+const toDestroy500DronePrimitives = () => {
+  toStop500DroneRandomMoveLoop()
+  const map = mapStore.getMap()
+  if (map) {
+    stopAllMoveDronePrimitivePoint()
+  }
+
+  let removed = 0
+  for (let i = 0; i < DRONE_BATCH_COUNT; i += 1) {
+    const id = getDroneBatchId(i)
+    const drone = mapStore.getGraphicMap(id)
+    if (drone?.destroy) {
+      drone.destroy()
+      removed += 1
+    }
+  }
+  console.log(`已销毁批量无人机：${removed}/${DRONE_BATCH_COUNT}`)
 }
 
 const toMoveDronePrimitivePoint1 = () => {
@@ -1197,6 +1304,8 @@ const toCreateRectangularPyramidEffect1 = () => {
 };
 
 onBeforeUnmount(() => {
+  toStop500DroneRandomMoveLoop()
+
   // 组件卸载时清除定时器和所有几何体
   if (conicalTimer) {
     clearInterval(conicalTimer);
@@ -1228,6 +1337,7 @@ const {
 
 const {
   moveDronePrimitivePointByLngLat,
+  stopAllMoveDronePrimitivePoint,
 } = moveDronePrimitivePoint(process.env.BASE_URL)
 
 const {
