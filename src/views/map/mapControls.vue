@@ -423,6 +423,15 @@ const toMoveDronePrimitivePoint = () => {
 }
 
 const toMoveDronePrimitivePointb = () => {
+  setDronePrimitivePointByImg({
+    id: 'drone-primitive-2', 
+    lng: 117.209629, 
+    lat: 31.716888, 
+    height: 500, 
+    labelBgColor: 'rgba(31, 96, 78, 0.8)',
+  });
+
+  
   // 在原位置附近随机生成新的坐标
   const newLng = 117.236334 + (Math.random() - 0.5) * 0.01;
   const newLat = 31.715287 + (Math.random() - 0.5) * 0.01;
