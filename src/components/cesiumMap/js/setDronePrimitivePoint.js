@@ -1,10 +1,106 @@
 /**
  * 无人机 Primitive 点位设置模块
  *
- * 使用 BillboardCollection 以 Primitive 方式在 Cesium 地图上展示无人机图片点位。
+ * 使用共享 BillboardCollection / LabelCollection 以 Primitive 方式在 Cesium 地图上展示无人机图片点位。
  */
 import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
+
+const DRONE_PICK_TYPE = 'drone-primitive'
+const DRONE_LABEL_PICK_TYPE = 'drone-primitive-label'
+const droneContextMap = new WeakMap()
+
+const createDronePickId = (type, droneId) => ({
+  type,
+  droneId,
+})
+
+const getDroneIdFromPicked = (picked) => {
+  if (!Cesium.defined(picked)) return null
+
+  const pickedId = picked.id
+  if (pickedId?.type === DRONE_PICK_TYPE || pickedId?.type === DRONE_LABEL_PICK_TYPE) {
+    return pickedId.droneId
+  }
+
+  return null
+}
+
+const createDroneContext = (map, mapStore) => {
+  const billboardCollection = new Cesium.BillboardCollection({
+    scene: map.scene,
+    blendOption: Cesium.BlendOption.OPAQUE_AND_TRANSLUCENT,
+  })
+
+  const labelCollection = new Cesium.LabelCollection({
+    scene: map.scene,
+    blendOption: Cesium.BlendOption.OPAQUE_AND_TRANSLUCENT,
+  })
+
+  map.scene.primitives.add(billboardCollection)
+  map.scene.primitives.add(labelCollection)
+
+  const droneInfoMap = new Map()
+  const handler = new Cesium.ScreenSpaceEventHandler(map.scene.canvas)
+
+  const logPickedDroneInfo = (movement, eventName) => {
+    const picked = map.scene.pick(movement.position)
+    const droneId = getDroneIdFromPicked(picked)
+    if (!droneId) return
+
+    const droneInfo = droneInfoMap.get(droneId) || mapStore.getGraphicMap(droneId)?.info
+    if (droneInfo) {
+      console.log(`无人机${eventName}点击信息：`, droneInfo)
+    }
+  }
+
+  handler.setInputAction((movement) => {
+    logPickedDroneInfo(movement, '左键')
+  }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+
+  handler.setInputAction((movement) => {
+    logPickedDroneInfo(movement, '右键')
+  }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+
+  return {
+    map,
+    billboardCollection,
+    labelCollection,
+    droneInfoMap,
+    handler,
+  }
+}
+
+const getDroneContext = (map, mapStore) => {
+  let context = droneContextMap.get(map)
+
+  if (!context || context.billboardCollection.isDestroyed() || context.labelCollection.isDestroyed()) {
+    context = createDroneContext(map, mapStore)
+    droneContextMap.set(map, context)
+  }
+
+  return context
+}
+
+const destroyDroneContextIfEmpty = (context) => {
+  if (context.droneInfoMap.size > 0) return
+
+  if (!context.handler.isDestroyed()) {
+    context.handler.destroy()
+  }
+
+  if (!context.billboardCollection.isDestroyed()) {
+    context.map.scene.primitives.remove(context.billboardCollection)
+    context.billboardCollection.destroy()
+  }
+
+  if (!context.labelCollection.isDestroyed()) {
+    context.map.scene.primitives.remove(context.labelCollection)
+    context.labelCollection.destroy()
+  }
+
+  droneContextMap.delete(context.map)
+}
 
 export function setDronePrimitivePoint(baseUrl) {
   const mapStore = useMapStore()
@@ -34,27 +130,26 @@ export function setDronePrimitivePoint(baseUrl) {
       return mapStore.getGraphicMap(options.id)
     }
 
+    const context = getDroneContext(map, mapStore)
     const position = Cesium.Cartesian3.fromDegrees(
       options.lng,
       options.lat,
       options.height || 0
     )
-
-    const billboardCollection = new Cesium.BillboardCollection({
-      scene: map.scene,
-      blendOption: Cesium.BlendOption.OPAQUE_AND_TRANSLUCENT,
-    })
-
-    const labelCollection = new Cesium.LabelCollection({
-      scene: map.scene,
-      blendOption: Cesium.BlendOption.OPAQUE_AND_TRANSLUCENT,
-    })
-
     const droneName = options.name || `无人机${options.id}`
     const labelText = options.labelText || `白名单：${droneName}`
-
-    const billboard = billboardCollection.add({
+    const droneInfo = {
       id: options.id,
+      name: droneName,
+      labelText,
+      lng: options.lng,
+      lat: options.lat,
+      height: options.height || 0,
+      heading: options.heading || 0,
+    }
+
+    const billboard = context.billboardCollection.add({
+      id: createDronePickId(DRONE_PICK_TYPE, options.id),
       position,
       image: options.imageUrl || `${baseUrl}/images/drone.png`,
       width: options.width || 30,
@@ -65,8 +160,8 @@ export function setDronePrimitivePoint(baseUrl) {
       disableDepthTestDistance: Number.POSITIVE_INFINITY,
     })
 
-    const label = labelCollection.add({
-      id: `${options.id}-label`,
+    const label = context.labelCollection.add({
+      id: createDronePickId(DRONE_LABEL_PICK_TYPE, options.id),
       position,
       text: labelText,
       font: options.labelFont || '14px Microsoft YaHei',
@@ -84,39 +179,7 @@ export function setDronePrimitivePoint(baseUrl) {
       show: true,
     })
 
-    map.scene.primitives.add(billboardCollection)
-    map.scene.primitives.add(labelCollection)
-
-    const droneInfo = {
-      id: options.id,
-      name: droneName,
-      labelText,
-      lng: options.lng,
-      lat: options.lat,
-      height: options.height || 0,
-      heading: options.heading || 0,
-    }
-
-    const handler = new Cesium.ScreenSpaceEventHandler(map.scene.canvas)
-    const isCurrentDrone = (picked) => {
-      if (!Cesium.defined(picked)) return false
-      const pickedId = picked.id
-      return pickedId === options.id || pickedId === `${options.id}-label`
-    }
-
-    handler.setInputAction((movement) => {
-      const picked = map.scene.pick(movement.position)
-      if (isCurrentDrone(picked)) {
-        console.log('无人机左键点击信息：', droneInfo)
-      }
-    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
-
-    handler.setInputAction((movement) => {
-      const picked = map.scene.pick(movement.position)
-      if (isCurrentDrone(picked)) {
-        console.log('无人机右键点击信息：', droneInfo)
-      }
-    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+    context.droneInfoMap.set(options.id, droneInfo)
 
     const dronePrimitive = {
       id: options.id,
@@ -125,26 +188,23 @@ export function setDronePrimitivePoint(baseUrl) {
       targetLat: options.lat,
       targetHeight: options.height || 0,
       position,
-      billboardCollection,
-      labelCollection,
+      billboardCollection: context.billboardCollection,
+      labelCollection: context.labelCollection,
       billboard,
       label,
-      eventHandler: handler,
       info: droneInfo,
       destroy: () => {
-        if (!handler.isDestroyed()) {
-          handler.destroy()
+        if (!context.billboardCollection.isDestroyed() && billboard) {
+          context.billboardCollection.remove(billboard)
         }
 
-        if (!billboardCollection.isDestroyed()) {
-          map.scene.primitives.remove(billboardCollection)
-          billboardCollection.destroy()
+        if (!context.labelCollection.isDestroyed() && label) {
+          context.labelCollection.remove(label)
         }
 
-        if (!labelCollection.isDestroyed()) {
-          map.scene.primitives.remove(labelCollection)
-          labelCollection.destroy()
-        }
+        context.droneInfoMap.delete(options.id)
+        mapStore.removeGraphicMap(options.id)
+        destroyDroneContextIfEmpty(context)
       },
     }
 
