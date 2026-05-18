@@ -265,7 +265,13 @@ const toSetPointPrimitiveByImg = () => {
 
 // 设置无人机点位 （通过提供的图片设置点位）【Primitive】
 const toSetDronePrimitivePointByImg = () => {
-  setDronePrimitivePointByImg({id: 'drone-primitive-1', lng: 117.229629, lat: 31.716888, height: 500, labelBgColor: 'rgba(31, 96, 78, 0.8)'});
+  setDronePrimitivePointByImg({
+    id: 'drone-primitive-1', 
+    lng: 117.229629, 
+    lat: 31.716888, 
+    height: 500, 
+    labelBgColor: 'rgba(31, 96, 78, 0.8)'
+  });
 }
 
 // 移动点位 （通过提供的图片设置点位）
@@ -377,7 +383,14 @@ const toMoveDronePrimitivePoint = () => {
   const newLat = 31.715287 + (Math.random() - 0.5) * 0.01;
   const newHeight =  500;
 
-  moveDronePrimitivePointByLngLat({pointId: 'drone-primitive-1', lng: newLng, lat: newLat, height: newHeight, speed: 100});
+  moveDronePrimitivePointByLngLat({
+    pointId: 'drone-primitive-1', 
+    lng: newLng, 
+    lat: newLat, 
+    height: newHeight, 
+    speed: 100,
+    smooth: true
+  });
 }
 
 // 回放控制器
