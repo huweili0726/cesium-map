@@ -262,7 +262,7 @@ const toSetPointPrimitiveByImg = () => {
 
 // 设置无人机点位 （通过提供的图片设置点位）【Primitive】
 const toSetDronePrimitivePointByImg = () => {
-  setDronePrimitivePointByImg({id: 'drone-primitive-1', lng: 117.229629, lat: 31.716888, height: 500});
+  setDronePrimitivePointByImg({id: 'drone-primitive-1', lng: 117.229629, lat: 31.716888, height: 500, labelBgColor: 'rgba(31, 96, 78, 0.8)'});
 }
 
 // 移动点位 （通过提供的图片设置点位）

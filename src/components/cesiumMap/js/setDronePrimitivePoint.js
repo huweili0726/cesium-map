@@ -15,6 +15,7 @@ export function setDronePrimitivePoint(baseUrl) {
    * @param options.id 点位唯一标识
    * @param options.lng 经度
    * @param options.lat 纬度
+   * @param options.labelBgColor 标签背景颜色（可选，默认rgba(0, 0, 0, 0.65)）
    * @param options.height 高度（可选，默认0）
    * @param options.width 图片宽度（可选，默认30）
    * @param options.heightSize 图片高度（可选，默认30）
@@ -44,6 +45,14 @@ export function setDronePrimitivePoint(baseUrl) {
       blendOption: Cesium.BlendOption.OPAQUE_AND_TRANSLUCENT,
     })
 
+    const labelCollection = new Cesium.LabelCollection({
+      scene: map.scene,
+      blendOption: Cesium.BlendOption.OPAQUE_AND_TRANSLUCENT,
+    })
+
+    const droneName = options.name || `无人机${options.id}`
+    const labelText = options.labelText || `白名单：${droneName}`
+
     const billboard = billboardCollection.add({
       id: options.id,
       position,
@@ -56,17 +65,39 @@ export function setDronePrimitivePoint(baseUrl) {
       disableDepthTestDistance: Number.POSITIVE_INFINITY,
     })
 
+    const label = labelCollection.add({
+      id: `${options.id}-label`,
+      position,
+      text: labelText,
+      font: options.labelFont || '14px Microsoft YaHei',
+      fillColor: Cesium.Color.WHITE,
+      outlineColor: Cesium.Color.BLACK,
+      outlineWidth: 3,
+      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+      horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+      pixelOffset: new Cesium.Cartesian2(0, -(options.heightSize || 30) / 2 - 10),
+      showBackground: true,
+      backgroundColor: Cesium.Color.fromCssColorString(options.labelBgColor || 'rgba(0, 0, 0, 0.65)'),
+      backgroundPadding: new Cesium.Cartesian2(10, 6),
+      disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      show: true,
+    })
+
     map.scene.primitives.add(billboardCollection)
+    map.scene.primitives.add(labelCollection)
 
     const dronePrimitive = {
       id: options.id,
-      name: `无人机${options.id}`,
+      name: droneName,
       targetLng: options.lng,
       targetLat: options.lat,
       targetHeight: options.height || 0,
       position,
       billboardCollection,
+      labelCollection,
       billboard,
+      label,
       info: {
         lng: options.lng,
         lat: options.lat,
@@ -77,6 +108,11 @@ export function setDronePrimitivePoint(baseUrl) {
         if (!billboardCollection.isDestroyed()) {
           map.scene.primitives.remove(billboardCollection)
           billboardCollection.destroy()
+        }
+
+        if (!labelCollection.isDestroyed()) {
+          map.scene.primitives.remove(labelCollection)
+          labelCollection.destroy()
         }
       },
     }
