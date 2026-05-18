@@ -10,7 +10,9 @@ import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { getMoveContext, stopAllMove, stopMoveByPointId, syncDronePosition } from './droneMoveHelper'
 import {
+  beginBatchTrailUpdate,
   clearDronePrimitiveTrail,
+  endBatchTrailUpdate,
   normalizeTrailConfig,
   syncDroneTrailOnMove,
   syncSmoothTrailSegment,
@@ -93,8 +95,8 @@ export function moveDronePrimitivePoint() {
       16
     )
 
-    const prevMove = context.movingMap.get(options.pointId)
-    const segmentId = (prevMove?.segmentId ?? 0) + 1
+    const segmentId = (dronePrimitive.moveSegmentId ?? 0) + 1
+    dronePrimitive.moveSegmentId = segmentId
     const mergedTrailConfig = {
       ...(dronePrimitive.trailConfig || {}),
       ...(options.trail ? normalizeTrailConfig(options.trail, mapStore) : {}),
@@ -110,12 +112,39 @@ export function moveDronePrimitivePoint() {
       segmentId,
     })
 
-    // 收到新经纬度：终止上一段插值的同时，拖尾立刻切到当前机位，不再沿旧段采样
-    if (mergedTrailConfig.enabled !== false && prevMove) {
-      syncSmoothTrailSegment(map, options.pointId, startPosition, mergedTrailConfig)
+    if (mergedTrailConfig.enabled !== false) {
+      syncSmoothTrailSegment(map, options.pointId, startPosition, mergedTrailConfig, segmentId)
     }
 
     return dronePrimitive
+  }
+
+  /**
+   * 批量移动（合并拖尾刷新，海量场景务必使用）
+   * @param items { pointId, lng, lat, height?, heading?, trail? }[]
+   * @param commonOptions 共用 smooth / speed / trail 等
+   */
+  const moveDronePrimitivePointsBatch = (items, commonOptions = {}) => {
+    const map = mapStore.getMap()
+    if (!map || !items?.length) return 0
+
+    beginBatchTrailUpdate(map)
+    let count = 0
+    try {
+      for (let i = 0; i < items.length; i += 1) {
+        const item = items[i]
+        const options = {
+          ...commonOptions,
+          ...item,
+          pointId: item.pointId,
+        }
+        const result = moveDronePrimitivePointByLngLat(options)
+        if (result) count += 1
+      }
+    } finally {
+      endBatchTrailUpdate(map)
+    }
+    return count
   }
 
   /**
@@ -169,6 +198,7 @@ export function moveDronePrimitivePoint() {
 
   return {
     moveDronePrimitivePointByLngLat,
+    moveDronePrimitivePointsBatch,
     stopMoveDronePrimitivePoint,
     stopAllMoveDronePrimitivePoint,
     clearMoveDronePrimitiveTrail,

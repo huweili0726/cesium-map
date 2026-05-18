@@ -462,23 +462,23 @@ const toMoveDronePrimitivePointb = () => {
   });
 }
 
-/** 500 架批量无人机 */
-const DRONE_BATCH_COUNT = 500
+/** 批量无人机（可改 1000 / 5000 压测，海量务必 renderMode: collection） */
+const DRONE_BATCH_COUNT = 1000
 const DRONE_BATCH_PREFIX = 'drone-batch-'
 const DRONE_BATCH_CENTER = { lng: 117.229629, lat: 31.716888 }
 const DRONE_BATCH_SPREAD = 0.04
 const DRONE_BATCH_BASE_HEIGHT = 500
 
+/** collection + highDensity：PolylineCollection 原地更新，避免每机 Primitive 重建 */
 const droneBatchTrailConfig = {
+  renderMode: 'collection',
+  highDensity: true,
   color: '#ff6600',
   width: 2,
   retainSeconds: 10,
-  maxPoints: 128,
-  cornerRadius: 5,
-  retainSeconds: 10,
-  minDistance: 1,  
-  // sampleInterval: 300,
-  // smoothMinDistance: 8,
+  maxPoints: 24,
+  minDistance: 15,
+  showLabel: true,
 }
 
 let droneBatchMoveTimer = null
@@ -492,38 +492,38 @@ const randomDroneBatchPosition = () => ({
 })
 
 const toCreate500DronePrimitives = () => {
-  let created = 0
+  const items = []
   for (let i = 0; i < DRONE_BATCH_COUNT; i += 1) {
     const pos = randomDroneBatchPosition()
-    const drone = setDronePrimitivePointByImg({
+    items.push({
       id: getDroneBatchId(i),
       lng: pos.lng,
       lat: pos.lat,
       height: pos.height,
-      name: `无人机${i}`,
-      labelText: `UAV${i}`,
-      labelBgColor: 'rgba(31, 96, 78, 0.65)',
-      trail: { ...droneBatchTrailConfig },
+      showLabel: false,
+      trail: droneBatchTrailConfig,
     })
-    if (drone) created += 1
   }
+  const created = setDronePrimitivePointsBatch(items)
   console.log(`批量创建 Primitive 无人机：${created}/${DRONE_BATCH_COUNT}`)
 }
 
 const toMove500DronePrimitivesRandom = () => {
+  const moves = []
   for (let i = 0; i < DRONE_BATCH_COUNT; i += 1) {
     const pos = randomDroneBatchPosition()
-    moveDronePrimitivePointByLngLat({
+    moves.push({
       pointId: getDroneBatchId(i),
       lng: pos.lng,
       lat: pos.lat,
       height: pos.height,
-      speed: 60 + Math.random() * 60,
-      smooth: false,
-      trail: droneBatchTrailConfig,
     })
   }
-  console.log(`已对 ${DRONE_BATCH_COUNT} 架无人机下发随机移动`)
+  moveDronePrimitivePointsBatch(moves, {
+    smooth: false,
+    trail: droneBatchTrailConfig,
+  })
+  console.log(`已对 ${DRONE_BATCH_COUNT} 架无人机批量随机移动`)
 }
 
 const toStart500DroneRandomMoveLoop = () => {
@@ -533,7 +533,7 @@ const toStart500DroneRandomMoveLoop = () => {
   toMove500DronePrimitivesRandom()
   droneBatchMoveTimer = window.setInterval(() => {
     toMove500DronePrimitivesRandom()
-  }, 2500)
+  }, 2000)
   console.log('已启动 500 架无人机定时随机移动（2.5s/次）')
 }
 
@@ -1333,10 +1333,12 @@ const {
 
 const {
   setDronePrimitivePointByImg,
+  setDronePrimitivePointsBatch,
 } = setDronePrimitivePoint(process.env.BASE_URL)
 
 const {
   moveDronePrimitivePointByLngLat,
+  moveDronePrimitivePointsBatch,
   stopAllMoveDronePrimitivePoint,
 } = moveDronePrimitivePoint(process.env.BASE_URL)
 

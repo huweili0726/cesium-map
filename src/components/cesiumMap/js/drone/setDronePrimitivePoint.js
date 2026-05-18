@@ -8,7 +8,9 @@ import { useMapStore } from '@/stores/modules/mapStore'
 import { destroyDroneInfoBoard, showDroneInfoBoard, syncOpenedDroneInfoBoards } from './setDroneInfoBoard'
 import {
   appendDroneTrailPoint,
+  beginBatchTrailUpdate,
   clearDronePrimitiveTrail,
+  endBatchTrailUpdate,
   normalizeTrailConfig,
 } from './droneTrailHelper'
 
@@ -186,24 +188,28 @@ export function setDronePrimitivePoint(baseUrl) {
       disableDepthTestDistance: Number.POSITIVE_INFINITY,
     })
 
-    const label = context.labelCollection.add({
-      id: createDronePickId(DRONE_LABEL_PICK_TYPE, options.id),
-      position,
-      text: labelText,
-      font: options.labelFont || '14px Microsoft YaHei',
-      fillColor: Cesium.Color.WHITE,
-      outlineColor: Cesium.Color.BLACK,
-      outlineWidth: 3,
-      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-      horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-      pixelOffset: new Cesium.Cartesian2(0, -(options.heightSize || 30) / 2 - 10),
-      showBackground: true,
-      backgroundColor: Cesium.Color.fromCssColorString(options.labelBgColor || 'rgba(0, 0, 0, 0.65)'),
-      backgroundPadding: new Cesium.Cartesian2(10, 6),
-      disableDepthTestDistance: Number.POSITIVE_INFINITY,
-      show: true,
-    })
+    const showLabel = options.showLabel !== false
+    let label = null
+    if (showLabel) {
+      label = context.labelCollection.add({
+        id: createDronePickId(DRONE_LABEL_PICK_TYPE, options.id),
+        position,
+        text: labelText,
+        font: options.labelFont || '14px Microsoft YaHei',
+        fillColor: Cesium.Color.WHITE,
+        outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 3,
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        pixelOffset: new Cesium.Cartesian2(0, -(options.heightSize || 30) / 2 - 10),
+        showBackground: true,
+        backgroundColor: Cesium.Color.fromCssColorString(options.labelBgColor || 'rgba(0, 0, 0, 0.65)'),
+        backgroundPadding: new Cesium.Cartesian2(10, 6),
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        show: true,
+      })
+    }
 
     context.droneInfoMap.set(options.id, droneInfo)
 
@@ -235,7 +241,7 @@ export function setDronePrimitivePoint(baseUrl) {
           context.billboardCollection.remove(billboard)
         }
 
-        if (!context.labelCollection.isDestroyed() && label) {
+        if (label && !context.labelCollection.isDestroyed()) {
           context.labelCollection.remove(label)
         }
 
@@ -260,7 +266,31 @@ export function setDronePrimitivePoint(baseUrl) {
     return dronePrimitive
   }
 
+  /**
+   * 批量创建无人机（合并拖尾刷新，适合 500~10000 架）
+   * @param items 与 setDronePrimitivePointByImg 相同结构的数组
+   * @param defaults 每项缺省字段
+   */
+  const setDronePrimitivePointsBatch = (items, defaults = {}) => {
+    const map = mapStore.getMap()
+    if (!map || !items?.length) return 0
+
+    beginBatchTrailUpdate(map)
+    let created = 0
+    try {
+      for (let i = 0; i < items.length; i += 1) {
+        const item = { ...defaults, ...items[i] }
+        const drone = setDronePrimitivePointByImg(item)
+        if (drone) created += 1
+      }
+    } finally {
+      endBatchTrailUpdate(map)
+    }
+    return created
+  }
+
   return {
     setDronePrimitivePointByImg,
+    setDronePrimitivePointsBatch,
   }
 }

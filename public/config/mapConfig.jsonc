@@ -1,6 +1,6 @@
 {
   "scene": {
-    "debugShowFramesPerSecond": false,  // 是否显示帧数
+    "debugShowFramesPerSecond": true,  // 是否显示帧数
     "center": {
       "lat": 29.2731078,  // 地图中心点纬度
       "lng": 106.5704352,  // 地图中心点经度

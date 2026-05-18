@@ -83,7 +83,7 @@ const updateMovingDrones = (context) => {
         pointId,
         position: targetPosition,
         trailConfig: dronePrimitive.trailConfig,
-        force: false,
+        force: true,
       })
     }
     context.movingMap.delete(pointId)

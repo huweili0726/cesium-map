@@ -19,8 +19,17 @@ const DEFAULT_SMOOTH_MIN_DISTANCE = 8
 const DEFAULT_CORNER_DOT_THRESHOLD = 0.5
 const DEFAULT_CORNER_RADIUS = 25
 const DEFAULT_CORNER_STEPS = 5
+/** primitive 模式每帧最多重建条数，避免 1000+ 同帧卡死 */
+const MAX_PRIMITIVE_REBUILDS_PER_FRAME = 48
+const LARGE_TRAIL_COUNT = 300
+const PRUNE_INTERVAL_MS = 400
 
 const MATERIAL_VERTEX_FORMAT = Cesium.PolylineMaterialAppearance.VERTEX_FORMAT
+
+const getColorKey = (color) => {
+  if (color instanceof Cesium.Color) return color.toCssColorString()
+  return String(color)
+}
 
 const scratchV1 = new Cesium.Cartesian3()
 const scratchV2 = new Cesium.Cartesian3()
@@ -103,11 +112,11 @@ const buildRoundedCornerPoints = (prev, corner, next, cornerRadius, steps) => {
   return arcPoints
 }
 
-/** 绘制用点列：对急弯做圆角，原始点列仍按时间裁剪 */
+/** 绘制用点列：highDensity 跳过圆角；primitive 模式用于 PolylineGeometry */
 const buildRenderPositions = (trailState) => {
   const source = trailState.points.map((point) => point.position)
   const count = source.length
-  if (count < 3) return source
+  if (count < 3 || trailState.highDensity) return source
 
   const { cornerDotThreshold, cornerRadius, cornerSteps } = trailState
   const result = [source[0]]
@@ -131,6 +140,62 @@ const buildRenderPositions = (trailState) => {
 
   result.push(source[count - 1])
   return result
+}
+
+const releaseCollectionPolyline = (context, trailState) => {
+  const polyline = trailState.collectionPolyline
+  trailState.collectionPolyline = null
+  if (!polyline) return
+
+  const bucket = context.collectionBuckets?.get(getColorKey(trailState.color))
+  if (bucket && !bucket.collection.isDestroyed()) {
+    bucket.collection.remove(polyline)
+    bucket.count -= 1
+  }
+}
+
+const getCollectionBucket = (context, color) => {
+  const key = getColorKey(color)
+  let bucket = context.collectionBuckets.get(key)
+  if (!bucket) {
+    const collection = new Cesium.PolylineCollection()
+    context.map.scene.primitives.add(collection)
+    bucket = { collection, count: 0 }
+    context.collectionBuckets.set(key, bucket)
+  }
+  return bucket
+}
+
+const syncCollectionPolyline = (context, trailState) => {
+  const positions = trailState.points.map((point) => point.position)
+  if (positions.length < 2 || !trailState.visible) {
+    if (trailState.collectionPolyline) {
+      trailState.collectionPolyline.show = false
+    }
+    return
+  }
+
+  const bucket = getCollectionBucket(context, trailState.color)
+  const material = getTrailMaterial(context, trailState.color)
+  let polyline = trailState.collectionPolyline
+
+  if (!polyline) {
+    polyline = bucket.collection.add({
+      positions: positions.map((p) => Cesium.Cartesian3.clone(p)),
+      width: trailState.width,
+      material,
+      show: true,
+      id: trailState.pointId,
+    })
+    trailState.collectionPolyline = polyline
+    bucket.count += 1
+    return
+  }
+
+  polyline.positions = positions
+  polyline.width = trailState.width
+  polyline.material = material
+  polyline.show = true
 }
 
 const rebuildTrailPrimitive = (context, trailState) => {
@@ -170,29 +235,87 @@ const getTrailContext = (map) => {
     map,
     trailMap: new Map(),
     materialCache: new Map(),
+    collectionBuckets: new Map(),
     dirtyTrailIds: new Set(),
     batchFlushListener: null,
     pruneListener: null,
+    deferFlush: 0,
+    lastPruneTime: 0,
   }
   trailContextMap.set(map, context)
   return context
 }
 
+const flushDirtyTrails = (context) => {
+  if (context.dirtyTrailIds.size === 0) return
+
+  const ids = Array.from(context.dirtyTrailIds)
+  context.dirtyTrailIds.clear()
+
+  const collectionIds = []
+  const primitiveIds = []
+
+  ids.forEach((id) => {
+    const trailState = context.trailMap.get(id)
+    if (!trailState) return
+    if (trailState.renderMode === 'collection') {
+      collectionIds.push(id)
+    } else {
+      primitiveIds.push(id)
+    }
+  })
+
+  collectionIds.forEach((id) => {
+    const trailState = context.trailMap.get(id)
+    if (trailState) syncCollectionPolyline(context, trailState)
+  })
+
+  const rebuildIds = primitiveIds.slice(0, MAX_PRIMITIVE_REBUILDS_PER_FRAME)
+  const deferredIds = primitiveIds.slice(MAX_PRIMITIVE_REBUILDS_PER_FRAME)
+  deferredIds.forEach((id) => context.dirtyTrailIds.add(id))
+
+  rebuildIds.forEach((id) => {
+    const trailState = context.trailMap.get(id)
+    if (trailState) rebuildTrailPrimitive(context, trailState)
+  })
+
+  if (context.trailMap.size === 0) {
+    destroyTrailContextIfEmpty(context)
+  }
+}
+
+const scheduleTrailFlush = (context) => {
+  if (context.deferFlush > 0) return
+  if (context.batchFlushListener) return
+
+  context.batchFlushListener = () => {
+    context.batchFlushListener = null
+    flushDirtyTrails(context)
+    if (context.dirtyTrailIds.size > 0) {
+      scheduleTrailFlush(context)
+    }
+  }
+  context.map.scene.preRender.addEventListener(context.batchFlushListener)
+}
+
 const markTrailDirty = (context, pointId) => {
   context.dirtyTrailIds.add(pointId)
-  if (!context.batchFlushListener) {
-    context.batchFlushListener = () => {
-      const ids = Array.from(context.dirtyTrailIds)
-      context.dirtyTrailIds.clear()
-      ids.forEach((id) => {
-        const trailState = context.trailMap.get(id)
-        if (trailState) rebuildTrailPrimitive(context, trailState)
-      })
-      if (context.trailMap.size === 0) {
-        destroyTrailContextIfEmpty(context)
-      }
-    }
-    context.map.scene.preRender.addEventListener(context.batchFlushListener)
+  scheduleTrailFlush(context)
+}
+
+/** 批量移动/创建时合并为一次 preRender 刷新 */
+export const beginBatchTrailUpdate = (map) => {
+  const context = getTrailContext(map)
+  context.deferFlush += 1
+}
+
+export const endBatchTrailUpdate = (map) => {
+  const context = trailContextMap.get(map)
+  if (!context) return
+
+  context.deferFlush = Math.max(0, context.deferFlush - 1)
+  if (context.deferFlush === 0 && context.dirtyTrailIds.size > 0) {
+    scheduleTrailFlush(context)
   }
 }
 
@@ -207,8 +330,19 @@ const destroyTrailContextIfEmpty = (context) => {
     context.map.scene.preRender.removeEventListener(context.batchFlushListener)
     context.batchFlushListener = null
   }
+  context.dirtyTrailIds?.clear()
 
-  context.trailMap.forEach((trailState) => releaseTrailPrimitive(trailState, context.map))
+  context.trailMap.forEach((trailState) => {
+    releaseTrailPrimitive(trailState, context.map)
+    releaseCollectionPolyline(context, trailState)
+  })
+  context.collectionBuckets?.forEach((bucket) => {
+    if (!bucket.collection.isDestroyed()) {
+      context.map.scene.primitives.remove(bucket.collection)
+      bucket.collection.destroy()
+    }
+  })
+  context.collectionBuckets?.clear()
   context.materialCache.clear()
   trailContextMap.delete(context.map)
 }
@@ -269,6 +403,13 @@ const appendTrailPointInternal = (context, trailState, position, now, force) => 
 
 const pruneAllTrails = (context) => {
   const now = performance.now()
+  if (
+    context.trailMap.size > LARGE_TRAIL_COUNT &&
+    now - context.lastPruneTime < PRUNE_INTERVAL_MS
+  ) {
+    return
+  }
+  context.lastPruneTime = now
 
   context.trailMap.forEach((trailState, pointId) => {
     if (trailState.retainSeconds < 0) return
@@ -301,6 +442,9 @@ export const normalizeTrailConfig = (trail = {}, mapStore) => {
     cornerRadius: trail.cornerRadius ?? DEFAULT_CORNER_RADIUS,
     cornerSteps: trail.cornerSteps ?? DEFAULT_CORNER_STEPS,
     visible: trail.visible !== false,
+    /** primitive=高质量单条；collection=PolylineCollection 海量（推荐 500+） */
+    renderMode: trail.renderMode === 'collection' ? 'collection' : 'primitive',
+    highDensity: trail.highDensity === true,
   }
 }
 
@@ -321,6 +465,8 @@ const applyTrailConfigToState = (context, trailState, config) => {
     cornerRadius: config.cornerRadius,
     cornerSteps: config.cornerSteps,
     visible: config.visible,
+    renderMode: config.renderMode,
+    highDensity: config.highDensity,
   })
 
   if (styleChanged && trailState.points.length >= 2) {
@@ -361,7 +507,7 @@ export const ensureDroneTrail = (map, pointId, trailConfig = {}) => {
 /**
  * smooth 改目标/新航段：立刻在无人机当前位置落点并重置采样，避免仍按上一段插值 minDistance 滞后
  */
-export const syncSmoothTrailSegment = (map, pointId, position, trailConfig = {}) => {
+export const syncSmoothTrailSegment = (map, pointId, position, trailConfig = {}, segmentId) => {
   if (!map || !pointId || !position) return false
 
   const mapStore = useMapStore()
@@ -375,6 +521,9 @@ export const syncSmoothTrailSegment = (map, pointId, position, trailConfig = {})
   const now = performance.now()
   appendTrailPointInternal(context, trailState, position, now, true)
   trailState.lastSampleTime = 0
+  if (segmentId !== undefined) {
+    trailState.sampleSegmentId = segmentId
+  }
   return true
 }
 
@@ -411,12 +560,13 @@ export const syncDroneTrailOnMove = (map, pointId, position, moveOptions = {}) =
     dronePrimitive.trailConfig = mergedConfig
   }
 
+  const hasMinDistance = (mergedConfig.minDistance ?? 0) > 0
   return appendDroneTrailPoint({
     map,
     pointId,
     position,
     trailConfig: mergedConfig,
-    force: !moveOptions.smooth,
+    force: !moveOptions.smooth && !hasMinDistance,
   })
 }
 
@@ -466,6 +616,7 @@ export const clearDronePrimitiveTrail = (map, pointId) => {
   if (!trailState) return
 
   releaseTrailPrimitive(trailState, map)
+  releaseCollectionPolyline(context, trailState)
   context.trailMap.delete(pointId)
   context.dirtyTrailIds.delete(pointId)
   destroyTrailContextIfEmpty(context)
