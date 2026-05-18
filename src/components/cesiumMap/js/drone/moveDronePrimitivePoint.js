@@ -4,7 +4,7 @@
  * 面向上万架无人机的移动策略：
  * 1. 默认直接更新到服务端/外部传入的新经纬度高度，单次调用 O(1)，最稳。
  * 2. 可选 smooth=true 使用共享 postRender 插值器，所有平滑移动共用一个渲染循环，避免每架无人机创建定时器。
- * 3. 拖尾使用分块批量 Primitive + PolylineGeometry 屏幕像素线宽（见 droneTrailHelper），默认每次经纬高更新追加点；smooth 时按 sampleInterval 采样。
+ * 3. 拖尾见 droneTrailHelper：PolylineGeometry 像素线宽，每机独立 Primitive，急弯绘制时圆角。
  */
 import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
