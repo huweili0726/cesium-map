@@ -5,7 +5,7 @@
  */
 import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
-import { destroyDroneInfoBoard, showDroneInfoBoard, syncOpenedDroneInfoBoards } from './droneInfoBoard'
+import { destroyDroneInfoBoard, showDroneInfoBoard, syncOpenedDroneInfoBoards } from './setDroneInfoBoard'
 
 const DRONE_PICK_TYPE = 'drone-primitive'
 const DRONE_LABEL_PICK_TYPE = 'drone-primitive-label'
