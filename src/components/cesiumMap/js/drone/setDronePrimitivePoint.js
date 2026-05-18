@@ -6,6 +6,11 @@
 import * as Cesium from 'cesium'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { destroyDroneInfoBoard, showDroneInfoBoard, syncOpenedDroneInfoBoards } from './setDroneInfoBoard'
+import {
+  appendDroneTrailPoint,
+  clearDronePrimitiveTrail,
+  normalizeTrailConfig,
+} from './droneTrailHelper'
 
 const DRONE_PICK_TYPE = 'drone-primitive'
 const DRONE_LABEL_PICK_TYPE = 'drone-primitive-label'
@@ -136,6 +141,7 @@ export function setDronePrimitivePoint(baseUrl) {
    * @param options.width 图片宽度（可选，默认30）
    * @param options.heightSize 图片高度（可选，默认30）
    * @param options.imageUrl 图片地址（可选，默认使用 /images/drone.png）
+   * @param options.trail 拖尾配置（可选，与 move 时 trail 字段一致）
    * @returns 创建的无人机点位对象
    */
   const setDronePrimitivePointByImg = (options) => {
@@ -201,6 +207,8 @@ export function setDronePrimitivePoint(baseUrl) {
 
     context.droneInfoMap.set(options.id, droneInfo)
 
+    const trailConfig = options.trail ? normalizeTrailConfig(options.trail, mapStore) : null
+
     const dronePrimitive = {
       id: options.id,
       name: droneName,
@@ -208,6 +216,7 @@ export function setDronePrimitivePoint(baseUrl) {
       targetLat: options.lat,
       targetHeight: options.height || 0,
       position,
+      trailConfig,
       billboardCollection: context.billboardCollection,
       labelCollection: context.labelCollection,
       billboard,
@@ -218,6 +227,7 @@ export function setDronePrimitivePoint(baseUrl) {
       infoBoardOffset: { x: 0, y: 0 },
       destroyInfoBoardDrag: null,
       destroy: () => {
+        clearDronePrimitiveTrail(map, options.id)
         destroyDroneInfoBoard(dronePrimitive)
         context.infoBoardDroneIds.delete(options.id)
 
@@ -236,6 +246,17 @@ export function setDronePrimitivePoint(baseUrl) {
     }
 
     mapStore.setGraphicMap(options.id, dronePrimitive)
+
+    if (trailConfig?.enabled) {
+      appendDroneTrailPoint({
+        map,
+        pointId: options.id,
+        position,
+        trailConfig,
+        force: true,
+      })
+    }
+
     return dronePrimitive
   }
 

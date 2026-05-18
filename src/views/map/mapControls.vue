@@ -270,7 +270,13 @@ const toSetDronePrimitivePointByImg = () => {
     lng: 117.229629, 
     lat: 31.716888, 
     height: 500, 
-    labelBgColor: 'rgba(31, 96, 78, 0.8)'
+    labelBgColor: 'rgba(31, 96, 78, 0.8)',
+    trail: {
+      color: '#00ff88',
+      width: 3,
+      retainSeconds: 10,  // 10s；-1 永久（受 maxPoints 限制）
+      maxPoints: 512,
+    },
   });
 }
 
@@ -389,7 +395,15 @@ const toMoveDronePrimitivePoint = () => {
     lat: newLat, 
     height: newHeight, 
     speed: 100,
-    smooth: true
+    smooth: false,
+    trail: { 
+      color: '#ff6600',
+      width: 2, 
+      retainSeconds: 10,
+      // retainSeconds: -1,      // 永久
+      // sampleInterval: 250,    // smooth 下每 250ms 采样一点
+      // minDistance: 1,         // 同时满足最小 1m 间距
+    }
   });
 }
 

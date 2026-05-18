@@ -4,6 +4,7 @@
  * 负责维护共享移动上下文、同步无人机位置、批量执行平滑插值移动。
  */
 import * as Cesium from 'cesium'
+import { appendDroneTrailPoint, sampleSmoothMovingTrails } from './droneTrailHelper'
 
 const moveContextMap = new WeakMap()
 
@@ -66,10 +67,20 @@ const updateMovingDrones = (context) => {
 
     if (progress >= 1) {
       syncDronePosition(dronePrimitive, targetPosition, targetOptions)
+      if (dronePrimitive.trailConfig?.enabled !== false) {
+        appendDroneTrailPoint({
+          map: context.map,
+          pointId,
+          position: targetPosition,
+          trailConfig: dronePrimitive.trailConfig,
+          force: true,
+        })
+      }
       context.movingMap.delete(pointId)
     }
   })
 
+  sampleSmoothMovingTrails(context)
   destroyMoveContextIfEmpty(context)
 }
 
