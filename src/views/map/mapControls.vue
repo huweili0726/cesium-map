@@ -190,7 +190,7 @@
 import { ref, onBeforeUnmount } from 'vue'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { setPoint } from '@/components/cesiumMap/js/setPoint'
-import { setDronePrimitivePoint } from '@/components/cesiumMap/js/setDronePrimitivePoint'
+import { setDronePrimitivePoint } from '@/components/cesiumMap/js/drone/setDronePrimitivePoint'
 import { hemisphereConfig } from '@/components/cesiumMap/js/hemisphere'
 import { movePointConfig } from '@/components/cesiumMap/js/movePoint'
 import { setReplay } from '@/components/cesiumMap/js/replayPath'
