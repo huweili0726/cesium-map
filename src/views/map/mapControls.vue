@@ -100,6 +100,8 @@
           <button @click="toShowDronePoint" class="control-btn">show(无人机1)</button>
 
           <button @click="toDestroyDronePoint" class="control-btn">destroy(无人机1)</button>
+
+          <button @click="toMoveDronePrimitivePoint" class="control-btn">move(primitive无人机)</button>
         </div>
       </div>
 
@@ -191,6 +193,7 @@ import { ref, onBeforeUnmount } from 'vue'
 import { useMapStore } from '@/stores/modules/mapStore'
 import { setPoint } from '@/components/cesiumMap/js/setPoint'
 import { setDronePrimitivePoint } from '@/components/cesiumMap/js/drone/setDronePrimitivePoint'
+import { moveDronePrimitivePoint } from '@/components/cesiumMap/js/drone/moveDronePrimitivePoint'
 import { hemisphereConfig } from '@/components/cesiumMap/js/hemisphere'
 import { movePointConfig } from '@/components/cesiumMap/js/movePoint'
 import { setReplay } from '@/components/cesiumMap/js/replayPath'
@@ -366,6 +369,15 @@ const toShowDronePoint = () => {
 const toDestroyDronePoint = () => {
   // 销毁无人机+轨迹
   destroyDroneTrail({pointId: '4'});
+}
+
+const toMoveDronePrimitivePoint = () => {
+  // 在原位置附近随机生成新的坐标
+  const newLng = 117.236334 + (Math.random() - 0.5) * 0.01;
+  const newLat = 31.715287 + (Math.random() - 0.5) * 0.01;
+  const newHeight =  500;
+
+  moveDronePrimitivePointByLngLat({pointId: 'drone-primitive-1', lng: newLng, lat: newLat, height: newHeight, speed: 100});
 }
 
 // 回放控制器
@@ -1110,6 +1122,10 @@ const {
 const {
   setDronePrimitivePointByImg,
 } = setDronePrimitivePoint(process.env.BASE_URL)
+
+const {
+  moveDronePrimitivePointByLngLat,
+} = moveDronePrimitivePoint(process.env.BASE_URL)
 
 const {
   movePoint,
