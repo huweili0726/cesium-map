@@ -193,6 +193,10 @@ const initCesium = async () => {
     map.scene.globe.dynamicAtmosphereLighting = mapOptions.scene.globe.dynamicAtmosphereLighting;
     // 开启/关闭 动态大气光照从太阳开始
     map.scene.globe.dynamicAtmosphereLightingFromSun = mapOptions.scene.globe.dynamicAtmosphereLightingFromSun;
+    // 后处理抗锯齿，减轻折线拖尾锯齿感
+    if (map.scene.postProcessStages?.fxaa) {
+      map.scene.postProcessStages.fxaa.enabled = true
+    }
     
     // 初始化鼠标控制器
     mouseController(map); 
