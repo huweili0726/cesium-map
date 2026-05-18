@@ -54,7 +54,8 @@
         <div v-if="isImgPointControlsOpen" class="controls-content">
           <button @click="toSetPointEntityByImg" class="control-btn">set entity点位(img)</button>
           <button @click="toSetPointPrimitiveByImg" class="control-btn">set primitive点位(img)</button>
-          <button @click="toSetDronePrimitivePointByImg" class="control-btn">set primitive无人机(img)</button>
+          <button @click="toSetDronePrimitivePointByImg" class="control-btn">set primitive无人机a</button>
+          <button @click="toSetDronePrimitivePointByImgb" class="control-btn">set primitive无人机b</button>
           <button @click="toMovePointByImg" class="control-btn">move点位(img)</button>
           <button @click="toSetBatchPointByImg" class="control-btn">set(img 1万+）</button>
         </div>
@@ -102,6 +103,7 @@
           <button @click="toDestroyDronePoint" class="control-btn">destroy(无人机1)</button>
 
           <button @click="toMoveDronePrimitivePoint" class="control-btn">move(primitive无人机)</button>
+          <button @click="toMoveDronePrimitivePointb" class="control-btn">move(primitive无人机b)</button>
           <button @click="toMoveDronePrimitivePoint1" class="control-btn">move(primitive无人机)1</button>
         </div>
       </div>
@@ -281,6 +283,16 @@ const toSetDronePrimitivePointByImg = () => {
   });
 }
 
+const toSetDronePrimitivePointByImgb = () => {
+  setDronePrimitivePointByImg({
+    id: 'drone-primitive-2', 
+    lng: 117.209629, 
+    lat: 31.716888, 
+    height: 500, 
+    labelBgColor: 'rgba(31, 96, 78, 0.8)',
+  });
+}
+
 // 移动点位 （通过提供的图片设置点位）
 const toMovePointByImg = () => {
   // 在原位置附近随机生成新的坐标
@@ -406,6 +418,32 @@ const toMoveDronePrimitivePoint = () => {
       sampleInterval: 250,    // smooth 下每 250ms 采样一点
       smoothMinDistance: 1,  // 可选，默认至少 8m
       minDistance: 0,         // 仅影响 smooth: false
+    }
+  });
+}
+
+const toMoveDronePrimitivePointb = () => {
+  // 在原位置附近随机生成新的坐标
+  const newLng = 117.236334 + (Math.random() - 0.5) * 0.01;
+  const newLat = 31.715287 + (Math.random() - 0.5) * 0.01;
+  const newHeight =  500;
+
+  moveDronePrimitivePointByLngLat({
+    pointId: 'drone-primitive-2', 
+    lng: newLng, 
+    lat: newLat, 
+    height: newHeight, 
+    speed: 100,
+    smooth: true,
+    trail: { 
+      color: '#ff6600',
+      width: 2, 
+      retainSeconds: 10,
+      cornerRadius: 5,  // 掉头弯更圆滑、更不易变细
+      // retainSeconds: -1,      // 永久
+      sampleInterval: 250,    // smooth 下每 250ms 采样一点
+      smoothMinDistance: 1,  // 可选，默认至少 8m
+      minDistance: 1,         // 仅影响 smooth: false
     }
   });
 }
