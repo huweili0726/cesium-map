@@ -400,6 +400,7 @@ const toMoveDronePrimitivePoint = () => {
       color: '#ff6600',
       width: 2, 
       retainSeconds: 10,
+      cornerRadius: 5,  // 掉头弯更圆滑、更不易变细
       // retainSeconds: -1,      // 永久
       // sampleInterval: 250,    // smooth 下每 250ms 采样一点
       // minDistance: 1,         // 同时满足最小 1m 间距
